@@ -1,0 +1,40 @@
+{% extends "hotel/base.html" %}{% load tr_tags %}
+{% block title %}{% tr "Services" %}{% endblock %}
+{% block content %}
+<h1>{% tr "Services" %}</h1>
+<div class="grid-2">
+<div class="card">
+  <h2>{% tr "Service Catalog" %}</h2>
+  <form method="post">{% csrf_token %}
+    <input type="hidden" name="action" value="order">
+    <div class="svc-catalog">
+    {% for s in catalog %}
+      <label class="svc-item"><input type="checkbox" name="service" value="{{ s.name }}">
+        <span>{{ s.name }} — ${{ s.price }}</span>
+        <input class="qty" name="qty_{{ s.name }}" type="number" value="1" min="1">
+      </label>
+    {% endfor %}
+    </div>
+    <select name="guest_id" required><option value="">{% tr "Select Guest" %}</option>{% for g in guests %}<option value="{{ g.id }}">{{ g.name }} (G{{ g.id }})</option>{% endfor %}</select>
+    <button class="btn primary" type="submit">{% tr "Place Order" %}</button>
+  </form>
+</div>
+<div class="card">
+  <h2>{% tr "Service Orders" %}</h2>
+  <table>
+    <thead><tr><th>{% tr "Order ID" %}</th><th>{% tr "Guest" %}</th><th>{% tr "Service" %}</th><th>{% tr "Qty" %}</th><th>{% tr "Total" %}</th><th>{% tr "Time" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "Update" %}</th></tr></thead>
+    <tbody>
+    {% for o in orders %}
+      <tr><td>SO{{ o.id }}</td><td>{{ o.guest.name }}</td><td>{{ o.service_name }}</td><td>{{ o.quantity }}</td><td>${{ o.total|floatformat:2 }}</td><td>{{ o.timestamp|date:"Y-m-d H:i" }}</td>
+      <td><span class="badge">{{ o.status }}</span></td>
+      <td><form method="post" class="inline">{% csrf_token %}
+        <input type="hidden" name="action" value="status"><input type="hidden" name="order_id" value="{{ o.id }}">
+        <select name="status"><option {% if o.status == "Pending" %}selected{% endif %}>Pending</option><option {% if o.status == "In Progress" %}selected{% endif %}>In Progress</option><option {% if o.status == "Completed" %}selected{% endif %}>Completed</option><option {% if o.status == "Cancelled" %}selected{% endif %}>Cancelled</option></select>
+        <button class="btn ghost" type="submit">{% tr "Save" %}</button>
+      </form></td></tr>
+    {% empty %}<tr><td colspan="8">{% tr "No services selected" %}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+</div>
+{% endblock %}

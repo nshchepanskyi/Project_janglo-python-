@@ -1,0 +1,17 @@
+{% load tr_tags %}{% load static %}<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="{{ theme }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrandStay — {% tr "Login" %}</title><link rel="stylesheet" href="{% static 'hotel/style.css' %}"></head>
+<body class="auth-page">
+<div class="auth-card">
+  <h1>GrandStay {% tr "Login" %}</h1>
+  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+  <form method="post">{% csrf_token %}
+    <input name="login" placeholder="{% tr "Username or Email" %}" required>
+    <input name="password" type="password" placeholder="{% tr "Password" %}" required>
+    <button class="btn primary" type="submit">{% tr "Login" %}</button>
+  </form>
+  <p><a href="{% url 'register' %}">{% tr "Create account" %}</a> · <a href="{% url 'toggle_lang' %}">{{ lang|upper }}</a></p>
+</div>
+</body>
+</html>

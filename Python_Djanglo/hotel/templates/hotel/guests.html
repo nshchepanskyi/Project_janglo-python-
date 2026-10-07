@@ -1,0 +1,18 @@
+{% extends "hotel/base.html" %}{% load tr_tags %}
+{% block title %}{% tr "Guests" %}{% endblock %}
+{% block content %}
+<h1>{% tr "Guests" %}</h1>
+<div class="card">
+  <form method="get" class="form-row"><input name="q" value="{{ q }}" placeholder="{% tr "Guest Name" %} / Email / {% tr "Phone" %}"><button class="btn ghost" type="submit">Search</button></form>
+</div>
+<div class="card">
+  <h2>{% tr "Guest List" %}</h2>
+  <table>
+    <thead><tr><th>{% tr "Guest ID" %}</th><th>{% tr "Name" %}</th><th>{% tr "Phone" %}</th><th>Email</th></tr></thead>
+    <tbody>
+    {% for g in guests %}<tr><td>G{{ g.id }}</td><td>{{ g.name }}</td><td>{{ g.phone }}</td><td>{{ g.email }}</td></tr>
+    {% empty %}<tr><td colspan="4">—</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

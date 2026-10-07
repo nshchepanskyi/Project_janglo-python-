@@ -1,0 +1,43 @@
+{% extends "hotel/base.html" %}{% load tr_tags %}
+{% block title %}{% tr "Dashboard" %}{% endblock %}
+{% block content %}
+<div class="kpi-row">
+  <div class="card kpi"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ occupancy }}%</div><div class="kpi-sub">{{ occupied }} / {{ rooms|length }} rooms occupied</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "AVAILABLE ROOMS" %}</div><div class="kpi-value">{{ avail }}</div><div class="kpi-sub ok">ready</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "ARRIVALS TODAY" %}</div><div class="kpi-value">{{ arrivals }}</div><div class="kpi-sub">{{ checked_in }} checked-in so far ({{ arrivals_today }} today)</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">${{ total_rev|floatformat:0 }}</div><div class="kpi-sub">Rooms ${{ res_rev|floatformat:0 }} · Services ${{ svc_rev|floatformat:0 }}</div></div>
+</div>
+
+<div class="card">
+  <div class="card-head"><h2>{% tr "Recent Reservations" %}</h2><a href="{% url 'reservations' %}">{% tr "VIEW ALL RECORDS" %}</a></div>
+  <table>
+    <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
+    <tbody>
+    {% for r in recent %}
+      <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td>{{ r.check_in }}</td><td><span class="badge">{{ r.status }}</span></td><td>${{ r.amount|floatformat:2 }}</td></tr>
+    {% empty %}
+      <tr><td colspan="5">{% tr "No reservations yet" %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head"><h2>{% tr "Room Status" %}</h2></div>
+    <div class="legend"><span class="dot green"></span>{% tr "Available" %} <span class="dot blue"></span>{% tr "Occupied" %} <span class="dot amber"></span>{% tr "Cleaning" %} <span class="dot red"></span>{% tr "Maintenance" %}</div>
+    <div class="room-grid">
+      {% for room in rooms %}<div class="room status-{{ room.status|lower }}">{{ room.number }}</div>{% endfor %}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>{% tr "Services Revenue" %}</h2></div>
+    {% for s in svc_summary %}
+      <div class="svc-row"><span>{{ s.name }}</span><span>{{ s.count }} orders</span><b>${{ s.revenue|floatformat:0 }}</b>
+      <div class="bar"><div style="width:{{ s.pct }}%"></div></div></div>
+    {% empty %}
+      <p>{% tr "No service orders yet." %}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
