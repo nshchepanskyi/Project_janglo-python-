@@ -30,7 +30,7 @@
     <tbody>
     {% for r in rooms %}
       <tr><td>{{ r.number }}</td><td>{{ r.display_title }}<br><small class="nowrap">{{ r.location }} · ★ {{ r.rating }}</small></td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
-      <td><span class="badge">{% tr r.status %}</span></td>
+      <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="room_id" value="{{ r.id }}">
         <select name="status">

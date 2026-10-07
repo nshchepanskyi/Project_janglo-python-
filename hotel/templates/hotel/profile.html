@@ -50,7 +50,7 @@
       <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th></tr></thead>
       <tbody>
       {% for r in recent %}
-        <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge">{% tr r.status %}</span></td></tr>
+        <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td></tr>
       {% empty %}
         <tr><td colspan="4">{% tr "No reservations yet" %}</td></tr>
       {% endfor %}
@@ -75,7 +75,7 @@
           <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td>
           <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}</td>
           <td>{{ r.nights }}</td>
-          <td><span class="badge">{% tr r.status %}</span></td>
+          <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
           <td>${{ r.amount }}</td>
         </tr>
       {% empty %}

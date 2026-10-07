@@ -14,7 +14,7 @@
     <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
     <tbody>
     {% for r in recent %}
-      <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge">{% tr r.status %}</span></td><td class="nowrap">${{ r.amount|floatformat:2 }}</td></tr>
+      <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td><td class="nowrap">${{ r.amount|floatformat:2 }}</td></tr>
     {% empty %}
       <tr><td colspan="5">{% tr "No reservations yet" %}</td></tr>
     {% endfor %}

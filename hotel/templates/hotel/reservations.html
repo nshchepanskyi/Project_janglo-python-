@@ -23,7 +23,7 @@
     <tbody>
     {% for r in reservations %}
       <tr><td>#{{ r.id }}</td><td>{{ r.guest.name }}<br><small class="nowrap">{{ r.check_in|date:"Y-m-d" }} → {{ r.check_out|date:"Y-m-d" }}</small></td><td>{{ r.room.number }}</td>
-      <td><span class="badge">{% tr r.status %}</span></td>
+      <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
       {% if can_manage %}
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="reservation_id" value="{{ r.id }}">

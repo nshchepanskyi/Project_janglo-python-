@@ -5,7 +5,7 @@
 <body class="auth-page">
 <div class="auth-card">
   <h1>{% tr "Create Account" %}</h1>
-  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}{% endif %}
   <form method="post">{% csrf_token %}
     <input name="username" placeholder="{% tr "Username" %}" required>
     <input name="email" type="email" placeholder="Email" required>

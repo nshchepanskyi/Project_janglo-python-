@@ -13,20 +13,20 @@
     <div class="brand">GrandStay</div>
     <nav>
       {% if is_admin %}
-      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">{% tr "Dashboard" %}</a>
-      <a href="{% url 'rooms' %}" class="{% if request.resolver_match.url_name == 'rooms' %}active{% endif %}">{% tr "Rooms" %}</a>
+      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">📊 {% tr "Dashboard" %}</a>
+      <a href="{% url 'rooms' %}" class="{% if request.resolver_match.url_name == 'rooms' %}active{% endif %}">🛏️ {% tr "Rooms" %}</a>
       {% endif %}
-      <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% if is_admin %}{% tr "Reservations" %}{% else %}{% tr "My Reservations" %}{% endif %}</a>
+      <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">📅 {% if is_admin %}{% tr "Reservations" %}{% else %}{% tr "My Reservations" %}{% endif %}</a>
       {% if is_admin %}
-      <a href="{% url 'guests' %}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">{% tr "Guests" %}</a>
-      <a href="{% url 'services' %}" class="{% if request.resolver_match.url_name == 'services' %}active{% endif %}">{% tr "Services" %}</a>
+      <a href="{% url 'guests' %}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">👥 {% tr "Guests" %}</a>
+      <a href="{% url 'services' %}" class="{% if request.resolver_match.url_name == 'services' %}active{% endif %}">🛎️ {% tr "Services" %}</a>
       {% endif %}
-      <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
+      <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">👤 {% tr "Profile" %}</a>
     </nav>
     {% if user.is_authenticated %}
     <div class="nav-foot">
-      <span>{{ user.username }}{% if is_admin %} · {% tr "Admin" %}{% endif %}</span>
-      <a class="btn ghost small" href="{% url 'home' %}">{% tr "Public site" %}</a>
+      <div class="nav-user"><span class="avatar">{{ user.username|first|upper }}</span><span>{{ user.username }}{% if is_admin %} · {% tr "Admin" %}{% endif %}</span></div>
+      <a class="btn ghost small" href="{% url 'home' %}">🌐 {% tr "Public site" %}</a>
       <a href="{% url 'logout' %}" class="btn ghost small">{% tr "Logout" %}</a>
     </div>
     {% endif %}
