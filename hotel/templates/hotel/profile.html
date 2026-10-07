@@ -1,0 +1,60 @@
+{% extends "hotel/base.html" %}{% load tr_tags %}
+{% block title %}{% tr "Profile" %}{% endblock %}
+{% block content %}
+<h1>{% tr "Profile" %}</h1>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>{% tr "My Account" %}</h2>
+    <table class="kv">
+      <tr><td>{% tr "Username" %}</td><td>{{ user.username }}</td></tr>
+      <tr><td>Email</td><td>{{ user.email|default:"—" }}</td></tr>
+      <tr><td>{% tr "Role" %}</td><td>{% if user.is_superuser %}{% tr "Administrator" %}{% else %}{% tr "User" %}{% endif %}</td></tr>
+      <tr><td>{% tr "Member since" %}</td><td>{{ user.date_joined|date:"Y-m-d" }}</td></tr>
+      <tr><td>{% tr "Last login" %}</td><td>{{ user.last_login|date:"Y-m-d H:i" }}</td></tr>
+      <tr><td>{% tr "Language" %}</td><td>{{ lang|upper }}</td></tr>
+      <tr><td>{% tr "Theme" %}</td><td>{{ theme|title }}</td></tr>
+    </table>
+
+    <h3>{% tr "Update Email" %}</h3>
+    <form method="post" class="form-row">{% csrf_token %}
+      <input type="hidden" name="action" value="email">
+      <input name="email" type="email" value="{{ user.email }}" placeholder="Email">
+      <button class="btn primary" type="submit">{% tr "Save" %}</button>
+    </form>
+
+    <h3>{% tr "Change Password" %}</h3>
+    <form method="post" class="form-col">{% csrf_token %}
+      <input type="hidden" name="action" value="password">
+      <input name="old_password" type="password" placeholder="{% tr "Current Password" %}" required>
+      <input name="new_password1" type="password" placeholder="{% tr "New Password" %}" required>
+      <input name="new_password2" type="password" placeholder="{% tr "Confirm Password" %}" required>
+      <button class="btn primary" type="submit">{% tr "Change Password" %}</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>{% tr "My Statistics" %}</h2>
+    <div class="kpi-row two">
+      <div class="card kpi mini"><div class="kpi-label">{% tr "GUESTS" %}</div><div class="kpi-value">{{ stats.guests }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "RESERVATIONS" %}</div><div class="kpi-value">{{ stats.reservations }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ stats.occupancy }}%</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">${{ stats.revenue|floatformat:0 }}</div></div>
+    </div>
+
+    <h3>{% tr "Recent Reservations" %}</h3>
+    <table>
+      <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+        <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge">{% tr r.status %}</span></td></tr>
+      {% empty %}
+        <tr><td colspan="4">{% tr "No reservations yet" %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

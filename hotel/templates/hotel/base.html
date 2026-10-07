@@ -17,6 +17,7 @@
       <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% tr "Reservations" %}</a>
       <a href="{% url 'guests' %}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">{% tr "Guests" %}</a>
       <a href="{% url 'services' %}" class="{% if request.resolver_match.url_name == 'services' %}active{% endif %}">{% tr "Services" %}</a>
+      <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
     </nav>
     {% if user.is_authenticated %}
     <div class="nav-foot">

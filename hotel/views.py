@@ -2,8 +2,9 @@ import re
 from datetime import date
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError
@@ -307,4 +308,48 @@ def services_view(request):
         "catalog": SERVICES_CATALOG,
         "guests": Guest.objects.all(),
         "orders": orders,
+    })
+
+
+# ---------- profile (new page for the user's own info) ----------
+
+@login_required
+def profile_view(request):
+    user = request.user
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "email":
+            email = request.POST.get("email", "").strip()
+            if not email:
+                messages.error(request, "Invalid email")
+            else:
+                user.email = email
+                user.save()
+                messages.success(request, "Profile updated")
+            return redirect("profile")
+        if action == "password":
+            form = PasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Password changed")
+            else:
+                for err in form.errors.values():
+                    messages.error(request, " ".join(err))
+            return redirect("profile")
+
+    stats = {
+        "guests": Guest.objects.count(),
+        "reservations": Reservation.objects.count(),
+        "orders": ServiceOrder.objects.count(),
+        "rooms": Room.objects.count(),
+        "revenue": calc_total_revenue(),
+        "occupancy": get_occupancy_rate(),
+        "checked_in": arrivals_count()["checked_in"],
+    }
+    recent = list(Reservation.objects.select_related("guest", "room").all()[:5])
+    return render(request, "hotel/profile.html", {
+        "stats": stats,
+        "recent": recent,
+        "pw_form": PasswordChangeForm(user),
     })
