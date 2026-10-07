@@ -155,6 +155,7 @@ TRANSLATIONS = {
         "Bicycle Rental": "Прокат велосипедів",
 
         "Guest not found": "Гостя не знайдено",
+        "Search": "Пошук",
 
         "Services": "Послуги",
         "Rooms": "Номери",

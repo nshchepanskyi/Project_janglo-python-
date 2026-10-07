@@ -2,10 +2,10 @@
 {% block title %}{% tr "Dashboard" %}{% endblock %}
 {% block content %}
 <div class="kpi-row">
-  <div class="card kpi"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ occupancy }}%</div><div class="kpi-sub">{{ occupied }} / {{ rooms|length }} rooms occupied</div></div>
-  <div class="card kpi"><div class="kpi-label">{% tr "AVAILABLE ROOMS" %}</div><div class="kpi-value">{{ avail }}</div><div class="kpi-sub ok">ready</div></div>
-  <div class="card kpi"><div class="kpi-label">{% tr "ARRIVALS TODAY" %}</div><div class="kpi-value">{{ arrivals }}</div><div class="kpi-sub">{{ checked_in }} checked-in so far ({{ arrivals_today }} today)</div></div>
-  <div class="card kpi"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">${{ total_rev|floatformat:0 }}</div><div class="kpi-sub">Rooms ${{ res_rev|floatformat:0 }} · Services ${{ svc_rev|floatformat:0 }}</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ occupancy }}%</div><div class="kpi-sub">{% with total=rooms|length %}{% tr "{occupied} of {total} rooms occupied" occupied=occupied total=total %}{% endwith %}</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "AVAILABLE ROOMS" %}</div><div class="kpi-value">{{ avail }}</div><div class="kpi-sub ok">{% tr "+2 Ready for cleaning" %}</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "ARRIVALS TODAY" %}</div><div class="kpi-value">{{ arrivals }}</div><div class="kpi-sub">{% tr "{count} Checked-in so far" count=checked_in %} ({{ arrivals_today }})</div></div>
+  <div class="card kpi"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">${{ total_rev|floatformat:0 }}</div><div class="kpi-sub">{% tr "Rooms ${res_rev:,.0f}  ·  Services ${svc_rev:,.0f}" res_rev=res_rev svc_rev=svc_rev %}</div></div>
 </div>
 
 <div class="card">
@@ -14,7 +14,7 @@
     <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
     <tbody>
     {% for r in recent %}
-      <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td>{{ r.check_in }}</td><td><span class="badge">{{ r.status }}</span></td><td>${{ r.amount|floatformat:2 }}</td></tr>
+      <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge">{% tr r.status %}</span></td><td class="nowrap">${{ r.amount|floatformat:2 }}</td></tr>
     {% empty %}
       <tr><td colspan="5">{% tr "No reservations yet" %}</td></tr>
     {% endfor %}
@@ -33,7 +33,7 @@
   <div class="card">
     <div class="card-head"><h2>{% tr "Services Revenue" %}</h2></div>
     {% for s in svc_summary %}
-      <div class="svc-row"><span>{{ s.name }}</span><span>{{ s.count }} orders</span><b>${{ s.revenue|floatformat:0 }}</b>
+      <div class="svc-row"><span class="svc-name">{% tr s.name %}</span><span class="nowrap">{% tr "{count} orders" count=s.count %}</span><b class="nowrap">${{ s.revenue|floatformat:0 }}</b>
       <div class="bar"><div style="width:{{ s.pct }}%"></div></div></div>
     {% empty %}
       <p>{% tr "No service orders yet." %}</p>

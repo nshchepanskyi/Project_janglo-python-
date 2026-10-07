@@ -10,7 +10,7 @@
     <div class="svc-catalog">
     {% for s in catalog %}
       <label class="svc-item"><input type="checkbox" name="service" value="{{ s.name }}">
-        <span>{{ s.name }} — ${{ s.price }}</span>
+        <span>{% tr s.name %} — ${{ s.price }}</span>
         <input class="qty" name="qty_{{ s.name }}" type="number" value="1" min="1">
       </label>
     {% endfor %}
@@ -25,11 +25,11 @@
     <thead><tr><th>{% tr "Order ID" %}</th><th>{% tr "Guest" %}</th><th>{% tr "Service" %}</th><th>{% tr "Qty" %}</th><th>{% tr "Total" %}</th><th>{% tr "Time" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "Update" %}</th></tr></thead>
     <tbody>
     {% for o in orders %}
-      <tr><td>SO{{ o.id }}</td><td>{{ o.guest.name }}</td><td>{{ o.service_name }}</td><td>{{ o.quantity }}</td><td>${{ o.total|floatformat:2 }}</td><td>{{ o.timestamp|date:"Y-m-d H:i" }}</td>
-      <td><span class="badge">{{ o.status }}</span></td>
+      <tr><td class="nowrap">SO{{ o.id }}</td><td>{{ o.guest.name }}</td><td>{% tr o.service_name %}</td><td>{{ o.quantity }}</td><td class="nowrap">${{ o.total|floatformat:2 }}</td><td class="nowrap">{{ o.timestamp|date:"Y-m-d H:i" }}</td>
+      <td><span class="badge nowrap">{% tr o.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="order_id" value="{{ o.id }}">
-        <select name="status"><option {% if o.status == "Pending" %}selected{% endif %}>Pending</option><option {% if o.status == "In Progress" %}selected{% endif %}>In Progress</option><option {% if o.status == "Completed" %}selected{% endif %}>Completed</option><option {% if o.status == "Cancelled" %}selected{% endif %}>Cancelled</option></select>
+        <select name="status"><option value="Pending" {% if o.status == "Pending" %}selected{% endif %}>{% tr "Pending" %}</option><option value="In Progress" {% if o.status == "In Progress" %}selected{% endif %}>{% tr "In Progress" %}</option><option value="Completed" {% if o.status == "Completed" %}selected{% endif %}>{% tr "Completed" %}</option><option value="Cancelled" {% if o.status == "Cancelled" %}selected{% endif %}>{% tr "Cancelled" %}</option></select>
         <button class="btn ghost" type="submit">{% tr "Save" %}</button>
       </form></td></tr>
     {% empty %}<tr><td colspan="8">{% tr "No services selected" %}</td></tr>{% endfor %}

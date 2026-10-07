@@ -1,6 +1,7 @@
 :root{--bg:#f1f5f9;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--accent:#2563eb;--accent-bg:#dbeafe;--danger:#dc2626;--ok:#16a34a}
 [data-theme="dark"]{--bg:#0f172a;--surface:#1e293b;--border:#334155;--text:#f1f5f9;--muted:#94a3b8;--accent:#60a5fa;--accent-bg:#1e3a8a}
-*{box-sizing:border-box}body{margin:0;font-family:Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans","Helvetica Neue",Arial,sans-serif;background:var(--bg);color:var(--text)}
+input,select,button,textarea{font:inherit;color:inherit}
 .layout{display:flex;min-height:100vh}
 .navbar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px;display:flex;flex-direction:column;gap:16px}
 .brand{font-weight:800;font-size:22px;color:var(--accent)}
@@ -40,7 +41,8 @@ input,select{padding:9px 12px;border-radius:8px;border:1px solid var(--border);b
 [data-theme="dark"] .status-available{background:#14532d}[data-theme="dark"] .status-occupied{background:#1e3a8a}[data-theme="dark"] .status-cleaning{background:#78350f}[data-theme="dark"] .status-maintenance{background:#7f1d1d}
 .legend{display:flex;gap:10px;align-items:center;font-size:13px;color:var(--muted)}.dot{width:10px;height:10px;border-radius:50%;display:inline-block}.dot.green{background:#22c55e}.dot.blue{background:#2563eb}.dot.amber{background:#f59e0b}.dot.red{background:#ef4444}
 .bar{height:6px;background:var(--accent-bg);border-radius:3px;margin-top:4px}.bar div{height:6px;background:var(--accent);border-radius:3px}
-.svc-row{margin-bottom:12px}.svc-catalog{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.svc-item{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:8px}.qty{width:70px}
+.nowrap{white-space:nowrap}
+.svc-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}.svc-row .svc-name{flex:1;min-width:120px}.svc-row .bar{flex-basis:100%;margin-top:0}.svc-catalog{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.svc-item{display:flex;gap:10px;align-items:center;border:1px solid var(--border);border-radius:8px;padding:8px}.svc-item span{flex:1}.qty{width:70px;flex:none}
 .auth-page{display:flex;align-items:center;justify-content:center;min-height:100vh}
 .auth-card{width:380px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px}
 .auth-card form{display:flex;flex-direction:column;gap:10px}

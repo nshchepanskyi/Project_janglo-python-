@@ -7,7 +7,7 @@
   <form method="post" class="form-row">{% csrf_token %}
     <input type="hidden" name="action" value="add">
     <input name="number" placeholder="{% tr "Room Number" %}" required>
-    <select name="room_type"><option>Single</option><option>Double</option><option>Suite</option></select>
+    <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
     <input name="price" type="number" step="0.01" min="0" placeholder="{% tr "Price" %}" required>
     <button class="btn primary" type="submit">{% tr "Add Room" %}</button>
   </form>
@@ -26,15 +26,15 @@
     <thead><tr><th>{% tr "Room" %}</th><th>{% tr "Type" %}</th><th>{% tr "Price" %}</th><th>{% tr "STATUS" %}</th><th></th></tr></thead>
     <tbody>
     {% for r in rooms %}
-      <tr><td>{{ r.number }}</td><td>{{ r.room_type }}</td><td>${{ r.price }}</td>
-      <td><span class="badge">{{ r.status }}</span></td>
+      <tr><td>{{ r.number }}</td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
+      <td><span class="badge">{% tr r.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="room_id" value="{{ r.id }}">
-        <select name="status">{% for v,l in r.STATUS_CHOICES|default:None %}{% endfor %}
-          <option {% if r.status == "Available" %}selected{% endif %}>Available</option>
-          <option {% if r.status == "Occupied" %}selected{% endif %}>Occupied</option>
-          <option {% if r.status == "Cleaning" %}selected{% endif %}>Cleaning</option>
-          <option {% if r.status == "Maintenance" %}selected{% endif %}>Maintenance</option>
+        <select name="status">
+          <option value="Available" {% if r.status == "Available" %}selected{% endif %}>{% tr "Available" %}</option>
+          <option value="Occupied" {% if r.status == "Occupied" %}selected{% endif %}>{% tr "Occupied" %}</option>
+          <option value="Cleaning" {% if r.status == "Cleaning" %}selected{% endif %}>{% tr "Cleaning" %}</option>
+          <option value="Maintenance" {% if r.status == "Maintenance" %}selected{% endif %}>{% tr "Maintenance" %}</option>
         </select>
         <button class="btn ghost" type="submit">{% tr "Save" %}</button>
       </form></td></tr>
