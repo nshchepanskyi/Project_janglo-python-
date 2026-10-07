@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 
@@ -518,3 +519,71 @@ class PlaceDetailTests(TestCase):
         self.assertContains(resp, 'href="/places/501/"')
         resp = self.client.get("/places/")
         self.assertContains(resp, 'href="/places/501/"')
+
+
+class RoomCapacityTests(TestCase):
+    """Перевірка місткості за типом: Single → 1, Double → 2, Suite → до 8."""
+
+    def setUp(self):
+        boss = User.objects.create_user("boss5", "boss5@test.com", "pass1234")
+        boss.is_staff = True
+        boss.save()
+        self.client.login(username="boss5", password="pass1234")
+
+    def _add(self, **data):
+        payload = {
+            "action": "add", "number": "700", "room_type": "Single",
+            "price": "50", "title": "Test", "location": "Kyiv, Ukraine",
+            "capacity": "1",
+        }
+        payload.update(data)
+        return self.client.post("/rooms/", payload, follow=True)
+
+    def test_single_rejects_two_guests(self):
+        resp = self._add(number="701", capacity="2")
+        self.assertContains(resp, "A Single room fits 1 guest")
+        self.assertFalse(Room.objects.filter(number="701").exists())
+
+    def test_double_rejects_three_guests(self):
+        resp = self._add(number="702", room_type="Double", capacity="3")
+        self.assertContains(resp, "A Double room fits 2 guests")
+        self.assertFalse(Room.objects.filter(number="702").exists())
+
+    def test_suite_rejects_nine_guests(self):
+        resp = self._add(number="703", room_type="Suite", capacity="9")
+        self.assertContains(resp, "A Suite room fits up to 8 guests")
+        self.assertFalse(Room.objects.filter(number="703").exists())
+
+    def test_suite_accepts_eight_guests(self):
+        self._add(number="708", room_type="Suite", capacity="8")
+        self.assertEqual(Room.objects.get(number="708").capacity, 8)
+
+    def test_invalid_capacity_string(self):
+        resp = self._add(number="709", capacity="abc")
+        self.assertContains(resp, "Invalid capacity")
+        self.assertFalse(Room.objects.filter(number="709").exists())
+
+    def test_model_clean_blocks_wrong_capacity(self):
+        room = Room(number="710", room_type="Single", price=Decimal("50"), capacity=3)
+        with self.assertRaises(ValidationError):
+            room.full_clean()
+
+    def test_reservation_guests_limited_by_room_type(self):
+        room = Room.objects.create(number="711", room_type="Single",
+                                   price=Decimal("50"), capacity=1)
+        guest = Guest.objects.create(name="Guest", phone="+380", email="g@g.com")
+        res = Reservation(room=room, guest=guest, guests=2,
+                          check_in=date(2026, 12, 1), check_out=date(2026, 12, 2))
+        with self.assertRaises(ValidationError):
+            res.full_clean()
+        res.guests = 1
+        res.full_clean()  # 1 гість у одномісному — ок
+
+    def test_public_search_caps_guests_at_eight(self):
+        resp = self.client.get("/", {"guests": "9"})
+        self.assertEqual(resp.context["search"]["guests"], "8")
+        self.assertEqual(resp.context["search"]["max_guests"], 8)
+
+    def test_guests_input_limited_to_eight(self):
+        resp = self.client.get("/")
+        self.assertContains(resp, 'max="8"')

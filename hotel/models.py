@@ -13,6 +13,38 @@ ROOM_TYPES = [
     ("Suite", "Suite"),
 ]
 
+# Ліміт місткості за типом номера: одномісний → 1 гість, двомісний → 2,
+# люкс → максимум 8. Правило використовують Room.clean() (адмінка /admin/),
+# Reservation.clean() і форма «Add Room» у панелі керування.
+ROOM_CAPACITY_LIMITS = {
+    "Single": 1,
+    "Double": 2,
+    "Suite": 8,
+}
+
+# Глобальний максимум гостей (величезний Suite): поле Guests на публічному
+# сайті обмежене цим значенням.
+MAX_GUESTS = max(ROOM_CAPACITY_LIMITS.values())
+
+# Статичні (перекладувані) тексти помилок перевірки місткості
+CAPACITY_ERRORS = {
+    "Single": "A Single room fits 1 guest",
+    "Double": "A Double room fits 2 guests",
+    "Suite": "A Suite room fits up to 8 guests",
+}
+
+
+def capacity_error(room_type, capacity):
+    """Помилка місткості за типом номера або None, якщо все в межах ліміту."""
+    limit = ROOM_CAPACITY_LIMITS.get(room_type)
+    if limit is None or capacity is None:
+        return None
+    if capacity < 1:
+        return "Capacity must be at least 1"
+    if capacity > limit:
+        return CAPACITY_ERRORS[room_type]
+    return None
+
 ROOM_STATUSES = [
     ("Available", "Available"),
     ("Occupied", "Occupied"),
@@ -112,8 +144,9 @@ class Room(models.Model):
     def clean(self):
         if self.price is not None and self.price < 0:
             raise ValidationError("Price cannot be negative")
-        if self.capacity is not None and self.capacity < 1:
-            raise ValidationError("Capacity must be at least 1")
+        err = capacity_error(self.room_type, self.capacity)
+        if err:
+            raise ValidationError({"capacity": err})
 
     @property
     def display_title(self):
@@ -162,6 +195,11 @@ class Reservation(models.Model):
     def clean(self):
         if self.check_in and self.check_out and self.check_out <= self.check_in:
             raise ValidationError("Check out must be later than check in")
+        # Не більше гостей, ніж вміщує тип номера (Single 1, Double 2, Suite 8)
+        if self.room_id and self.guests:
+            err = capacity_error(self.room.room_type, self.guests)
+            if err:
+                raise ValidationError({"guests": err})
 
     @property
     def nights(self):

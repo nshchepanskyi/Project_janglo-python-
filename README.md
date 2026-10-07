@@ -57,6 +57,12 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 (`check_in < other.check_out AND check_out > other.check_in`).
 Сервісний збір публічного бронювання — 12% (`SERVICE_FEE_RATE`).
 
+Ліміт місткості за типом номера (`ROOM_CAPACITY_LIMITS`): **Single — 1 гість,
+Double — 2, Suite — максимум 8**. Перевірка (`capacity_error`) діє в
+`Room.clean()` (адмінка `/admin/`), у формі Add Room, у `Reservation.clean()`
+(кількість гостей бронювання) та в полі Guests публічного пошуку
+(`MAX_GUESTS = 8`).
+
 ## Структура
 
 ```

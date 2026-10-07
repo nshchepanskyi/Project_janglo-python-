@@ -11,10 +11,11 @@
       <input name="title" placeholder="{% tr "Title" %}">
       <input name="location" placeholder="{% tr "Location" %}">
       <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
-      <input name="capacity" type="number" min="1" max="10" value="2" title="{% tr "Guests" %}">
+      <input name="capacity" type="number" min="1" max="{{ max_guests }}" value="1" title="{% tr "Guests" %}">
       <input name="price" type="number" step="0.01" min="0" placeholder="{% tr "Price" %}" required>
       <input name="photo" type="file" accept="image/*" title="{% tr "Upload photo" %}">
     </div>
+    <p class="hint">{% tr "Capacity limit: Single — 1, Double — 2, Suite — up to 8" %}</p>
     <h3>{% tr "Services in this room" %}</h3>
     <p class="hint">{% tr "Tick what this room offers — the list appears on the room card." %}</p>
     <div class="svc-pick">

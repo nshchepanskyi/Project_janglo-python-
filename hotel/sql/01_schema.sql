@@ -15,7 +15,12 @@ CREATE TABLE IF NOT EXISTS hotel_room (
     -- дані публічної картки (Фаза 1)
     title VARCHAR(120) NOT NULL DEFAULT '',
     location VARCHAR(120) NOT NULL DEFAULT '',
-    capacity INTEGER NOT NULL DEFAULT 2 CHECK (capacity >= 1),
+    capacity INTEGER NOT NULL DEFAULT 2
+        -- місткість за типом: Single 1, Double 2, Suite до 8 (capacity_error)
+        CHECK (capacity >= 1
+               AND ((room_type = 'Single' AND capacity <= 1)
+                    OR (room_type = 'Double' AND capacity <= 2)
+                    OR (room_type = 'Suite' AND capacity <= 8))),
     rating DECIMAL(2, 1) NOT NULL DEFAULT 4.5 CHECK (rating >= 0 AND rating <= 5),
     -- шлях у media/ (ImageField, upload_to='rooms/')
     photo VARCHAR(100) NOT NULL DEFAULT ''

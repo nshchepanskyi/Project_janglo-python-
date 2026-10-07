@@ -15,6 +15,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import (
     Guest,
+    MAX_GUESTS,
+    ROOM_CAPACITY_LIMITS,
     Reservation,
     Room,
     Service,
@@ -24,6 +26,7 @@ from .models import (
     calc_service_fee,
     calc_service_revenue,
     calc_total_revenue,
+    capacity_error,
     get_occupancy_rate,
     get_services_summary,
     room_is_free,
@@ -197,7 +200,8 @@ def _parse_search(location, check_in, check_out, guests):
     n_guests = None
     if guests:
         try:
-            n_guests = max(int(guests), 1)
+            # не більше за глобальний максимум (Suite → 8 гостей)
+            n_guests = min(max(int(guests), 1), MAX_GUESTS)
         except ValueError:
             return location, None, None, None, "Invalid guests count"
     return location, d_in, d_out, n_guests, None
@@ -225,6 +229,8 @@ def _search_context(location, d_in, d_out, guests, raw):
         "raw": raw,
         "d_in": d_in,
         "d_out": d_out,
+        # ліміт поля Guests на публічних формах (MAX_GUESTS = 8)
+        "max_guests": MAX_GUESTS,
     }
 
 
@@ -369,12 +375,21 @@ def rooms_view(request):
             except ValueError:
                 messages.error(request, "Invalid price")
                 return redirect("rooms")
-            try:
-                capacity = int(request.POST.get("capacity", "2") or 2)
-                if capacity < 1:
-                    raise ValueError
-            except ValueError:
-                capacity = 2
+            # Перевірка місткості за типом: Single → 1, Double → 2, Suite → до 8
+            raw_capacity = request.POST.get("capacity", "").strip()
+            if raw_capacity:
+                try:
+                    capacity = int(raw_capacity)
+                except ValueError:
+                    messages.error(request, "Invalid capacity")
+                    return redirect("rooms")
+            else:
+                # порожнє поле → значення, що точно влізає в ліміт типу
+                capacity = min(2, ROOM_CAPACITY_LIMITS.get(room_type, 2))
+            capacity_err = capacity_error(room_type, capacity)
+            if capacity_err:
+                messages.error(request, capacity_err)
+                return redirect("rooms")
             photo = request.FILES.get("photo")
             # Галочки «що є в цьому номері» — id з каталогу послуг (hotel_service)
             service_ids = [s for s in request.POST.getlist("services") if s.isdigit()]
@@ -414,6 +429,7 @@ def rooms_view(request):
     return render(request, "hotel/rooms.html", {
         "rooms": Room.objects.prefetch_related("services").all(),
         "catalog": Service.objects.all(),
+        "max_guests": MAX_GUESTS,
     })
 
 

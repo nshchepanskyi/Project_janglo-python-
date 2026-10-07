@@ -14,7 +14,7 @@
   </label>
   <label class="sp-field">
     <span>{% tr "Guests" %}</span>
-    <input type="number" name="guests" min="1" max="10" value="{{ search.raw.guests }}" placeholder="1">
+    <input type="number" name="guests" min="1" max="{{ search.max_guests }}" value="{{ search.raw.guests }}" placeholder="1">
   </label>
   <button class="btn primary sp-btn" type="submit">{% tr "Search" %}</button>
 </form>

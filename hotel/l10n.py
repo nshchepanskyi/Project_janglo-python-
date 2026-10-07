@@ -268,6 +268,15 @@ TRANSLATIONS = {
         "Similar rooms": "Схожі номери",
         "You will confirm the booking on the next step": "Ви підтвердите бронювання на наступному кроці",
         "A comfortable room with everything you need for a pleasant stay.": "Комфортний номер з усім необхідним для приємного відпочинку.",
+
+        # ---------- Перевірка місткості за типом номера ----------
+        "Capacity limit: Single — 1, Double — 2, Suite — up to 8":
+            "Ліміт місткості: одномісний — 1, двомісний — 2, люкс — до 8",
+        "Invalid capacity": "Некоректна місткість",
+        "Capacity must be at least 1": "Місткість має бути щонайменше 1",
+        "A Single room fits 1 guest": "Одномісний номер вміщує 1 гостя",
+        "A Double room fits 2 guests": "Двомісний номер вміщує 2 гостей",
+        "A Suite room fits up to 8 guests": "Люкс вміщує до 8 гостей",
     },
 }
 
