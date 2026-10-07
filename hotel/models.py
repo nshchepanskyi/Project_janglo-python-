@@ -1,9 +1,9 @@
-from decimal import Decimal
+from decimal import ROUND_HALF_UP, Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 
@@ -52,12 +52,30 @@ SERVICES_CATALOG = [
 
 SERVICE_PRICES = {s["name"]: s["price"] for s in SERVICES_CATALOG}
 
+# Сервісний збір публічного бронювання: 12% від суми за ночі,
+# округлено до цілих доларів — саме так, як на макеті ($120 + $14 = $134).
+SERVICE_FEE_RATE = Decimal("0.12")
+
+
+def calc_service_fee(subtotal):
+    if not subtotal:
+        return Decimal("0")
+    return (subtotal * SERVICE_FEE_RATE).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+
 
 class Room(models.Model):
     number = models.CharField(max_length=10, unique=True)
     room_type = models.CharField(max_length=20, choices=ROOM_TYPES, default="Single")
     price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=ROOM_STATUSES, default="Available")
+
+    # Публічна картка (Фаза 1): назва, локація, місткість, рейтинг, фото.
+    # photo — звичайний шлях; поки порожньо — картка показує плейсхолдер «Фото».
+    title = models.CharField(max_length=120, blank=True, default="")
+    location = models.CharField(max_length=120, blank=True, default="")
+    capacity = models.PositiveIntegerField(default=2)
+    rating = models.DecimalField(max_digits=2, decimal_places=1, default=Decimal("4.5"))
+    photo = models.CharField(max_length=200, blank=True, default="")
 
     class Meta:
         ordering = ["number"]
@@ -68,6 +86,13 @@ class Room(models.Model):
     def clean(self):
         if self.price is not None and self.price < 0:
             raise ValidationError("Price cannot be negative")
+        if self.capacity is not None and self.capacity < 1:
+            raise ValidationError("Capacity must be at least 1")
+
+    @property
+    def display_title(self):
+        """Назва для публічної картки: якщо не задано — «Room 101»."""
+        return self.title or f"Room {self.number}"
 
 
 class Guest(models.Model):
@@ -97,6 +122,8 @@ class Reservation(models.Model):
     )
     check_in = models.DateField()
     check_out = models.DateField()
+    # Скільки гостей заселяється (для публічного пошуку/картки місця)
+    guests = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=RESERVATION_STATUSES, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -120,6 +147,14 @@ class Reservation(models.Model):
     @property
     def amount(self):
         return self.room.price * self.nights
+
+    @property
+    def fee(self):
+        return calc_service_fee(self.amount)
+
+    @property
+    def total(self):
+        return self.amount + self.fee
 
 
 class ServiceOrder(models.Model):
@@ -183,3 +218,49 @@ def arrivals_count():
     active = Reservation.objects.filter(status__in=["Pending", "Checked-In"]).count()
     checked_in = Reservation.objects.filter(status="Checked-In").count()
     return {"today": by_date, "active": active, "checked_in": checked_in}
+
+
+# ---------- публічний пошук (Фаза 1) ----------
+
+ACTIVE_STATUSES = ["Pending", "Checked-In"]
+
+
+def search_rooms(location="", check_in=None, check_out=None, guests=None):
+    """
+    Пошук місць для публічного каталогу.
+
+    - location  — збіг у назві, локації або номері;
+    - guests    — лише номери з місткістю не меншою за кількість гостей;
+    - дати      — головне правило: номер вільний, якщо жодне активне бронювання
+                  не перетинається з бажаним інтервалом
+                  (new.check_in < other.check_out AND new.check_out > other.check_in).
+    """
+    qs = Room.objects.all()
+    if location:
+        qs = qs.filter(
+            Q(title__icontains=location)
+            | Q(location__icontains=location)
+            | Q(number__icontains=location)
+        )
+    if guests:
+        qs = qs.filter(capacity__gte=guests)
+    if check_in and check_out:
+        busy = Reservation.objects.filter(
+            status__in=ACTIVE_STATUSES,
+            check_in__lt=check_out,
+            check_out__gt=check_in,
+        ).values_list("room_id", flat=True)
+        qs = qs.exclude(pk__in=busy)
+    return qs
+
+
+def room_is_free(room, check_in=None, check_out=None):
+    """Чи вільний номер: за датами — перевірка перетину, без дат — статус."""
+    if not (check_in and check_out):
+        return room.status == "Available"
+    return not Reservation.objects.filter(
+        room=room,
+        status__in=ACTIVE_STATUSES,
+        check_in__lt=check_out,
+        check_out__gt=check_in,
+    ).exists()

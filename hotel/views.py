@@ -25,6 +25,8 @@ from .models import (
     calc_total_revenue,
     get_occupancy_rate,
     get_services_summary,
+    room_is_free,
+    search_rooms,
 )
 
 
@@ -118,8 +120,12 @@ def login_view(request):
             messages.error(request, "Invalid credentials")
         else:
             login(request, user)
+            # Повернення на сторінку, звідки користувача перенаправили на вхід
+            nxt = request.POST.get("next") or request.GET.get("next") or ""
+            if nxt.startswith("/") and not nxt.startswith("//"):
+                return redirect(nxt)
             return redirect(home_redirect(user))
-    return render(request, "hotel/login.html")
+    return render(request, "hotel/login.html", {"next": request.GET.get("next", "")})
 
 
 def logout_view(request):
@@ -135,6 +141,136 @@ def toggle_lang(request):
 def toggle_theme(request):
     request.session["theme"] = "dark" if request.session.get("theme", "light") == "light" else "light"
     return redirect(request.META.get("HTTP_REFERER") or home_redirect(request.user))
+
+
+# ---------- публічний сайт (Фаза 1: головна, каталог, пошук) ----------
+
+# Тексти статичних сторінок футера (ключ = англ. текст, UK — у l10n)
+STATIC_PAGES = {
+    "terms": {
+        "title": "Terms of Service",
+        "body": "By making a reservation at GrandStay you agree to arrive on the selected date, "
+                "keep the room in good condition and follow the hotel rules. Cancellation is free "
+                "24 hours before check-in; later cancellations may be charged one night.",
+    },
+    "privacy": {
+        "title": "Privacy Policy",
+        "body": "GrandStay stores only the data you provide for a booking: name, e-mail, phone and "
+                "stay dates. We never sell or share your data with third parties and you can ask us "
+                "to delete your account at any time.",
+    },
+    "help": {
+        "title": "Help Center",
+        "body": "Need help? E-mail support@grandstay.example or call +380 44 000 00 00 (24/7). "
+                "You can manage your bookings in the My Bookings section after signing in.",
+    },
+}
+
+
+def _get_search(request):
+    g = request.GET
+    return (
+        g.get("location", "").strip(),
+        g.get("check_in", "").strip(),
+        g.get("check_out", "").strip(),
+        g.get("guests", "").strip(),
+    )
+
+
+def _parse_search(location, check_in, check_out, guests):
+    """(location, date|None, date|None, int|None, error_key|None)."""
+    d_in = d_out = None
+    for raw, target in ((check_in, "in"), (check_out, "out")):
+        if not raw:
+            continue
+        try:
+            parsed = date.fromisoformat(raw)
+        except ValueError:
+            return location, None, None, None, "Invalid date format"
+        if target == "in":
+            d_in = parsed
+        else:
+            d_out = parsed
+    if d_in and d_out and d_out <= d_in:
+        return location, None, None, None, "Check out must be later"
+    n_guests = None
+    if guests:
+        try:
+            n_guests = max(int(guests), 1)
+        except ValueError:
+            return location, None, None, None, "Invalid guests count"
+    return location, d_in, d_out, n_guests, None
+
+
+def _annotate_cards(rooms, d_in, d_out):
+    """Позначає кожну картку: вільна/зайнята + ключ бейджа для перекладу."""
+    for r in rooms:
+        free = room_is_free(r, d_in, d_out)
+        r.free = free
+        r.badge_kind = "ok" if free else "busy"
+        if d_in and d_out:
+            r.badge_key = "Free for your dates" if free else "Booked"
+        else:
+            r.badge_key = "Available now" if free else "Booked"
+    return rooms
+
+
+def _search_context(location, d_in, d_out, guests, raw):
+    return {
+        "location": location,
+        "check_in": d_in.isoformat() if d_in else "",
+        "check_out": d_out.isoformat() if d_out else "",
+        "guests": str(guests) if guests else "",
+        "raw": raw,
+        "d_in": d_in,
+        "d_out": d_out,
+    }
+
+
+def home_view(request):
+    """Публічна головна: hero + пошук + рекомендовані місця + CTA."""
+    location, ci_raw, co_raw, guests_raw = _get_search(request)
+    location, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
+    if error:
+        messages.error(request, error)
+    rooms = list(search_rooms(location, d_in, d_out, guests)[:6])
+    _annotate_cards(rooms, d_in, d_out)
+    return render(request, "hotel/home.html", {
+        "rooms": rooms,
+        "found": search_rooms(location, d_in, d_out, guests).count(),
+        "search": _search_context(location, d_in, d_out, guests,
+                                  {"location": location, "check_in": ci_raw,
+                                   "check_out": co_raw, "guests": guests_raw}),
+        "pages": STATIC_PAGES,
+    })
+
+
+def places_view(request):
+    """Каталог/результати пошуку з перевіркою вільності дат."""
+    location, ci_raw, co_raw, guests_raw = _get_search(request)
+    location, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
+    if error:
+        messages.error(request, error)
+    rooms = list(search_rooms(location, d_in, d_out, guests))
+    _annotate_cards(rooms, d_in, d_out)
+    return render(request, "hotel/places.html", {
+        "rooms": rooms,
+        "found": len(rooms),
+        "search": _search_context(location, d_in, d_out, guests,
+                                  {"location": location, "check_in": ci_raw,
+                                   "check_out": co_raw, "guests": guests_raw}),
+        "has_filters": bool(location or d_in or d_out or guests),
+        "pages": STATIC_PAGES,
+    })
+
+
+def page_view(request, slug):
+    """Статичні сторінки футера: Terms / Privacy / Help."""
+    from django.http import Http404
+    page = STATIC_PAGES.get(slug)
+    if page is None:
+        raise Http404
+    return render(request, "hotel/page.html", {"page": page, "slug": slug, "pages": STATIC_PAGES})
 
 
 # ---------- dashboard (port of views/dashboard.py) ----------
@@ -173,17 +309,28 @@ def rooms_view(request):
         if action == "add":
             number = request.POST.get("number", "").strip()
             room_type = request.POST.get("room_type", "Single")
+            title = request.POST.get("title", "").strip()
+            location = request.POST.get("location", "").strip()
             try:
                 price = float(request.POST.get("price", "0") or 0)
             except ValueError:
                 messages.error(request, "Invalid price")
                 return redirect("rooms")
+            try:
+                capacity = int(request.POST.get("capacity", "2") or 2)
+                if capacity < 1:
+                    raise ValueError
+            except ValueError:
+                capacity = 2
             if not number:
                 messages.error(request, "Enter a room number")
             elif Room.objects.filter(number=number).exists():
                 messages.error(request, f"Room {number} already exists")
             else:
-                Room.objects.create(number=number, room_type=room_type, price=price)
+                Room.objects.create(
+                    number=number, room_type=room_type, price=price,
+                    title=title, location=location, capacity=capacity,
+                )
                 messages.success(request, f"Room {number} added")
             return redirect("rooms")
         if action == "delete":
@@ -279,7 +426,13 @@ def reservations_view(request):
     if not admin:
         # Звичайний користувач бачить лише власні бронювання
         reservations = reservations.filter(user=request.user)
+    # Префіл із публічного каталогу: /reservations/?room=101&check_in=...&check_out=...
+    prefill_room = request.GET.get("room", "").strip()
+    prefill_in = request.GET.get("check_in", "").strip()
+    prefill_out = request.GET.get("check_out", "").strip()
     available_rooms = Room.objects.filter(status="Available")
+    if prefill_room:
+        available_rooms = Room.objects.filter(Q(status="Available") | Q(number=prefill_room))
     return render(request, "hotel/reservations.html", {
         "reservations": reservations,
         "available_rooms": available_rooms,
@@ -287,6 +440,9 @@ def reservations_view(request):
         "today": date.today().isoformat(),
         "can_manage": admin,
         "prefill_email": "" if admin else request.user.email,
+        "prefill_room": prefill_room,
+        "prefill_check_in": prefill_in,
+        "prefill_check_out": prefill_out,
     })
 
 

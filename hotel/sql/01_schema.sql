@@ -11,7 +11,13 @@ CREATE TABLE IF NOT EXISTS hotel_room (
         CHECK (room_type IN ('Single', 'Double', 'Suite')),
     price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
     status VARCHAR(20) NOT NULL DEFAULT 'Available'
-        CHECK (status IN ('Available', 'Occupied', 'Cleaning', 'Maintenance'))
+        CHECK (status IN ('Available', 'Occupied', 'Cleaning', 'Maintenance')),
+    -- дані публічної картки (Фаза 1)
+    title VARCHAR(120) NOT NULL DEFAULT '',
+    location VARCHAR(120) NOT NULL DEFAULT '',
+    capacity INTEGER NOT NULL DEFAULT 2 CHECK (capacity >= 1),
+    rating DECIMAL(2, 1) NOT NULL DEFAULT 4.5 CHECK (rating >= 0 AND rating <= 5),
+    photo VARCHAR(200) NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS hotel_guest (
@@ -30,6 +36,7 @@ CREATE TABLE IF NOT EXISTS hotel_reservation (
     user_id INTEGER REFERENCES auth_user(id) ON DELETE SET NULL,
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
+    guests INTEGER NOT NULL DEFAULT 1 CHECK (guests >= 1),
     status VARCHAR(20) NOT NULL DEFAULT 'Pending'
         CHECK (status IN ('Pending', 'Checked-In', 'Checked-Out')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -40,6 +47,8 @@ CREATE INDEX IF NOT EXISTS idx_reservation_guest ON hotel_reservation(guest_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_room ON hotel_reservation(room_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_user ON hotel_reservation(user_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_status ON hotel_reservation(status);
+-- швидкий пошук вільності: перетин інтервалів (check_in < other.check_out AND check_out > other.check_in)
+CREATE INDEX IF NOT EXISTS idx_reservation_dates ON hotel_reservation(check_in, check_out);
 
 CREATE TABLE IF NOT EXISTS hotel_serviceorder (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

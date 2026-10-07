@@ -1,0 +1,58 @@
+{% load tr_tags %}{% load static %}<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="{{ theme }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrandStay — {% block title %}{% tr "Find your next stay" %}{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'hotel/style.css' %}">
+<link rel="stylesheet" href="{% static 'hotel/landing.css' %}">
+</head>
+<body class="public">
+<header class="p-topbar">
+  <a class="p-brand" href="{% url 'home' %}">GrandStay</a>
+  <nav class="p-nav">
+    <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">{% tr "Home" %}</a>
+    <a href="{% url 'places' %}" class="{% if request.resolver_match.url_name == 'places' %}active{% endif %}">{% tr "Book" %}</a>
+    {% if user.is_authenticated %}
+    <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% tr "My Bookings" %}</a>
+    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
+    {% endif %}
+    {% if is_admin %}
+    <a href="{% url 'dashboard' %}">{% tr "Dashboard" %}</a>
+    {% endif %}
+  </nav>
+  <div class="p-actions">
+    <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
+    <a class="btn ghost" href="{% url 'toggle_theme' %}">◐</a>
+    {% if user.is_authenticated %}
+    <a class="p-user" href="{% url 'profile' %}">{{ user.username }}</a>
+    <a class="btn ghost" href="{% url 'logout' %}">{% tr "Logout" %}</a>
+    {% else %}
+    <a class="btn primary p-signin" href="{% url 'login' %}">{% tr "Sign In" %}</a>
+    {% endif %}
+  </div>
+</header>
+
+<main class="p-main">
+  {% if messages %}
+  <div class="messages p-messages">
+    {% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="p-footer">
+  <div class="p-foot-top">
+    <div class="p-foot-brand">GrandStay</div>
+    <nav class="p-foot-nav">
+      <a href="{% url 'page' 'terms' %}">{% tr "Terms of Service" %}</a>
+      <a href="{% url 'page' 'privacy' %}">{% tr "Privacy Policy" %}</a>
+      <a href="{% url 'page' 'help' %}">{% tr "Help Center" %}</a>
+    </nav>
+  </div>
+  <div class="p-copy">© 2026 GrandStay Hotel · {% tr "All rights reserved" %}</div>
+</footer>
+<script src="{% static 'hotel/app.js' %}" defer></script>
+</body>
+</html>

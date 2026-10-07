@@ -10,9 +10,9 @@
     <div class="phone"><select name="country_code">{% for c in country_codes %}<option {% if c == "+380" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
     <input name="phone" placeholder="{% tr "Phone Number" %}"></div>
     <input name="email" type="email" placeholder="Email" value="{{ prefill_email }}" required>
-    <select name="room_number" required><option value="">{% tr "Available Rooms" %}</option>{% for r in available_rooms %}<option value="{{ r.number }}">{{ r.number }} — {% tr r.room_type %} (${{ r.price }})</option>{% endfor %}</select>
-    <input name="check_in" type="date" value="{{ today }}" required>
-    <input name="check_out" type="date" required>
+    <select name="room_number" required><option value="">{% tr "Available Rooms" %}</option>{% for r in available_rooms %}<option value="{{ r.number }}" {% if prefill_room == r.number %}selected{% endif %}>{{ r.number }} — {% tr r.room_type %} (${{ r.price }})</option>{% endfor %}</select>
+    <input name="check_in" type="date" value="{{ prefill_check_in|default:today }}" required>
+    <input name="check_out" type="date" value="{{ prefill_check_out }}" required>
     <button class="btn primary" type="submit">{% tr "Create" %}</button>
   </form>
 </div>

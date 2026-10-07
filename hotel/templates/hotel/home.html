@@ -1,0 +1,30 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{% tr "Find your next stay" %}{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>{% tr "Find your next stay" %}</h1>
+  <p class="hero-sub">{% tr "Comfortable rooms in the heart of the city — book in a couple of clicks." %}</p>
+  {% include "hotel/_search_panel.html" %}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>{% tr "Recommended places" %}</h2>
+    <a class="section-link" href="{% url 'places' %}">{% tr "View all" %} →</a>
+  </div>
+  <div class="place-grid">
+    {% for r in rooms %}{% include "hotel/_place_card.html" %}{% empty %}
+    <div class="empty-state"><p>{% tr "Nothing found for your search" %}</p>
+      <a class="btn ghost" href="{% url 'places' %}">{% tr "View all" %}</a></div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cta">
+  <div class="cta-text">
+    <h2>{% tr "Create your own story" %}</h2>
+    <p>{% tr "Join GrandStay and get access to your bookings, favorites and member prices." %}</p>
+  </div>
+  <a class="btn primary" href="{% url 'register' %}">{% tr "Create account" %}</a>
+</section>
+{% endblock %}

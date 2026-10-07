@@ -1,0 +1,9 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{% tr page.title %}{% endblock %}
+{% block content %}
+<section class="p-doc">
+  <h1>{% tr page.title %}</h1>
+  <p>{% tr page.body %}</p>
+  <a class="btn ghost" href="{% url 'home' %}">{% tr "Back to home" %}</a>
+</section>
+{% endblock %}

@@ -10,6 +10,7 @@ from .models import (
     Room,
     ServiceOrder,
     calc_reservation_revenue,
+    calc_service_fee,
     calc_service_revenue,
     get_occupancy_rate,
     get_services_summary,
@@ -195,3 +196,143 @@ class RoleAccessTests(TestCase):
         self.assertEqual(stats["amount"], Decimal("240"))
         self.assertEqual(stats["orders"], 1)
         self.assertFalse(resp.context["is_admin"])
+
+
+class PublicSiteTests(TestCase):
+    """Публічний сайт (Фаза 1): головна, каталог, пошук з перевіркою вільності."""
+
+    def setUp(self):
+        self.single = Room.objects.create(
+            number="101", room_type="Single", price=Decimal("50"),
+            title="Cozy Single", location="Kyiv, Ukraine", capacity=1,
+            rating=Decimal("4.6"),
+        )
+        self.double = Room.objects.create(
+            number="201", room_type="Double", price=Decimal("80"),
+            title="Deluxe Double", location="Lviv, Ukraine", capacity=2,
+            rating=Decimal("4.8"),
+        )
+        self.suite = Room.objects.create(
+            number="301", room_type="Suite", price=Decimal("150"),
+            title="GrandStay Suite", location="Kyiv, Ukraine", capacity=3,
+            rating=Decimal("4.9"),
+        )
+        guest = Guest.objects.create(name="Busy Guest", phone="+38000", email="b@b.com")
+        # 201 зайнятий 10–13.09.2026
+        Reservation.objects.create(
+            guest=guest, room=self.double,
+            check_in=date(2026, 9, 10), check_out=date(2026, 9, 13),
+        )
+
+    def test_home_is_public_and_shows_cards(self):
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Recommended places")
+        self.assertContains(resp, "Cozy Single")
+        self.assertContains(resp, "search-panel")
+        self.assertContains(resp, "Terms of Service")
+
+    def test_search_by_location(self):
+        resp = self.client.get("/places/", {"location": "Lviv"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([r.number for r in resp.context["rooms"]], ["201"])
+
+    def test_search_filters_by_guests_capacity(self):
+        resp = self.client.get("/places/", {"guests": "3"})
+        self.assertEqual([r.number for r in resp.context["rooms"]], ["301"])
+
+    def test_overlap_dates_exclude_busy_room(self):
+        resp = self.client.get("/places/", {"check_in": "2026-09-12", "check_out": "2026-09-14"})
+        numbers = [r.number for r in resp.context["rooms"]]
+        self.assertNotIn("201", numbers)
+        self.assertIn("101", numbers)
+        self.assertIn("301", numbers)
+
+    def test_adjacent_dates_are_free(self):
+        # заїзд у день виїзду іншого гостя — не є перетином
+        resp = self.client.get("/places/", {"check_in": "2026-09-13", "check_out": "2026-09-15"})
+        self.assertIn("201", [r.number for r in resp.context["rooms"]])
+
+    def test_invalid_date_order_shows_error(self):
+        resp = self.client.get("/places/", {"check_in": "2026-09-14", "check_out": "2026-09-10"})
+        self.assertEqual(resp.status_code, 200)
+        msgs = [str(m) for m in resp.context["messages"]]
+        self.assertIn("Check out must be later", msgs)
+        # без фільтра дат показуємо весь каталог
+        self.assertEqual(len(resp.context["rooms"]), 3)
+
+    def test_bad_date_format_shows_error(self):
+        resp = self.client.get("/places/", {"check_in": "not-a-date"})
+        msgs = [str(m) for m in resp.context["messages"]]
+        self.assertIn("Invalid date format", msgs)
+
+    def test_static_footer_pages(self):
+        for slug, title in [
+            ("terms", "Terms of Service"),
+            ("privacy", "Privacy Policy"),
+            ("help", "Help Center"),
+        ]:
+            resp = self.client.get(f"/pages/{slug}/")
+            self.assertEqual(resp.status_code, 200, slug)
+            self.assertContains(resp, title)
+        self.assertEqual(self.client.get("/pages/nope/").status_code, 404)
+
+    def test_service_fee_and_total(self):
+        # макет: $120 × 1 ніч + збір 12% ($14) = $134
+        self.assertEqual(calc_service_fee(Decimal("120")), Decimal("14"))
+        r = Reservation.objects.create(
+            guest=Guest.objects.create(name="G", phone="+380", email="g@g.com"),
+            room=self.suite, check_in=date(2026, 9, 1), check_out=date(2026, 9, 2),
+        )
+        self.assertEqual(r.amount, Decimal("150"))
+        self.assertEqual(r.fee, Decimal("18"))
+        self.assertEqual(r.total, Decimal("168"))
+
+    def test_book_button_prefills_reservation_form(self):
+        User.objects.create_user("buyer", "buyer@test.com", "secret123")
+        self.client.login(username="buyer", password="secret123")
+        resp = self.client.get("/reservations/", {
+            "room": "201", "check_in": "2026-11-05", "check_out": "2026-11-07",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["prefill_room"], "201")
+        self.assertEqual(resp.context["prefill_check_in"], "2026-11-05")
+        self.assertContains(resp, 'value="201" selected')
+
+    def test_login_returns_to_requested_page(self):
+        User.objects.create_user("buyer", "buyer@test.com", "secret123")
+        resp = self.client.post("/login/?next=/reservations/", {
+            "login": "buyer", "password": "secret123",
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.endswith("/reservations/"), resp.url)
+        # приховане поле next у формі входу (після виходу)
+        self.client.logout()
+        resp = self.client.get("/login/?next=/places/")
+        self.assertEqual(resp.context["next"], "/places/")
+
+    def test_public_pages_work_in_ukrainian(self):
+        self.client.get("/lang/")  # en → uk
+        resp = self.client.get("/")
+        self.assertContains(resp, "Рекомендовані місця")
+        resp = self.client.get("/pages/terms/")
+        self.assertContains(resp, "Умови користування")
+
+    def test_new_room_card_fields(self):
+        admin = User.objects.create_user("boss2", "boss2@test.com", "pass1234")
+        admin.is_staff = True
+        admin.save()
+        self.client.login(username="boss2", password="pass1234")
+        resp = self.client.post("/rooms/", {
+            "action": "add", "number": "404", "room_type": "Suite",
+            "price": "99", "title": "Sky Loft", "location": "Odesa, Ukraine",
+            "capacity": "4",
+        })
+        self.assertEqual(resp.status_code, 302)
+        r = Room.objects.get(number="404")
+        self.assertEqual(r.title, "Sky Loft")
+        self.assertEqual(r.location, "Odesa, Ukraine")
+        self.assertEqual(r.capacity, 4)
+        # картка без назві показує «Room X»
+        r2 = Room.objects.create(number="405", room_type="Single", price=Decimal("40"))
+        self.assertEqual(r2.display_title, "Room 405")

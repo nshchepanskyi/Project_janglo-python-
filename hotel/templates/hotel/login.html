@@ -5,8 +5,9 @@
 <body class="auth-page">
 <div class="auth-card">
   <h1>GrandStay {% tr "Login" %}</h1>
-  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{{ m }}</div>{% endfor %}{% endif %}
+  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}{% endif %}
   <form method="post">{% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
     <input name="login" placeholder="{% tr "Username or Email" %}" required>
     <input name="password" type="password" placeholder="{% tr "Password" %}" required>
     <button class="btn primary" type="submit">{% tr "Login" %}</button>

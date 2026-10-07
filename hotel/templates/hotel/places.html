@@ -1,0 +1,31 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{% tr "Book" %}{% endblock %}
+{% block content %}
+<section class="p-page-head">
+  <h1>{% tr "Book a place" %}</h1>
+  <p class="hero-sub">{% tr "Pick your dates — we show only the rooms that are free." %}</p>
+  {% include "hotel/_search_panel.html" %}
+  {% if search.d_in and search.d_out or search.guests or search.location %}
+  <div class="chips">
+    {% if search.location %}<span class="chip">📍 {{ search.location }}</span>{% endif %}
+    {% if search.d_in and search.d_out %}<span class="chip">📅 {{ search.d_in|date:"j M Y" }} → {{ search.d_out|date:"j M Y" }}</span>{% endif %}
+    {% if search.guests %}<span class="chip">👥 {% tr "Guests" %}: {{ search.guests }}</span>{% endif %}
+  </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>{% tr "Recommended places" %}</h2>
+    <span class="found-count">{% tr "Places found" %}: {{ found }}</span>
+  </div>
+  <div class="place-grid">
+    {% for r in rooms %}{% include "hotel/_place_card.html" %}{% empty %}
+    <div class="empty-state">
+      <p>{% tr "Nothing found for your search" %}</p>
+      <a class="btn ghost" href="{% url 'home' %}">{% tr "Back to home" %}</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

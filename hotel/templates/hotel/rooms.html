@@ -7,7 +7,10 @@
   <form method="post" class="form-row">{% csrf_token %}
     <input type="hidden" name="action" value="add">
     <input name="number" placeholder="{% tr "Room Number" %}" required>
+    <input name="title" placeholder="{% tr "Title" %}">
+    <input name="location" placeholder="{% tr "Location" %}">
     <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
+    <input name="capacity" type="number" min="1" max="10" value="2" title="{% tr "Guests" %}">
     <input name="price" type="number" step="0.01" min="0" placeholder="{% tr "Price" %}" required>
     <button class="btn primary" type="submit">{% tr "Add Room" %}</button>
   </form>
@@ -23,10 +26,10 @@
 <div class="card">
   <h2>{% tr "Room List" %}</h2>
   <table>
-    <thead><tr><th>{% tr "Room" %}</th><th>{% tr "Type" %}</th><th>{% tr "Price" %}</th><th>{% tr "STATUS" %}</th><th></th></tr></thead>
+    <thead><tr><th>{% tr "Room" %}</th><th>{% tr "Title" %}</th><th>{% tr "Type" %}</th><th>{% tr "Price" %}</th><th>{% tr "STATUS" %}</th><th></th></tr></thead>
     <tbody>
     {% for r in rooms %}
-      <tr><td>{{ r.number }}</td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
+      <tr><td>{{ r.number }}</td><td>{{ r.display_title }}<br><small class="nowrap">{{ r.location }} · ★ {{ r.rating }}</small></td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
       <td><span class="badge">{% tr r.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="room_id" value="{{ r.id }}">
@@ -38,7 +41,7 @@
         </select>
         <button class="btn ghost" type="submit">{% tr "Save" %}</button>
       </form></td></tr>
-    {% empty %}<tr><td colspan="5">—</td></tr>{% endfor %}
+    {% empty %}<tr><td colspan="6">—</td></tr>{% endfor %}
     </tbody>
   </table>
 </div>

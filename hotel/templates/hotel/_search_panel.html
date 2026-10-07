@@ -1,0 +1,20 @@
+{% load tr_tags %}
+<form class="search-panel" method="get" action="{% url 'places' %}">
+  <label class="sp-field">
+    <span>{% tr "Location" %}</span>
+    <input name="location" value="{{ search.raw.location }}" placeholder="{% tr 'Where are you going?' %}">
+  </label>
+  <label class="sp-field">
+    <span>{% tr "Check in" %}</span>
+    <input type="date" name="check_in" value="{{ search.raw.check_in }}">
+  </label>
+  <label class="sp-field">
+    <span>{% tr "Check out" %}</span>
+    <input type="date" name="check_out" value="{{ search.raw.check_out }}">
+  </label>
+  <label class="sp-field">
+    <span>{% tr "Guests" %}</span>
+    <input type="number" name="guests" min="1" max="10" value="{{ search.raw.guests }}" placeholder="1">
+  </label>
+  <button class="btn primary sp-btn" type="submit">{% tr "Search" %}</button>
+</form>

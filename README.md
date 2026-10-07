@@ -2,6 +2,9 @@
 
 Веб-сайт управління готелем: номери, бронювання, гості, послуги, дашборд.
 Порт десктоп-застосунку Flet (`Practic/`) на Django + SQLite.
+**Фаза 1 (нове):** публічний сайт — головна з пошуком, каталог місць
+з перевіркою вільності дат, картки з ціною/рейтингом/бейджем, статичні
+сторінки футера (Terms/Privacy/Help).
 
 ## Запуск
 
@@ -12,22 +15,41 @@ py manage.py createsuperuser   # опційно, для /admin/
 py manage.py runserver
 ```
 
-Відкрити: http://127.0.0.1:8000/dashboard/ (редірект на логін).
+Відкрити: http://127.0.0.1:8000/ (публічна головна),
+http://127.0.0.1:8000/dashboard/ (редірект на логін).
+
+## Публічна частина (Фаза 1)
+
+| URL | Що це |
+|---|---|
+| `/` | головна: hero + панель пошуку + Recommended places + CTA |
+| `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
+| `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
+| `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена) |
+
+Правило вільності (`search_rooms` у `models.py`): номер вільний, якщо жодне
+активне бронювання не перетинається з бажаним інтервалом
+(`check_in < other.check_out AND check_out > other.check_in`).
+Сервісний збір публічного бронювання — 12% (`SERVICE_FEE_RATE`).
 
 ## Структура
 
 ```
 config/            # налаштування Django
 hotel/             # застосунок готелю
-  models.py        # Room, Guest, Reservation, ServiceOrder + SERVICES_CATALOG + бізнес-логіка
-  views.py         # dashboard, rooms, reservations, guests, services, auth, lang/theme
+  models.py        # Room, Guest, Reservation, ServiceOrder + бізнес-логіка + search_rooms
+  views.py         # dashboard, rooms, reservations, guests, services, auth, lang/theme,
+                   # home/places/page (публічна частина)
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
-  templates/hotel/ # base, dashboard, rooms, reservations, guests, services, login, register
-  static/hotel/style.css  # світла/темна тема
+  templates/hotel/ # base, base_public, home, places, _place_card, _search_panel, page,
+                   # dashboard, rooms, reservations, guests, services, login, register
+  static/hotel/style.css    # адмінка: світла/темна тема + анімації
+  static/hotel/landing.css  # публічна частина (зелений бренд)
+  static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py
+  tests.py         # 28 тестів (у т.ч. PublicSiteTests)
 ```
 
 ## Відповідність Flet → Django

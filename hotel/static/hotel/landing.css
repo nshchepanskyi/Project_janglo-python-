@@ -1,0 +1,358 @@
+/* GrandStay — публічна частина сайту (Фаза 1): hero, пошук, картки, футер.
+   Залежить від style.css (базові btn/input/msg) і додає «зелений» бренд-стиль. */
+
+.public {
+  --l-bg: #f6f8f7;
+  --l-surface: #ffffff;
+  --l-text: #0f172a;
+  --l-muted: #64748b;
+  --l-border: #e5e7eb;
+  --l-brand: #0f766e;
+  --l-brand-600: #0d9488;
+  --l-brand-soft: #ccfbf1;
+  --l-star: #f59b0b;
+  background: var(--l-bg);
+  color: var(--l-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+[data-theme="dark"] .public {
+  --l-bg: #0b1220;
+  --l-surface: #111827;
+  --l-text: #f1f5f9;
+  --l-muted: #94a3b8;
+  --l-border: #1f2937;
+  --l-brand: #2dd4bf;
+  --l-brand-600: #14b8a6;
+  --l-brand-soft: #134e4a;
+}
+.public .btn.primary {
+  background: var(--l-brand);
+  border-color: var(--l-brand);
+  color: #fff;
+}
+[data-theme="dark"] .public .btn.primary { color: #04211e; }
+.public input:focus,
+.public select:focus {
+  border-color: var(--l-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--l-brand) 22%, transparent);
+}
+
+/* ---------- шапка ---------- */
+.p-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 12px 28px;
+  background: var(--l-surface);
+  border-bottom: 1px solid var(--l-border);
+}
+.p-brand {
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--l-brand);
+  text-decoration: none;
+  letter-spacing: .3px;
+}
+.p-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.p-nav a {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--l-muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: background-color .2s ease, color .2s ease, transform .2s ease;
+}
+.p-nav a:hover {
+  background: var(--l-brand-soft);
+  color: var(--l-brand);
+  transform: translateY(-1px);
+}
+.p-nav a.active {
+  background: var(--l-brand-soft);
+  color: var(--l-brand);
+  font-weight: 600;
+}
+.p-actions { display: flex; gap: 8px; align-items: center; }
+.p-actions .btn { padding: 7px 12px; font-size: 13px; }
+.p-signin { font-weight: 600; }
+.p-user {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--l-brand);
+  text-decoration: none;
+  padding: 6px 8px;
+}
+.p-user:hover { text-decoration: underline; }
+
+/* ---------- основний блок ---------- */
+.p-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 0 24px 40px;
+}
+.p-messages { margin-top: 16px; }
+
+@keyframes l-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes l-zoom { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ---------- hero + пошук ---------- */
+.hero {
+  text-align: center;
+  padding: 56px 0 8px;
+  animation: l-fadeUp .5s cubic-bezier(.22, .61, .36, 1) backwards;
+}
+.hero h1 {
+  font-size: clamp(28px, 4.5vw, 44px);
+  margin: 0 0 10px;
+  letter-spacing: -.5px;
+}
+.hero-sub {
+  color: var(--l-muted);
+  font-size: 16px;
+  margin: 0 auto 26px;
+  max-width: 620px;
+}
+.search-panel {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr .7fr auto;
+  gap: 10px;
+  align-items: end;
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .07);
+  text-align: left;
+}
+[data-theme="dark"] .search-panel { box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.sp-field { display: flex; flex-direction: column; gap: 5px; }
+.sp-field span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--l-muted);
+}
+.sp-field input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--l-border);
+  background: var(--l-bg);
+  color: var(--l-text);
+}
+.sp-btn { height: 41px; font-weight: 600; }
+
+/* ---------- секції ---------- */
+.section { margin-top: 40px }
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.section-head h2 { margin: 0; font-size: 22px }
+.section-link { color: var(--l-brand); text-decoration: none; font-size: 14px; font-weight: 600 }
+.section-link:hover { text-decoration: underline }
+.found-count { color: var(--l-muted); font-size: 14px }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px }
+.chip {
+  background: var(--l-brand-soft);
+  color: var(--l-brand);
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  animation: l-fadeUp .35s ease backwards;
+}
+.chip:nth-child(2) { animation-delay: .06s }
+.chip:nth-child(3) { animation-delay: .12s }
+
+/* ---------- картки місць ---------- */
+.place-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+  gap: 18px;
+}
+.place-card {
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: l-fadeUp .45s cubic-bezier(.22, .61, .36, 1) backwards;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+.place-grid .place-card:nth-child(1) { animation-delay: .05s }
+.place-grid .place-card:nth-child(2) { animation-delay: .1s }
+.place-grid .place-card:nth-child(3) { animation-delay: .15s }
+.place-grid .place-card:nth-child(4) { animation-delay: .2s }
+.place-grid .place-card:nth-child(5) { animation-delay: .25s }
+.place-grid .place-card:nth-child(6) { animation-delay: .3s }
+.place-grid .place-card:nth-child(n+7) { animation-delay: .34s }
+.place-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .12);
+  border-color: color-mix(in srgb, var(--l-brand) 40%, var(--l-border));
+}
+[data-theme="dark"] .place-card:hover { box-shadow: 0 14px 30px rgba(0, 0, 0, .55) }
+.place-photo {
+  position: relative;
+  height: 140px;
+  background: linear-gradient(135deg, var(--l-brand-soft), color-mix(in srgb, var(--l-brand-soft) 45%, var(--l-surface)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.place-photo img { width: 100%; height: 100%; object-fit: cover; display: block }
+.place-photo .ph {
+  color: var(--l-brand);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 13px;
+  opacity: .8;
+}
+.place-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.place-tag.ok { background: #dcfce7; color: #166534 }
+.place-tag.busy { background: #fee2e2; color: #991b1b }
+[data-theme="dark"] .place-tag.ok { background: #14532d; color: #bbf7d0 }
+[data-theme="dark"] .place-tag.busy { background: #7f1d1d; color: #fecaca }
+.place-body { padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1 }
+.place-title { font-weight: 700; font-size: 15.5px }
+.place-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--l-muted);
+}
+.place-rating { color: var(--l-star); font-weight: 700; white-space: nowrap }
+.place-cap { font-size: 12px; color: var(--l-muted) }
+.place-foot {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.place-price { font-size: 18px; font-weight: 800 }
+.place-price small { font-size: 12px; font-weight: 500; color: var(--l-muted) }
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--l-muted);
+  background: var(--l-surface);
+  border: 1px dashed var(--l-border);
+  border-radius: 16px;
+  padding: 34px 20px;
+  animation: l-fadeUp .4s ease backwards;
+}
+
+/* ---------- CTA ---------- */
+.cta {
+  margin-top: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 30px 34px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(120deg, #0f766e, #115e59 55%, #134e4a);
+  animation: l-fadeUp .5s ease backwards;
+}
+.cta h2 { margin: 0 0 6px; font-size: 24px }
+.cta p { margin: 0; opacity: .85; max-width: 560px }
+.cta .btn.primary {
+  background: #fff;
+  border-color: #fff;
+  color: #0f766e;
+  font-weight: 700;
+}
+.cta .btn.primary:hover { transform: translateY(-2px) }
+
+/* ---------- сторінки-документи ---------- */
+.p-doc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding-top: 46px;
+  animation: l-fadeUp .45s ease backwards;
+}
+.p-doc h1 { font-size: 30px; margin-bottom: 12px }
+.p-doc p {
+  color: var(--l-muted);
+  line-height: 1.7;
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.p-page-head { padding-top: 42px; animation: l-fadeUp .45s ease backwards }
+.p-page-head h1 { margin: 0 0 8px; font-size: clamp(26px, 3.6vw, 38px) }
+.p-page-head .hero-sub { margin-bottom: 20px; text-align: left }
+
+/* ---------- футер ---------- */
+.p-footer {
+  border-top: 1px solid var(--l-border);
+  background: var(--l-surface);
+  padding: 24px 28px;
+}
+.p-foot-top {
+  max-width: 1160px;
+  margin: 0 auto 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.p-foot-brand { font-weight: 800; color: var(--l-brand); font-size: 18px }
+.p-foot-nav { display: flex; gap: 18px; flex-wrap: wrap }
+.p-foot-nav a { color: var(--l-muted); text-decoration: none; font-size: 14px }
+.p-foot-nav a:hover { color: var(--l-brand); text-decoration: underline }
+.p-copy {
+  max-width: 1160px;
+  margin: 0 auto;
+  color: var(--l-muted);
+  font-size: 13px;
+}
+
+/* ---------- адаптив ---------- */
+@media (max-width: 900px) {
+  .p-topbar { flex-wrap: wrap; padding: 10px 16px; gap: 10px }
+  .p-nav { order: 3; width: 100% }
+  .search-panel { grid-template-columns: 1fr 1fr }
+  .sp-btn { grid-column: 1 / -1; width: 100% }
+  .hero { padding-top: 34px }
+  .p-main { padding: 0 16px 32px }
+}
+@media (max-width: 560px) {
+  .search-panel { grid-template-columns: 1fr }
+  .place-grid { grid-template-columns: 1fr }
+}

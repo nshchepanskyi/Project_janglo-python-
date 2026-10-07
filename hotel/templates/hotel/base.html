@@ -26,6 +26,7 @@
     {% if user.is_authenticated %}
     <div class="nav-foot">
       <span>{{ user.username }}{% if is_admin %} · {% tr "Admin" %}{% endif %}</span>
+      <a class="btn ghost small" href="{% url 'home' %}">{% tr "Public site" %}</a>
       <a href="{% url 'logout' %}" class="btn ghost small">{% tr "Logout" %}</a>
     </div>
     {% endif %}
