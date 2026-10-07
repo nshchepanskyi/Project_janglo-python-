@@ -86,13 +86,20 @@
 .p-actions .btn { padding: 7px 12px; font-size: 13px; }
 .p-signin { font-weight: 600; }
 .p-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--l-brand);
   text-decoration: none;
-  padding: 6px 8px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 999px;
+  border: 1px solid var(--l-border);
+  background: var(--l-surface);
 }
-.p-user:hover { text-decoration: underline; }
+.p-user:hover { border-color: var(--l-brand); text-decoration: none }
+.p-user .avatar { width: 26px; height: 26px; font-size: 12px }
 
 /* ---------- основний блок ---------- */
 .p-main {
@@ -102,6 +109,9 @@
   margin: 0 auto;
   padding: 0 24px 40px;
 }
+/* адмін-сторінки успадковують той самий контейнер (.content) — дає верхній відступ
+   та зберігає анімації .content > .card зі style.css */
+.p-main.content { padding: 28px 24px 44px; }
 .p-messages { margin-top: 16px; }
 
 @keyframes l-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }

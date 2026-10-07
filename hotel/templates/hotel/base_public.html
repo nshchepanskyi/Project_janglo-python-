@@ -13,19 +13,24 @@
   <nav class="p-nav">
     <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">{% tr "Home" %}</a>
     <a href="{% url 'places' %}" class="{% if request.resolver_match.url_name == 'places' %}active{% endif %}">{% tr "Book" %}</a>
-    {% if user.is_authenticated %}
-    <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% tr "My Bookings" %}</a>
-    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
-    {% endif %}
     {% if is_admin %}
-    <a href="{% url 'dashboard' %}">{% tr "Dashboard" %}</a>
+    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">{% tr "Dashboard" %}</a>
+    <a href="{% url 'rooms' %}" class="{% if request.resolver_match.url_name == 'rooms' %}active{% endif %}">{% tr "Rooms" %}</a>
+    {% endif %}
+    <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% if is_admin %}{% tr "Reservations" %}{% else %}{% tr "My Bookings" %}{% endif %}</a>
+    {% if is_admin %}
+    <a href="{% url 'guests' %}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">{% tr "Guests" %}</a>
+    <a href="{% url 'services' %}" class="{% if request.resolver_match.url_name == 'services' %}active{% endif %}">{% tr "Services" %}</a>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
     {% endif %}
   </nav>
   <div class="p-actions">
     <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
     <a class="btn ghost" href="{% url 'toggle_theme' %}">◐</a>
     {% if user.is_authenticated %}
-    <a class="p-user" href="{% url 'profile' %}">{{ user.username }}</a>
+    <a class="p-user" href="{% url 'profile' %}"><span class="avatar">{{ user.username|first|upper }}</span>{{ user.username }}</a>
     <a class="btn ghost" href="{% url 'logout' %}">{% tr "Logout" %}</a>
     {% else %}
     <a class="btn primary p-signin" href="{% url 'login' %}">{% tr "Sign In" %}</a>
@@ -33,7 +38,7 @@
   </div>
 </header>
 
-<main class="p-main">
+<main class="p-main content">
   {% if messages %}
   <div class="messages p-messages">
     {% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}

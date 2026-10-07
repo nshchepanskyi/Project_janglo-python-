@@ -14,6 +14,7 @@
     <button class="btn primary" type="submit">{% tr "Register" %}</button>
   </form>
   <div class="auth-actions">
+    <a class="btn ghost" href="{% url 'home' %}">{% tr "Home" %}</a>
     <a class="btn ghost" href="{% url 'login' %}">{% tr "Back to login" %}</a>
     <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
   </div>

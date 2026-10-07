@@ -43,7 +43,8 @@ hotel/             # застосунок готелю
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
-  templates/hotel/ # base, base_public, home, places, _place_card, _search_panel, page,
+  templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
+                   # home, places, _place_card, _search_panel, page,
                    # dashboard, rooms, reservations, guests, services, login, register
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
   static/hotel/landing.css  # публічна частина (зелений бренд)
@@ -67,7 +68,7 @@ hotel/             # застосунок готелю
 | `views/login.py`, `register.py` | `login_view`, `register_view` |
 | `l10n.py` (EN/UK) | `l10n.py` + сесія `lang` + тег `{% tr %}` |
 | `theme.py` (light/dark) | сесія `theme` + CSS-змінні |
-| `components/navbar.py`, `topbar.py` | `base.html` (sidebar + topbar) |
+| `components/navbar.py`, `topbar.py` | `base_public.html` (шапка з меню за ролями + футер), `base.html` успадковує її для адмін-сторінок |
 
 ## Документація розділу 1
 
