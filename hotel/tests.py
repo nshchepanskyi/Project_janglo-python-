@@ -520,6 +520,14 @@ class PlaceDetailTests(TestCase):
         resp = self.client.get("/places/")
         self.assertContains(resp, 'href="/places/501/"')
 
+    def test_guests_input_on_place_page_limited_by_room_capacity(self):
+        # місткість саме цього номера (Suite у фікстурі — 3), не глобальний максимум
+        resp = self.client.get("/places/501/")
+        self.assertContains(resp, 'name="guests" min="1" max="3"')
+        resp = self.client.get("/places/501/", {"guests": "4"})
+        self.assertFalse(resp.context["fits"])
+        self.assertFalse(resp.context["can_book"])
+
 
 class RoomCapacityTests(TestCase):
     """Перевірка місткості за типом: Single → 1, Double → 2, Suite → до 8."""
