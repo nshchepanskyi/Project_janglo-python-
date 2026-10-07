@@ -1,0 +1,87 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{{ room.display_title }}{% endblock %}
+{% block content %}
+<nav class="crumbs">
+  <a href="{% url 'home' %}">{% tr "Home" %}</a> <span>→</span>
+  <a href="{% url 'places' %}">{% tr "Book" %}</a> <span>→</span>
+  <span>{{ room.display_title }}</span>
+</nav>
+
+<section class="place-detail">
+  <div class="pd-main">
+    <div class="pd-photo">
+      {% if room.photo %}<img src="{{ room.photo.url }}" alt="{{ room.display_title }}">{% else %}<span class="ph">{% tr "Photo" %}</span>{% endif %}
+      <span class="place-tag {{ room.badge_kind }}">{% tr room.badge_key %}</span>
+    </div>
+
+    <div class="pd-body">
+      <h1 class="pd-title">{{ room.display_title }}</h1>
+      <div class="pd-meta">
+        <span>{% if room.location %}📍 {{ room.location }}{% endif %}</span>
+        <span class="pd-rate">★ {{ room.rating }}</span>
+        <span>{% tr "Guests" %}: {{ room.capacity }}</span>
+        <span>{% tr room.room_type %}</span>
+        <span class="pill">#{{ room.number }}</span>
+      </div>
+      <p class="pd-desc">{% tr "A comfortable room with everything you need for a pleasant stay." %}</p>
+
+      <h3>{% tr "Services in this room" %}</h3>
+      <div class="pd-svc">
+        {% for s in room.services.all %}<span class="mini-chip">✓ {% tr s.name %}</span>
+        {% empty %}<span class="hint">—</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="pd-book card">
+    <h2>{% tr "Check availability" %}</h2>
+    <form method="get" class="pd-form">
+      <label>{% tr "Check In" %}
+        <input type="date" name="check_in" value="{{ search.check_in }}">
+      </label>
+      <label>{% tr "Check Out" %}
+        <input type="date" name="check_out" value="{{ search.check_out }}">
+      </label>
+      <label>{% tr "Guests" %}
+        <input type="number" name="guests" min="1" max="10" value="{{ search.guests|default:'1' }}">
+      </label>
+      <button class="btn" type="submit">{% tr "Update" %}</button>
+    </form>
+
+    {% if not fits %}
+    <p class="msg error">{% tr "Too many guests for this room" %} — {% tr "Guests" %}: {{ room.capacity }}</p>
+    {% elif not room.free %}
+    <p class="msg error">{% tr "Not available for these dates" %}</p>
+    {% elif search.d_in and search.d_out %}
+    <p class="msg success">✓ {% tr "Available for these dates" %}</p>
+    {% endif %}
+
+    <div class="pd-check">
+      {% if nights %}
+      <div class="pd-row"><span>${{ room.price|floatformat:2 }} × {{ nights }} {% tr "NIGHTS" %}</span><b>${{ subtotal|floatformat:2 }}</b></div>
+      <div class="pd-row"><span>{% tr "Service fee" %} (12%)</span><b>${{ fee|floatformat:2 }}</b></div>
+      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>${{ total|floatformat:2 }}</b></div>
+      {% else %}
+      <p class="hint">{% tr "Choose dates to see the total" %}</p>
+      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>${{ room.price|floatformat:2 }} <small>{% tr "per night" %}</small></b></div>
+      {% endif %}
+    </div>
+
+    {% if can_book %}
+    <a class="btn primary big" href="{% url 'reservations' %}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}">
+      {% tr "Book" %}{% if nights %} · ${{ total|floatformat:0 }}{% endif %}
+    </a>
+    <p class="hint pd-hint">{% tr "You will confirm the booking on the next step" %}</p>
+    {% endif %}
+  </aside>
+</section>
+
+{% if others %}
+<section class="section">
+  <div class="section-head"><h2>{% tr "Similar rooms" %}</h2></div>
+  <div class="place-grid">
+    {% for r in others %}{% include "hotel/_place_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

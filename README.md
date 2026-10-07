@@ -6,6 +6,14 @@
 з перевіркою вільності дат, картки з ціною/рейтингом/бейджем, статичні
 сторінки футера (Terms/Privacy/Help).
 
+**Фаза 2 (нове):** сторінка місця `/places/<number>/` — велике фото, деталі
+номера, чипи послуг і **чек**: ціна × кількість ночей + сервісний збір 12%.
+Дати/гостей міняємо прямо на сторінці (GET-форма, без JS) — чек
+перераховується, вільність перевіряє `search_rooms`. Кнопка **Book · $269**
+веде на форму бронювання з префілом; якщо номер зайнятий на обрані дати
+або не вміщує стільки гостей — кнопка ховається з поясненням. Картки каталогу
+(фото й назва) ведуть на сторінку місця, внизу — «Similar rooms».
+
 **Фото та послуги (нове):**
 - **Фото номерів** — `Room.photo` це `ImageField` (`media/rooms/…`), вантажиться
   формою «Add Room» (`enctype="multipart/form-data"`), показується на публічних
@@ -33,12 +41,13 @@ py manage.py runserver
 Відкрити: http://127.0.0.1:8000/ (публічна головна),
 http://127.0.0.1:8000/dashboard/ (редірект на логін).
 
-## Публічна частина (Фаза 1)
+## Публічна частина (Фази 1–2)
 
 | URL | Що це |
 |---|---|
 | `/` | головна: hero + панель пошуку + Recommended places + CTA |
 | `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
+| `/places/<number>/` | **сторінка місця**: фото, деталі, чек і кнопка **Book · $…** |
 | `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
 | `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена) |
 | `/reservations/<id>/` | сторінка бронювання: рахунок + додаткові послуги та оплата |
@@ -55,18 +64,18 @@ config/            # налаштування Django
 hotel/             # застосунок готелю
   models.py        # Room, Guest, Reservation, Service, ServiceOrder + бізнес-логіка + search_rooms
   views.py         # dashboard, rooms, reservations, reservation_detail (додаткові послуги),
-                   # guests, auth, lang/theme, home/places/page (публічна частина)
+                   # guests, auth, lang/theme, home/places/place_detail/page (публічна частина)
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
   templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
-                   # home, places, _place_card, _search_panel, page,
+                   # home, places, place, _place_card, _search_panel, page,
                    # dashboard, rooms, reservations, reservation, guests, login, register
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
   static/hotel/landing.css  # публічна частина (зелений бренд)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 34 тести (у т.ч. PublicSiteTests, ServiceExtrasTests)
+  tests.py         # 40 тестів (у т.ч. PublicSiteTests, ServiceExtrasTests, PlaceDetailTests)
 ```
 
 ## Відповідність Flet → Django

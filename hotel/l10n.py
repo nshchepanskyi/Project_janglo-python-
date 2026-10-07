@@ -131,7 +131,7 @@ TRANSLATIONS = {
         "Qty": "К-сть",
         "Total": "Всього",
         "Time": "Час",
-        "Update": "Оновлення",
+        "Update": "Оновити",
         "Save": "Зберегти",
         "Select at least one service": "Виберіть хоча б одну послугу",
         "Select guest": "Виберіть гостя",
@@ -258,6 +258,16 @@ TRANSLATIONS = {
         "Upload photo": "Завантажити фото",
         "Extra services are paid before checkout, like in a real hotel.": "Додаткові послуги оплачують перед виселенням, як у реальному готелі.",
         "Back to reservations": "Назад до бронювань",
+
+        # ---------- Фаза 2: сторінка місця ----------
+        "Check availability": "Перевірити наявність",
+        "Available for these dates": "Вільно на обрані дати",
+        "Not available for these dates": "Немає вільності на обрані дати",
+        "Too many guests for this room": "Забагато гостей для цього номера",
+        "Choose dates to see the total": "Оберіть дати, щоб побачити суму",
+        "Similar rooms": "Схожі номери",
+        "You will confirm the booking on the next step": "Ви підтвердите бронювання на наступному кроці",
+        "A comfortable room with everything you need for a pleasant stay.": "Комфортний номер з усім необхідним для приємного відпочинку.",
     },
 }
 

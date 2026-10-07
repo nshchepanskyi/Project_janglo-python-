@@ -367,3 +367,119 @@
   .search-panel { grid-template-columns: 1fr }
   .place-grid { grid-template-columns: 1fr }
 }
+
+/* ---------- Фаза 2: сторінка місця (деталі + чек) ---------- */
+.crumbs {
+  font-size: 13px;
+  color: var(--l-muted);
+  margin-bottom: 16px;
+}
+.crumbs a { color: var(--l-muted); text-decoration: none }
+.crumbs a:hover { color: var(--l-brand); text-decoration: underline }
+
+.place-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: start;
+}
+.pd-photo {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: linear-gradient(135deg, var(--l-brand-soft),
+              color-mix(in srgb, var(--l-brand-soft) 45%, var(--l-surface)));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--l-border);
+}
+.pd-photo img { width: 100%; height: 100%; object-fit: cover; display: block }
+.pd-photo .ph {
+  color: var(--l-brand);
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 15px;
+  opacity: .8;
+}
+.pd-photo .place-tag { top: 14px; left: 14px; font-size: 12px; padding: 5px 12px }
+.pd-body { padding: 20px 4px 0 }
+.pd-title { font-size: 28px; margin: 0 0 10px; letter-spacing: -.3px }
+.pd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+  font-size: 14px;
+  color: var(--l-muted);
+}
+.pd-rate { color: var(--l-star); font-weight: 700 }
+.pd-desc { margin: 16px 0 20px; line-height: 1.65; color: var(--l-text) }
+.pd-svc { display: flex; flex-wrap: wrap; gap: 8px }
+
+.pd-book {
+  position: sticky;
+  top: 76px;
+  padding: 20px;
+}
+.pd-book h2 { margin: 0 0 14px; font-size: 18px }
+.pd-form { display: grid; gap: 10px; margin-bottom: 14px }
+.pd-form label {
+  display: grid;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--l-muted);
+}
+.pd-form input {
+  font-size: 14px;
+  padding: 9px 12px;
+  background: var(--l-surface);
+}
+.pd-check {
+  border-top: 1px solid var(--l-border);
+  border-bottom: 1px solid var(--l-border);
+  padding: 12px 0;
+  margin: 14px 0;
+  display: grid;
+  gap: 8px;
+}
+.pd-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--l-muted);
+}
+.pd-row b { color: var(--l-text) }
+.pd-total { font-size: 16px; font-weight: 700; color: var(--l-text) }
+.pd-total b { color: var(--l-brand); font-size: 18px }
+.pd-total small { font-size: 12px; font-weight: 500; color: var(--l-muted) }
+.btn.big {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 13px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 12px;
+}
+.pd-hint { margin-top: 10px; text-align: center }
+
+/* картки, що ведуть на сторінку місця */
+.place-card .place-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.place-card .place-link.place-title:hover { color: var(--l-brand) }
+
+@media (max-width: 900px) {
+  .place-detail { grid-template-columns: 1fr }
+  .pd-book { position: static }
+  .pd-title { font-size: 23px }
+}

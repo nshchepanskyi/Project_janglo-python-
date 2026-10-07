@@ -21,6 +21,7 @@ from .models import (
     ServiceOrder,
     arrivals_count,
     calc_reservation_revenue,
+    calc_service_fee,
     calc_service_revenue,
     calc_total_revenue,
     get_occupancy_rate,
@@ -260,6 +261,58 @@ def places_view(request):
                                   {"location": location, "check_in": ci_raw,
                                    "check_out": co_raw, "guests": guests_raw}),
         "has_filters": bool(location or d_in or d_out or guests),
+        "pages": STATIC_PAGES,
+    })
+
+
+def place_detail_view(request, number):
+    """
+    Фаза 2: сторінка місця — фото, деталі, чек і кнопка «Забронювати · $134».
+
+    Дати/гостей приносять із пошуку (?check_in=&check_out=&guests=) або міняють
+    прямо тут (GET-форма). Чек: ціна × ночі + сервісний збір 12%.
+    Кнопка веде на форму бронювання з префілом; недоступна, якщо номер зайнятий
+    на обрані дати або не вміщує стільки гостей.
+    """
+    room = get_object_or_404(Room, number=number)
+    location, ci_raw, co_raw, guests_raw = _get_search(request)
+    _, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
+    if error:
+        messages.error(request, error)
+
+    _annotate_cards([room], d_in, d_out)  # room.free + бейдж
+    nights = (d_out - d_in).days if d_in and d_out else 0
+    subtotal = room.price * nights if nights else Decimal("0")
+    fee = calc_service_fee(subtotal)
+    total = subtotal + fee
+    fits = not guests or guests <= room.capacity
+    can_book = room.free and fits
+
+    # Схожі номери: спершу те саме місто, якщо порожньо — будь-які інші
+    city = room.location.split(",")[0].strip()
+    others = list(
+        search_rooms(city, d_in, d_out, guests).exclude(pk=room.pk)
+        .prefetch_related("services")[:3]
+    )
+    if not others:
+        others = list(
+            search_rooms("", d_in, d_out, guests).exclude(pk=room.pk)
+            .prefetch_related("services")[:3]
+        )
+    _annotate_cards(others, d_in, d_out)
+
+    return render(request, "hotel/place.html", {
+        "room": room,
+        "nights": nights,
+        "subtotal": subtotal,
+        "fee": fee,
+        "total": total,
+        "fits": fits,
+        "can_book": can_book,
+        "others": others,
+        "search": _search_context(location, d_in, d_out, guests,
+                                  {"location": location, "check_in": ci_raw,
+                                   "check_out": co_raw, "guests": guests_raw}),
         "pages": STATIC_PAGES,
     })
 

@@ -453,3 +453,68 @@ class ServiceExtrasTests(TestCase):
         })
         self.res.refresh_from_db()
         self.assertEqual(self.res.status, "Checked-Out")
+
+
+class PlaceDetailTests(TestCase):
+    """Фаза 2: сторінка місця — чек із датами, вільність і кнопка «Забронювати · $»."""
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="501", room_type="Suite", price=Decimal("150"),
+            title="Sky Loft", location="Kyiv, Ukraine", capacity=3,
+            rating=Decimal("4.9"),
+        )
+        guest = Guest.objects.create(name="Busy Guest", phone="+38000", email="busy@b.com")
+        # 501 зайнятий 10–13.12.2026
+        Reservation.objects.create(
+            guest=guest, room=self.room,
+            check_in=date(2026, 12, 10), check_out=date(2026, 12, 13),
+        )
+
+    def test_detail_page_renders(self):
+        resp = self.client.get("/places/501/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Sky Loft")
+        self.assertContains(resp, "Check availability")
+        self.assertContains(resp, "per night")  # без дат — підсумок «за ніч»
+        # без дат кнопка веде на форму бронювання з префілом
+        self.assertContains(resp, 'href="/reservations/?room=501"')
+
+    def test_unknown_room_is_404(self):
+        resp = self.client.get("/places/999/")
+        self.assertEqual(resp.status_code, 404)
+
+    def test_check_math_dates_and_fee(self):
+        resp = self.client.get("/places/501/", {
+            "check_in": "2026-12-01", "check_out": "2026-12-04", "guests": "2",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["nights"], 3)
+        self.assertEqual(resp.context["subtotal"], Decimal("450"))
+        self.assertEqual(resp.context["fee"], Decimal("54"))
+        self.assertEqual(resp.context["total"], Decimal("504"))
+        self.assertContains(resp, "× 3 NIGHTS")
+        self.assertContains(resp, "$504.00")
+        self.assertContains(resp, "· $504")  # текст кнопки
+        self.assertContains(resp, 'value="2026-12-01"')  # форма зберігає дати
+
+    def test_busy_dates_hide_booking_button(self):
+        resp = self.client.get("/places/501/", {
+            "check_in": "2026-12-11", "check_out": "2026-12-12",
+        })
+        self.assertFalse(resp.context["room"].free)
+        self.assertFalse(resp.context["can_book"])
+        self.assertContains(resp, "Not available for these dates")
+        self.assertNotContains(resp, 'href="/reservations/?room=501')
+
+    def test_too_many_guests_blocks_booking(self):
+        resp = self.client.get("/places/501/", {"guests": "5"})
+        self.assertFalse(resp.context["fits"])
+        self.assertFalse(resp.context["can_book"])
+        self.assertContains(resp, "Too many guests for this room")
+
+    def test_cards_link_to_detail_page(self):
+        resp = self.client.get("/")
+        self.assertContains(resp, 'href="/places/501/"')
+        resp = self.client.get("/places/")
+        self.assertContains(resp, 'href="/places/501/"')
