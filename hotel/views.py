@@ -14,10 +14,10 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import (
-    SERVICES_CATALOG,
     Guest,
     Reservation,
     Room,
+    Service,
     ServiceOrder,
     arrivals_count,
     calc_reservation_revenue,
@@ -233,7 +233,7 @@ def home_view(request):
     location, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
     if error:
         messages.error(request, error)
-    rooms = list(search_rooms(location, d_in, d_out, guests)[:6])
+    rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services")[:6])
     _annotate_cards(rooms, d_in, d_out)
     return render(request, "hotel/home.html", {
         "rooms": rooms,
@@ -251,7 +251,7 @@ def places_view(request):
     location, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
     if error:
         messages.error(request, error)
-    rooms = list(search_rooms(location, d_in, d_out, guests))
+    rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services"))
     _annotate_cards(rooms, d_in, d_out)
     return render(request, "hotel/places.html", {
         "rooms": rooms,
@@ -322,15 +322,21 @@ def rooms_view(request):
                     raise ValueError
             except ValueError:
                 capacity = 2
+            photo = request.FILES.get("photo")
+            # Галочки «що є в цьому номері» — id з каталогу послуг (hotel_service)
+            service_ids = [s for s in request.POST.getlist("services") if s.isdigit()]
             if not number:
                 messages.error(request, "Enter a room number")
             elif Room.objects.filter(number=number).exists():
                 messages.error(request, f"Room {number} already exists")
             else:
-                Room.objects.create(
+                room = Room.objects.create(
                     number=number, room_type=room_type, price=price,
                     title=title, location=location, capacity=capacity,
+                    photo=photo,
                 )
+                if service_ids:
+                    room.services.set(Service.objects.filter(pk__in=service_ids))
                 messages.success(request, f"Room {number} added")
             return redirect("rooms")
         if action == "delete":
@@ -352,7 +358,10 @@ def rooms_view(request):
             room.status = request.POST.get("status", room.status)
             room.save()
             return redirect("rooms")
-    return render(request, "hotel/rooms.html", {"rooms": Room.objects.all()})
+    return render(request, "hotel/rooms.html", {
+        "rooms": Room.objects.prefetch_related("services").all(),
+        "catalog": Service.objects.all(),
+    })
 
 
 # ---------- reservations (port of views/reservations.py) ----------
@@ -371,6 +380,11 @@ def reservations_view(request):
                 return redirect("reservations")
             res = get_object_or_404(Reservation, pk=request.POST.get("reservation_id"))
             new_status = request.POST.get("status", res.status)
+            # Виселення можливе лише після оплати додаткових послуг,
+            # як у реальному готелі: рахунок закривають перед виїздом.
+            if new_status == "Checked-Out" and res.extras_due > 0:
+                messages.error(request, "Pay the extras before checkout")
+                return redirect("reservation_detail", pk=res.pk)
             res.status = new_status
             res.save()
             # keep room status in sync (port of create_reservation side-effect)
@@ -457,52 +471,81 @@ def guests_view(request):
     return render(request, "hotel/guests.html", {"guests": guests, "q": q})
 
 
-# ---------- services (port of views/services.py) ----------
+# ---------- деталі бронювання + додаткові послуги ----------
 
-@admin_required
-def services_view(request):
+@login_required
+def reservation_detail_view(request, pk):
+    """
+    Сторінка бронювання: склад проживання + додаткові послуги.
+
+    Послуги замовляють тут (з каталогу), а оплачують перед виселенням —
+    кнопка «Pay before checkout». Доступ: власник бронювання або адміністратор.
+    (Сторінка /services/ прибрана — послуги живуть у базі даних.)
+    """
+    res = get_object_or_404(
+        Reservation.objects.select_related("guest", "room"), pk=pk
+    )
+    owner = is_admin(request.user) or res.user_id == request.user.id
+    if not owner:
+        messages.error(request, "This booking is not available to you")
+        return redirect("profile")
+
     if request.method == "POST":
-        action = request.POST.get("action", "order")
-        if action == "status":
-            order = get_object_or_404(ServiceOrder, pk=request.POST.get("order_id"))
-            order.status = request.POST.get("status", order.status)
-            order.save()
-            messages.success(request, f"Order {order.pk} updated")
-            return redirect("services")
-        guest_id = request.POST.get("guest_id", "")
-        selected = request.POST.getlist("service")
-        if not selected:
-            messages.error(request, "Select at least one service")
-            return redirect("services")
-        guest = Guest.objects.filter(pk=guest_id).first()
-        if not guest:
-            messages.error(request, "Select guest")
-            return redirect("services")
-        created = 0
-        for name in selected:
-            try:
-                qty = int(request.POST.get(f"qty_{name}", "1") or 1)
-                if qty < 1:
-                    raise ValueError
-            except ValueError:
-                messages.error(request, f"Invalid quantity for {name}")
-                return redirect("services")
-            price = next((s["price"] for s in SERVICES_CATALOG if s["name"] == name), None)
-            if price is None:
-                continue
-            ServiceOrder.objects.create(guest=guest, service_name=name, service_price=price, quantity=qty)
-            created += 1
-        if created:
-            messages.success(request, f"{created} order(s) created")
-        else:
-            messages.error(request, "Failed to create orders")
-        return redirect("services")
-    orders = ServiceOrder.objects.select_related("guest").all()
-    return render(request, "hotel/services.html", {
-        "catalog": SERVICES_CATALOG,
-        "guests": Guest.objects.all(),
+        action = request.POST.get("action", "add")
+        if action == "add":
+            if res.status == "Checked-Out":
+                messages.error(request, "The stay is already over")
+                return redirect("reservation_detail", pk=res.pk)
+            selected = [s for s in request.POST.getlist("service") if s.isdigit()]
+            if not selected:
+                messages.error(request, "Select at least one service")
+                return redirect("reservation_detail", pk=res.pk)
+            created = 0
+            for service_id in selected:
+                svc = Service.objects.filter(pk=service_id).first()
+                if svc is None:
+                    continue
+                try:
+                    qty = int(request.POST.get(f"qty_{service_id}", "1") or 1)
+                    if qty < 1:
+                        raise ValueError
+                except ValueError:
+                    messages.error(request, f"Invalid quantity for {svc.name}")
+                    return redirect("reservation_detail", pk=res.pk)
+                ServiceOrder.objects.create(
+                    guest=res.guest, reservation=res,
+                    service_name=svc.name, service_price=svc.price,
+                    quantity=qty,
+                )
+                created += 1
+            if created:
+                messages.success(request, "Services ordered")
+            else:
+                messages.error(request, "Failed to create orders")
+            return redirect("reservation_detail", pk=res.pk)
+
+        if action == "pay":
+            paid = res.service_orders.filter(paid=False).exclude(status="Cancelled")
+            count = paid.update(paid=True)
+            if count:
+                messages.success(request, "Payment successful")
+            else:
+                messages.error(request, "Nothing to pay")
+            return redirect("reservation_detail", pk=res.pk)
+
+    orders = list(res.service_orders.all())
+    context = {
+        "res": res,
         "orders": orders,
-    })
+        "catalog": Service.objects.all(),
+        "extras_total": res.extras_total,
+        "extras_due": res.extras_due,
+        "grand_total": res.total + res.extras_total,
+        "can_order": res.status != "Checked-Out",
+        "can_manage": is_admin(request.user),
+        "pages": STATIC_PAGES,
+    }
+    return render(request, "hotel/reservation.html", context)
 
 
 # ---------- profile (new page for the user's own info) ----------

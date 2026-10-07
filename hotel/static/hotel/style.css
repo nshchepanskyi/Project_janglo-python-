@@ -152,6 +152,18 @@ input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
 /* компоненти послуг і пункти дій */
 .svc-item{transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease}
 .svc-item:hover{border-color:var(--accent);transform:translateX(3px)}
+
+/* ---------- фото та послуги номерів (каталог у БД) ---------- */
+.hint{font-size:13px;color:var(--muted);margin:6px 0 10px}
+.svc-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-bottom:12px}
+.room-thumb{width:46px;height:34px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px;border:1px solid var(--border)}
+.room-svc{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.mini-chip{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-bg);color:var(--accent);white-space:nowrap}
+.st-paid{background:#dcfce7;color:#166534}
+.st-unpaid{background:#fee2e2;color:#991b1b}
+[data-theme="dark"] .st-paid{background:#14532d;color:#bbf7d0}
+[data-theme="dark"] .st-unpaid{background:#7f1d1d;color:#fecaca}
+.due-line{margin:12px 0;font-size:15px;color:var(--danger)}
 .inline .btn{transition:transform .15s ease,box-shadow .2s ease,opacity .2s ease}
 .inline:hover .btn{opacity:1}
 

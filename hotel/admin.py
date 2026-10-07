@@ -1,10 +1,17 @@
 from django.contrib import admin
-from .models import Guest, Reservation, Room, ServiceOrder
+from .models import Guest, Reservation, Room, Service, ServiceOrder
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
     list_display = ("number", "room_type", "price", "status")
     list_filter = ("room_type", "status")
+
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    """Каталог послуг: додавати/редагувати позиції (назва + ціна)."""
+    list_display = ("name", "price")
+    search_fields = ("name",)
 
 
 @admin.register(Guest)

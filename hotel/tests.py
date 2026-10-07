@@ -1,19 +1,32 @@
+import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import TestCase, override_settings
 
 from .models import (
     Guest,
     Reservation,
     Room,
+    Service,
     ServiceOrder,
     calc_reservation_revenue,
     calc_service_fee,
     calc_service_revenue,
     get_occupancy_rate,
     get_services_summary,
+)
+
+# Тимчасове сховище для тестових завантажень фото
+TEST_MEDIA_ROOT = tempfile.mkdtemp(prefix="grandstay_test_media_")
+
+# 1×1 GIF для тесту завантаження фото номера
+TEST_GIF = (
+    b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff"
+    b"!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
+    b"\x00\x02\x02D\x01\x00;"
 )
 
 
@@ -105,12 +118,12 @@ class RoleAccessTests(TestCase):
 
     def test_admin_can_open_admin_pages(self):
         self._login("boss", "pass1234")
-        for url in ["/dashboard/", "/rooms/", "/guests/", "/services/", "/profile/"]:
+        for url in ["/dashboard/", "/rooms/", "/guests/", "/reservations/", "/profile/"]:
             self.assertEqual(self.client.get(url).status_code, 200, url)
 
     def test_user_redirected_from_admin_pages_to_profile(self):
         self._login("ivan", "secret123")
-        for url in ["/dashboard/", "/rooms/", "/guests/", "/services/"]:
+        for url in ["/dashboard/", "/rooms/", "/guests/"]:
             resp = self.client.get(url)
             self.assertEqual(resp.status_code, 302, url)
             self.assertTrue(resp.url.endswith("/profile/"), f"{url} -> {resp.url}")
@@ -336,3 +349,107 @@ class PublicSiteTests(TestCase):
         # картка без назві показує «Room X»
         r2 = Room.objects.create(number="405", room_type="Single", price=Decimal("40"))
         self.assertEqual(r2.display_title, "Room 405")
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
+class ServiceExtrasTests(TestCase):
+    """Каталог послуг у БД, фото номерів, додаткові послуги та оплата перед виселенням."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", "boss@test.com", "pass1234")
+        self.admin.is_staff = True
+        self.admin.is_superuser = True
+        self.admin.save()
+        self.user = User.objects.create_user("ivan", "ivan@test.com", "secret123")
+        self.room = Room.objects.create(number="410", room_type="Double", price=Decimal("80"))
+        self.guest = Guest.objects.create(name="Ivan Petrov", phone="+38050", email="i@i.com")
+        self.res = Reservation.objects.create(
+            guest=self.guest, room=self.room,
+            check_in=date(2026, 11, 1), check_out=date(2026, 11, 3), user=self.user,
+        )
+
+    def test_service_catalog_seeded_by_migration(self):
+        """SERVICES_CATALOG перенесено з коду в таблицю hotel_service."""
+        self.assertEqual(Service.objects.count(), 13)
+        breakfast = Service.objects.get(name="Breakfast")
+        self.assertEqual(breakfast.price, Decimal("10"))
+
+    def test_services_tab_removed(self):
+        """Вкладку Services прибрано — послуги живуть у базі даних."""
+        self.assertEqual(self.client.get("/services/").status_code, 404)
+
+    def test_add_room_with_photo_and_services(self):
+        self.client.login(username="boss", password="pass1234")
+        spa = Service.objects.get(name="Spa")
+        resp = self.client.post("/rooms/", {
+            "action": "add", "number": "909", "room_type": "Suite", "price": "120",
+            "title": "Sky Loft", "location": "Odesa, Ukraine", "capacity": "3",
+            "services": [str(spa.id)],
+            "photo": SimpleUploadedFile("room.gif", TEST_GIF, content_type="image/gif"),
+        })
+        self.assertEqual(resp.status_code, 302)
+        room = Room.objects.get(number="909")
+        self.assertTrue(room.photo.name.startswith("rooms/"))
+        self.assertEqual([s.name for s in room.services.all()], ["Spa"])
+
+    def test_reservation_detail_access(self):
+        # власник бронювання
+        self.client.login(username="ivan", password="secret123")
+        resp = self.client.get(f"/reservations/{self.res.pk}/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context["res"], self.res)
+        self.client.logout()
+        # сторонній користувач потрапляє у профіль
+        User.objects.create_user("other", "other@test.com", "secret123")
+        self.client.login(username="other", password="secret123")
+        resp = self.client.get(f"/reservations/{self.res.pk}/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(resp.url.endswith("/profile/"))
+        self.client.logout()
+        # адміністратор бачить будь-яке бронювання
+        self.client.login(username="boss", password="pass1234")
+        self.assertEqual(self.client.get(f"/reservations/{self.res.pk}/").status_code, 200)
+
+    def test_order_extras_and_pay_before_checkout(self):
+        self.client.login(username="ivan", password="secret123")
+        spa = Service.objects.get(name="Spa")
+        resp = self.client.post(f"/reservations/{self.res.pk}/", {
+            "action": "add", "service": [str(spa.id)], f"qty_{spa.id}": "2",
+        })
+        self.assertEqual(resp.status_code, 302)
+        order = ServiceOrder.objects.get(reservation=self.res)
+        self.assertEqual(order.service_name, "Spa")
+        self.assertEqual(order.quantity, 2)
+        self.assertEqual(order.total, Decimal("100"))
+        self.assertFalse(order.paid)
+        # рахунок до сплати перед виселенням
+        self.res.refresh_from_db()
+        self.assertEqual(self.res.extras_due, Decimal("100"))
+        self.assertEqual(self.res.extras_total, Decimal("100"))
+
+        resp = self.client.post(f"/reservations/{self.res.pk}/", {"action": "pay"})
+        self.assertEqual(resp.status_code, 302)
+        order.refresh_from_db()
+        self.assertTrue(order.paid)
+        self.res.refresh_from_db()
+        self.assertEqual(self.res.extras_due, 0)
+
+    def test_checkout_blocked_until_extras_paid(self):
+        ServiceOrder.objects.create(
+            guest=self.guest, reservation=self.res,
+            service_name="Spa", service_price=Decimal("50"), quantity=1,
+        )
+        self.client.login(username="boss", password="pass1234")
+        # несплачені послуги блокують виселення
+        self.client.post("/reservations/", {
+            "action": "status", "reservation_id": self.res.pk, "status": "Checked-Out",
+        })
+        self.res.refresh_from_db()
+        self.assertEqual(self.res.status, "Pending")
+        # оплатили — виселення проходить
+        self.client.post(f"/reservations/{self.res.pk}/", {"action": "pay"})
+        self.client.post("/reservations/", {
+            "action": "status", "reservation_id": self.res.pk, "status": "Checked-Out",
+        })
+        self.res.refresh_from_db()
+        self.assertEqual(self.res.status, "Checked-Out")

@@ -1,5 +1,5 @@
 -- 01_schema.sql — GrandStay Hotel, SQLite DDL (порт JSON-сховища Flet-версії на БД Django)
--- Таблиці відповідають моделям hotel/models.py: Room, Guest, Reservation, ServiceOrder
+-- Таблиці відповідають моделям hotel/models.py: Room, Guest, Reservation, Service, ServiceOrder
 -- + службові таблиці Django auth (User) для реєстрації/логіну (заміна auth.py + users.json)
 
 PRAGMA foreign_keys = ON;
@@ -17,7 +17,23 @@ CREATE TABLE IF NOT EXISTS hotel_room (
     location VARCHAR(120) NOT NULL DEFAULT '',
     capacity INTEGER NOT NULL DEFAULT 2 CHECK (capacity >= 1),
     rating DECIMAL(2, 1) NOT NULL DEFAULT 4.5 CHECK (rating >= 0 AND rating <= 5),
-    photo VARCHAR(200) NOT NULL DEFAULT ''
+    -- шлях у media/ (ImageField, upload_to='rooms/')
+    photo VARCHAR(100) NOT NULL DEFAULT ''
+);
+
+-- Каталог послуг у базі (модель Service): що є в номері + додаткові послуги
+CREATE TABLE IF NOT EXISTS hotel_service (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    price DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (price >= 0)
+);
+
+-- «Що є в цьому номері»: галочки при додаванні номера (Room.services M2M)
+CREATE TABLE IF NOT EXISTS hotel_room_services (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id INTEGER NOT NULL REFERENCES hotel_room(id) ON DELETE CASCADE,
+    service_id INTEGER NOT NULL REFERENCES hotel_service(id) ON DELETE CASCADE,
+    UNIQUE (room_id, service_id)
 );
 
 CREATE TABLE IF NOT EXISTS hotel_guest (
@@ -53,14 +69,19 @@ CREATE INDEX IF NOT EXISTS idx_reservation_dates ON hotel_reservation(check_in, 
 CREATE TABLE IF NOT EXISTS hotel_serviceorder (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     guest_id INTEGER NOT NULL REFERENCES hotel_guest(id) ON DELETE CASCADE,
+    -- до якого бронювання належить послуга (NULL — старі записи)
+    reservation_id INTEGER REFERENCES hotel_reservation(id) ON DELETE CASCADE,
     service_name VARCHAR(50) NOT NULL,
     service_price DECIMAL(10, 2) NOT NULL CHECK (service_price >= 0),
     quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity >= 1),
     total DECIMAL(10, 2) NOT NULL,
     timestamp DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'Pending'
-        CHECK (status IN ('Pending', 'In Progress', 'Completed', 'Cancelled'))
+        CHECK (status IN ('Pending', 'In Progress', 'Completed', 'Cancelled')),
+    -- оплата перед виселенням
+    paid INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_serviceorder_guest ON hotel_serviceorder(guest_id);
+CREATE INDEX IF NOT EXISTS idx_serviceorder_reservation ON hotel_serviceorder(reservation_id);
 CREATE INDEX IF NOT EXISTS idx_serviceorder_status ON hotel_serviceorder(status);

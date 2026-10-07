@@ -179,6 +179,7 @@
 .section-link:hover { text-decoration: underline }
 .found-count { color: var(--l-muted); font-size: 14px }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px }
+.place-svc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px }
 .chip {
   background: var(--l-brand-soft);
   color: var(--l-brand);

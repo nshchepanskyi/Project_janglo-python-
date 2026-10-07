@@ -4,14 +4,26 @@
 <h1>{% tr "Rooms" %}</h1>
 <div class="card">
   <h2>{% tr "Add Room" %}</h2>
-  <form method="post" class="form-row">{% csrf_token %}
+  <form method="post" enctype="multipart/form-data">{% csrf_token %}
     <input type="hidden" name="action" value="add">
-    <input name="number" placeholder="{% tr "Room Number" %}" required>
-    <input name="title" placeholder="{% tr "Title" %}">
-    <input name="location" placeholder="{% tr "Location" %}">
-    <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
-    <input name="capacity" type="number" min="1" max="10" value="2" title="{% tr "Guests" %}">
-    <input name="price" type="number" step="0.01" min="0" placeholder="{% tr "Price" %}" required>
+    <div class="form-row">
+      <input name="number" placeholder="{% tr "Room Number" %}" required>
+      <input name="title" placeholder="{% tr "Title" %}">
+      <input name="location" placeholder="{% tr "Location" %}">
+      <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
+      <input name="capacity" type="number" min="1" max="10" value="2" title="{% tr "Guests" %}">
+      <input name="price" type="number" step="0.01" min="0" placeholder="{% tr "Price" %}" required>
+      <input name="photo" type="file" accept="image/*" title="{% tr "Upload photo" %}">
+    </div>
+    <h3>{% tr "Services in this room" %}</h3>
+    <p class="hint">{% tr "Tick what this room offers — the list appears on the room card." %}</p>
+    <div class="svc-pick">
+      {% for s in catalog %}
+      <label class="svc-item"><input type="checkbox" name="services" value="{{ s.id }}">
+        <span>{% tr s.name %} — ${{ s.price }}</span>
+      </label>
+      {% empty %}<span class="hint">{% tr "No services in the catalog yet" %}</span>{% endfor %}
+    </div>
     <button class="btn primary" type="submit">{% tr "Add Room" %}</button>
   </form>
 </div>
@@ -29,7 +41,9 @@
     <thead><tr><th>{% tr "Room" %}</th><th>{% tr "Title" %}</th><th>{% tr "Type" %}</th><th>{% tr "Price" %}</th><th>{% tr "STATUS" %}</th><th></th></tr></thead>
     <tbody>
     {% for r in rooms %}
-      <tr><td>{{ r.number }}</td><td>{{ r.display_title }}<br><small class="nowrap">{{ r.location }} · ★ {{ r.rating }}</small></td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
+      <tr><td class="nowrap">{% if r.photo %}<img class="room-thumb" src="{{ r.photo.url }}" alt="">{% endif %}{{ r.number }}</td><td>{{ r.display_title }}<br><small class="nowrap">{{ r.location }} · ★ {{ r.rating }}</small>
+        {% if r.services.all %}<div class="room-svc">{% for s in r.services.all %}<span class="mini-chip">{% tr s.name %}</span>{% endfor %}</div>{% endif %}
+      </td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
       <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="room_id" value="{{ r.id }}">

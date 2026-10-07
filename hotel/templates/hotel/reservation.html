@@ -1,0 +1,75 @@
+{% extends "hotel/base.html" %}{% load tr_tags %}
+{% block title %}{% tr "Booking details" %} #{{ res.pk }}{% endblock %}
+{% block content %}
+<h1>{% tr "Booking details" %} #{{ res.pk }} <span class="badge st-{{ res.status|slugify }}">{% tr res.status %}</span></h1>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>{% tr "Stay" %}</h2>
+    <table class="kv">
+      <tr><td>{% tr "Room" %}</td><td><span class="pill">{{ res.room.number }}</span> · {% tr res.room.room_type %}</td></tr>
+      {% if res.room.title %}<tr><td>{% tr "Title" %}</td><td>{{ res.room.title }}</td></tr>{% endif %}
+      <tr><td>{% tr "Guest" %}</td><td>{{ res.guest.name }}</td></tr>
+      <tr><td>{% tr "Check In" %}</td><td>{{ res.check_in|date:"Y-m-d" }}</td></tr>
+      <tr><td>{% tr "Check Out" %}</td><td>{{ res.check_out|date:"Y-m-d" }}</td></tr>
+      <tr><td>{% tr "NIGHTS" %}</td><td>{{ res.nights }}</td></tr>
+      <tr><td>{% tr "Guests" %}</td><td>{{ res.guests }}</td></tr>
+    </table>
+
+    <h3>{% tr "Bill" %}</h3>
+    <table class="kv">
+      <tr><td>${{ res.room.price }} × {{ res.nights }} {% tr "NIGHTS" %}</td><td class="nowrap">${{ res.amount|floatformat:2 }}</td></tr>
+      <tr><td>{% tr "Service fee" %} (12%)</td><td class="nowrap">${{ res.fee|floatformat:2 }}</td></tr>
+      <tr><td>{% tr "Extra services" %}</td><td class="nowrap">${{ extras_total|floatformat:2 }}</td></tr>
+      <tr><td><b>{% tr "Total" %}</b></td><td class="nowrap"><b>${{ grand_total|floatformat:2 }}</b></td></tr>
+    </table>
+    <p><a class="btn ghost" href="{% url 'reservations' %}">← {% tr "Back to reservations" %}</a></p>
+  </div>
+
+  <div class="card">
+    <h2>{% tr "Extra services" %}</h2>
+    <p class="hint">{% tr "Extra services are paid before checkout, like in a real hotel." %}</p>
+    <table>
+      <thead><tr><th>{% tr "Service" %}</th><th>{% tr "Qty" %}</th><th>{% tr "Total" %}</th><th>{% tr "STATUS" %}</th></tr></thead>
+      <tbody>
+      {% for o in orders %}
+        <tr>
+          <td>{% tr o.service_name %}</td>
+          <td>{{ o.quantity }}</td>
+          <td class="nowrap">${{ o.total|floatformat:2 }}</td>
+          <td>{% if o.paid %}<span class="badge st-paid">{% tr "Paid" %}</span>{% else %}<span class="badge st-unpaid">{% tr "Unpaid" %}</span>{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4">—</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    {% if extras_due > 0 %}
+    <p class="due-line">{% tr "To pay before checkout" %}: <b>${{ extras_due|floatformat:2 }}</b></p>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="pay">
+      <button class="btn primary" type="submit">{% tr "Pay before checkout" %} · ${{ extras_due|floatformat:0 }}</button>
+    </form>
+    {% endif %}
+
+    {% if can_order %}
+    <h3>{% tr "Order extra services" %}</h3>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="svc-pick">
+        {% for s in catalog %}
+        <label class="svc-item"><input type="checkbox" name="service" value="{{ s.id }}">
+          <span>{% tr s.name %} — ${{ s.price }}</span>
+          <input class="qty" name="qty_{{ s.id }}" type="number" value="1" min="1">
+        </label>
+        {% empty %}<span class="hint">{% tr "No services in the catalog yet" %}</span>{% endfor %}
+      </div>
+      <button class="btn primary" type="submit">{% tr "Add services" %}</button>
+    </form>
+    {% else %}
+    <p class="hint">{% tr "The stay is already over" %}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

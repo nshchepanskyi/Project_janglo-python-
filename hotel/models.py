@@ -33,7 +33,9 @@ SERVICE_ORDER_STATUSES = [
     ("Cancelled", "Cancelled"),
 ]
 
-# Port of SERVICES_CATALOG from Flet version (hotel_data.py)
+# Початкові дані каталогу послуг (порт SERVICES_CATALOG з Flet hotel_data.py).
+# У базі це таблиця hotel_service (модель Service) — список лише наповнює її
+# під час міграції та слугує довідкою для hotel/sql/02_seed.sql.
 SERVICES_CATALOG = [
     {"name": "Breakfast", "price": Decimal("10")},
     {"name": "Laundry", "price": Decimal("15")},
@@ -63,6 +65,28 @@ def calc_service_fee(subtotal):
     return (subtotal * SERVICE_FEE_RATE).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
 
 
+class Service(models.Model):
+    """
+    Каталог послуг у базі даних (замість жорстко закодованого SERVICES_CATALOG).
+
+    Дві ролі:
+    - при створенні номера адміністратор ставить галочки «що є в цьому номері»
+      (Room.services) — ці послуги показуються на картці та в списку номерів;
+    - під час проживання гість додає додаткові послуги до свого бронювання
+      (ServiceOrder) і оплачує їх перед виселенням.
+    Додавати/редагувати позиції каталогу можна в /admin/ (або міграцією).
+    """
+
+    name = models.CharField(max_length=50, unique=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0"))
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return f"{self.name} (${self.price})"
+
+
 class Room(models.Model):
     number = models.CharField(max_length=10, unique=True)
     room_type = models.CharField(max_length=20, choices=ROOM_TYPES, default="Single")
@@ -70,12 +94,14 @@ class Room(models.Model):
     status = models.CharField(max_length=20, choices=ROOM_STATUSES, default="Available")
 
     # Публічна картка (Фаза 1): назва, локація, місткість, рейтинг, фото.
-    # photo — звичайний шлях; поки порожньо — картка показує плейсхолдер «Фото».
+    # Фото вантажиться у media/rooms/ (FileField); якщо порожньо — плейсхолдер «Фото».
     title = models.CharField(max_length=120, blank=True, default="")
     location = models.CharField(max_length=120, blank=True, default="")
     capacity = models.PositiveIntegerField(default=2)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=Decimal("4.5"))
-    photo = models.CharField(max_length=200, blank=True, default="")
+    photo = models.ImageField(upload_to="rooms/", blank=True)
+    # «Що є в цьому номері» — галочки з каталогу послуг при додаванні номера
+    services = models.ManyToManyField(Service, blank=True, related_name="rooms")
 
     class Meta:
         ordering = ["number"]
@@ -156,15 +182,35 @@ class Reservation(models.Model):
     def total(self):
         return self.amount + self.fee
 
+    @property
+    def extras_total(self):
+        """Додаткові послуги, замовлені під час проживання (без скасованих)."""
+        qs = self.service_orders.exclude(status="Cancelled")
+        return sum((o.total for o in qs), start=Decimal("0"))
+
+    @property
+    def extras_due(self):
+        """Скільки треба сплатити перед виселенням (неоплачені послуги)."""
+        qs = self.service_orders.filter(paid=False).exclude(status="Cancelled")
+        return sum((o.total for o in qs), start=Decimal("0"))
+
 
 class ServiceOrder(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="service_orders")
+    # До якого бронювання належить послуга (для рахунку «перед виселенням»).
+    # NULL — записи, створені до цього поля (зберігаємо історію).
+    reservation = models.ForeignKey(
+        Reservation, null=True, blank=True,
+        on_delete=models.CASCADE, related_name="service_orders",
+    )
     service_name = models.CharField(max_length=50)
     service_price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1)
     total = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=SERVICE_ORDER_STATUSES, default="Pending")
+    # Оплата: гість сплачує додаткові послуги перед виселенням
+    paid = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-timestamp"]

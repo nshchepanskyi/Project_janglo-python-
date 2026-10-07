@@ -6,6 +6,21 @@
 з перевіркою вільності дат, картки з ціною/рейтингом/бейджем, статичні
 сторінки футера (Terms/Privacy/Help).
 
+**Фото та послуги (нове):**
+- **Фото номерів** — `Room.photo` це `ImageField` (`media/rooms/…`), вантажиться
+  формою «Add Room» (`enctype="multipart/form-data"`), показується на публічних
+  картках і в списку номерів (плейсхолдер, якщо фото немає).
+- **Каталог послуг у базі** — модель `Service` (таблиця `hotel_service`,
+  наповнюється міграцією `0004` з `SERVICES_CATALOG`; редагується в `/admin/`).
+  Вкладку Services прибрано з меню.
+- **«Що є в цьому номері»** — галочки з каталогу при додаванні номера
+  (`Room.services`, M2M `hotel_room_services`); чипи на картці та в списку.
+- **Додаткові послуги перед виселенням** — на сторінці бронювання
+  `/reservations/<id>/` гість замовляє послуги (кількість × ціна), бачить рядок
+  «To pay before checkout» і сплачує кнопкою **Pay before checkout**
+  (`ServiceOrder.paid`). Немає несплачених послуг → виселення (Checked-Out)
+  заблоковане повідомленням.
+
 ## Запуск
 
 ```bash
@@ -26,6 +41,7 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 | `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
 | `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
 | `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена) |
+| `/reservations/<id>/` | сторінка бронювання: рахунок + додаткові послуги та оплата |
 
 Правило вільності (`search_rooms` у `models.py`): номер вільний, якщо жодне
 активне бронювання не перетинається з бажаним інтервалом
@@ -37,20 +53,20 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 ```
 config/            # налаштування Django
 hotel/             # застосунок готелю
-  models.py        # Room, Guest, Reservation, ServiceOrder + бізнес-логіка + search_rooms
-  views.py         # dashboard, rooms, reservations, guests, services, auth, lang/theme,
-                   # home/places/page (публічна частина)
+  models.py        # Room, Guest, Reservation, Service, ServiceOrder + бізнес-логіка + search_rooms
+  views.py         # dashboard, rooms, reservations, reservation_detail (додаткові послуги),
+                   # guests, auth, lang/theme, home/places/page (публічна частина)
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
   templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
                    # home, places, _place_card, _search_panel, page,
-                   # dashboard, rooms, reservations, guests, services, login, register
+                   # dashboard, rooms, reservations, reservation, guests, login, register
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
   static/hotel/landing.css  # публічна частина (зелений бренд)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 28 тестів (у т.ч. PublicSiteTests)
+  tests.py         # 34 тести (у т.ч. PublicSiteTests, ServiceExtrasTests)
 ```
 
 ## Відповідність Flet → Django
@@ -64,7 +80,7 @@ hotel/             # застосунок готелю
 | `views/rooms.py` | `views.rooms_view` + `rooms.html` |
 | `views/reservations.py` | `views.reservations_view` + `reservations.html` |
 | `views/guests.py` | `views.guests_view` + `guests.html` |
-| `views/services.py` | `views.services_view` + `services.html` |
+| `views/services.py` (окрема вкладка) | `Service` у БД: галочки в `rooms.html` + замовлення/оплата в `reservation_detail_view` |
 | `views/login.py`, `register.py` | `login_view`, `register_view` |
 | `l10n.py` (EN/UK) | `l10n.py` + сесія `lang` + тег `{% tr %}` |
 | `theme.py` (light/dark) | сесія `theme` + CSS-змінні |
