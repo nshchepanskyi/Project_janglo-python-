@@ -13,7 +13,10 @@
     <input name="confirm" type="password" placeholder="{% tr "Confirm Password" %}" required>
     <button class="btn primary" type="submit">{% tr "Register" %}</button>
   </form>
-  <p><a href="{% url 'login' %}">{% tr "Back to login" %}</a></p>
+  <div class="auth-actions">
+    <a class="btn ghost" href="{% url 'login' %}">{% tr "Back to login" %}</a>
+    <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
+  </div>
 </div>
 </body>
 </html>

@@ -21,7 +21,7 @@
     {% if user.is_authenticated %}
     <div class="nav-foot">
       <span>{{ user.username }}</span>
-      <a href="{% url 'logout' %}">{% tr "Logout" %}</a>
+      <a href="{% url 'logout' %}" class="btn ghost small">{% tr "Logout" %}</a>
     </div>
     {% endif %}
   </aside>

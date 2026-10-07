@@ -11,7 +11,10 @@
     <input name="password" type="password" placeholder="{% tr "Password" %}" required>
     <button class="btn primary" type="submit">{% tr "Login" %}</button>
   </form>
-  <p><a href="{% url 'register' %}">{% tr "Create account" %}</a> · <a href="{% url 'toggle_lang' %}">{{ lang|upper }}</a></p>
+  <div class="auth-actions">
+    <a class="btn primary" href="{% url 'register' %}">{% tr "Create account" %}</a>
+    <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
+  </div>
 </div>
 </body>
 </html>

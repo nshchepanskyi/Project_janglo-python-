@@ -26,10 +26,14 @@ th{text-align:left;color:var(--muted);font-size:12px;padding:8px;border-bottom:1
 td{padding:10px 8px;border-bottom:1px solid var(--border)}
 .pill{background:var(--accent-bg);color:var(--accent);padding:2px 10px;border-radius:8px}
 .badge{background:var(--accent-bg);color:var(--accent);padding:3px 10px;border-radius:20px;font-size:12px}
-.btn{padding:9px 16px;border-radius:8px;border:1px solid var(--border);text-decoration:none;cursor:pointer;font-size:14px;background:var(--surface);color:var(--text)}
+.btn{display:inline-block;padding:9px 16px;border-radius:8px;border:1px solid var(--border);text-decoration:none;cursor:pointer;font-size:14px;background:var(--surface);color:var(--text)}
+.btn.small{padding:6px 12px;font-size:12px}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger)}
 .btn.ghost{background:transparent}
+a.btn:hover{filter:brightness(1.08)}
+.nav-foot .btn{margin-top:4px;text-align:center}
+.auth-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 input,select{padding:9px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text)}

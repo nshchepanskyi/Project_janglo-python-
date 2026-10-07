@@ -9,7 +9,7 @@
 </div>
 
 <div class="card">
-  <div class="card-head"><h2>{% tr "Recent Reservations" %}</h2><a href="{% url 'reservations' %}">{% tr "VIEW ALL RECORDS" %}</a></div>
+  <div class="card-head"><h2>{% tr "Recent Reservations" %}</h2><a class="btn small" href="{% url 'reservations' %}">{% tr "VIEW ALL RECORDS" %}</a></div>
   <table>
     <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
     <tbody>
