@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS hotel_reservation (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     guest_id INTEGER NOT NULL REFERENCES hotel_guest(id) ON DELETE CASCADE,
     room_id INTEGER NOT NULL REFERENCES hotel_room(id) ON DELETE RESTRICT,
+    -- хто створив бронювання: для звичайного користувача — він сам;
+    -- NULL для записів, створених до запровадження ролей (SET NULL)
+    user_id INTEGER REFERENCES auth_user(id) ON DELETE SET NULL,
     check_in DATE NOT NULL,
     check_out DATE NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Pending'
@@ -35,6 +38,7 @@ CREATE TABLE IF NOT EXISTS hotel_reservation (
 
 CREATE INDEX IF NOT EXISTS idx_reservation_guest ON hotel_reservation(guest_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_room ON hotel_reservation(room_id);
+CREATE INDEX IF NOT EXISTS idx_reservation_user ON hotel_reservation(user_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_status ON hotel_reservation(status);
 
 CREATE TABLE IF NOT EXISTS hotel_serviceorder (

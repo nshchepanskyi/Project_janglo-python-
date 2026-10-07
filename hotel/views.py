@@ -1,5 +1,7 @@
 import re
 from datetime import date
+from decimal import Decimal
+from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -30,6 +32,29 @@ def _lang(request):
     return request.session.get("lang", "en")
 
 
+# ---------- roles: admin (staff) vs regular user ----------
+
+def is_admin(user):
+    """Адміністратор = персонал/суперкористувач (керує всім функціоналом)."""
+    return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
+
+
+def home_redirect(user):
+    """Куди відправляти після входу/реєстрації."""
+    return "dashboard" if is_admin(user) else "profile"
+
+
+def admin_required(view_func):
+    """Лише для адміністратора; звичайний користувач потрапляє у профіль."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not is_admin(request.user):
+            messages.error(request, "Access restricted to administrators")
+            return redirect("profile")
+        return view_func(request, *args, **kwargs)
+    return login_required(wrapper)
+
+
 # ---------- auth (port of auth.py: validate_* + register_user + login_user) ----------
 
 def _validate_username(username):
@@ -50,7 +75,7 @@ def _validate_email(email):
 
 def register_view(request):
     if request.user.is_authenticated:
-        return redirect("dashboard")
+        return redirect(home_redirect(request.user))
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         email = request.POST.get("email", "").strip()
@@ -77,7 +102,7 @@ def register_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("dashboard")
+        return redirect(home_redirect(request.user))
     if request.method == "POST":
         login_input = request.POST.get("login", "").strip()
         password = request.POST.get("password", "")
@@ -93,7 +118,7 @@ def login_view(request):
             messages.error(request, "Invalid credentials")
         else:
             login(request, user)
-            return redirect("dashboard")
+            return redirect(home_redirect(user))
     return render(request, "hotel/login.html")
 
 
@@ -104,17 +129,17 @@ def logout_view(request):
 
 def toggle_lang(request):
     request.session["lang"] = "uk" if _lang(request) == "en" else "en"
-    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+    return redirect(request.META.get("HTTP_REFERER") or home_redirect(request.user))
 
 
 def toggle_theme(request):
     request.session["theme"] = "dark" if request.session.get("theme", "light") == "light" else "light"
-    return redirect(request.META.get("HTTP_REFERER", "dashboard"))
+    return redirect(request.META.get("HTTP_REFERER") or home_redirect(request.user))
 
 
 # ---------- dashboard (port of views/dashboard.py) ----------
 
-@login_required
+@admin_required
 def dashboard_view(request):
     total_rev = calc_total_revenue()
     res_rev = calc_reservation_revenue()
@@ -141,7 +166,7 @@ def dashboard_view(request):
 
 # ---------- rooms (port of views/rooms.py) ----------
 
-@login_required
+@admin_required
 def rooms_view(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -189,9 +214,14 @@ COUNTRY_CODES = ["+380", "+1", "+44", "+49", "+33", "+48", "+39", "+34", "+90", 
 
 @login_required
 def reservations_view(request):
+    admin = is_admin(request.user)
     if request.method == "POST":
         action = request.POST.get("action", "create")
         if action == "status":
+            # Змінювати статуси (заселення/виселення) може лише адміністратор
+            if not admin:
+                messages.error(request, "Access restricted to administrators")
+                return redirect("reservations")
             res = get_object_or_404(Reservation, pk=request.POST.get("reservation_id"))
             new_status = request.POST.get("status", res.status)
             res.status = new_status
@@ -231,7 +261,10 @@ def reservations_view(request):
                 messages.error(request, "Reservation failed")
             else:
                 guest = Guest.objects.create(name=name, phone=f"{code}{phone}", email=email)
-                res = Reservation(guest=guest, room=room, check_in=check_in, check_out=check_out)
+                res = Reservation(
+                    guest=guest, room=room, check_in=check_in, check_out=check_out,
+                    user=request.user,
+                )
                 try:
                     res.full_clean()
                     res.save()
@@ -243,18 +276,23 @@ def reservations_view(request):
                     messages.error(request, "Reservation failed")
             return redirect("reservations")
     reservations = Reservation.objects.select_related("guest", "room").all()
+    if not admin:
+        # Звичайний користувач бачить лише власні бронювання
+        reservations = reservations.filter(user=request.user)
     available_rooms = Room.objects.filter(status="Available")
     return render(request, "hotel/reservations.html", {
         "reservations": reservations,
         "available_rooms": available_rooms,
         "country_codes": COUNTRY_CODES,
         "today": date.today().isoformat(),
+        "can_manage": admin,
+        "prefill_email": "" if admin else request.user.email,
     })
 
 
 # ---------- guests (port of views/guests.py) ----------
 
-@login_required
+@admin_required
 def guests_view(request):
     q = request.GET.get("q", "").strip()
     guests = Guest.objects.all()
@@ -265,7 +303,7 @@ def guests_view(request):
 
 # ---------- services (port of views/services.py) ----------
 
-@login_required
+@admin_required
 def services_view(request):
     if request.method == "POST":
         action = request.POST.get("action", "order")
@@ -338,18 +376,34 @@ def profile_view(request):
                     messages.error(request, " ".join(err))
             return redirect("profile")
 
-    stats = {
-        "guests": Guest.objects.count(),
-        "reservations": Reservation.objects.count(),
-        "orders": ServiceOrder.objects.count(),
-        "rooms": Room.objects.count(),
-        "revenue": calc_total_revenue(),
-        "occupancy": get_occupancy_rate(),
-        "checked_in": arrivals_count()["checked_in"],
-    }
-    recent = list(Reservation.objects.select_related("guest", "room").all()[:5])
+    admin = is_admin(user)
+    if admin:
+        # Адміністратор: загальна статистика готелю + всі бронювання
+        stats = {
+            "guests": Guest.objects.count(),
+            "reservations": Reservation.objects.count(),
+            "orders": ServiceOrder.objects.count(),
+            "rooms": Room.objects.count(),
+            "revenue": calc_total_revenue(),
+            "occupancy": get_occupancy_rate(),
+            "checked_in": arrivals_count()["checked_in"],
+        }
+        recent = list(Reservation.objects.select_related("guest", "room").all()[:5])
+    else:
+        # Звичайний користувач: лише його власні дані
+        mine = list(Reservation.objects.filter(user=user).select_related("guest", "room"))
+        my_guests = Guest.objects.filter(reservations__user=user).distinct()
+        stats = {
+            "my_reservations": len(mine),
+            "nights": sum(r.nights for r in mine),
+            "amount": sum((r.amount for r in mine), start=Decimal("0")),
+            "orders": ServiceOrder.objects.filter(guest__in=my_guests).count(),
+            "checked_in": sum(1 for r in mine if r.status == "Checked-In"),
+        }
+        recent = mine[:5]
     return render(request, "hotel/profile.html", {
         "stats": stats,
         "recent": recent,
+        "is_admin": admin,
         "pw_form": PasswordChangeForm(user),
     })

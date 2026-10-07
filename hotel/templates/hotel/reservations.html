@@ -3,13 +3,13 @@
 {% block content %}
 <h1>{% tr "Reservations" %}</h1>
 <div class="card">
-  <h2>{% tr "Create Reservation" %}</h2>
+  <h2>{% if can_manage %}{% tr "Create Reservation" %}{% else %}{% tr "Book a Room" %}{% endif %}</h2>
   <form method="post" class="form-grid">{% csrf_token %}
     <input type="hidden" name="action" value="create">
-    <input name="guest_name" placeholder="{% tr "Guest Name" %}" required>
+    <input name="guest_name" placeholder="{% tr "Guest Name" %}" value="{% if not can_manage %}{{ user.get_full_name|default:user.username }}{% endif %}" required>
     <div class="phone"><select name="country_code">{% for c in country_codes %}<option {% if c == "+380" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
     <input name="phone" placeholder="{% tr "Phone Number" %}"></div>
-    <input name="email" type="email" placeholder="Email" required>
+    <input name="email" type="email" placeholder="Email" value="{{ prefill_email }}" required>
     <select name="room_number" required><option value="">{% tr "Available Rooms" %}</option>{% for r in available_rooms %}<option value="{{ r.number }}">{{ r.number }} — {% tr r.room_type %} (${{ r.price }})</option>{% endfor %}</select>
     <input name="check_in" type="date" value="{{ today }}" required>
     <input name="check_out" type="date" required>
@@ -19,16 +19,19 @@
 <div class="card">
   <h2>{% tr "Reservation List" %}</h2>
   <table>
-    <thead><tr><th>{% tr "Reservation" %}</th><th>{% tr "Guest" %}</th><th>{% tr "Room" %}</th><th>{% tr "STATUS" %}</th><th></th></tr></thead>
+    <thead><tr><th>{% tr "Reservation" %}</th><th>{% tr "Guest" %}</th><th>{% tr "Room" %}</th><th>{% tr "STATUS" %}</th>{% if can_manage %}<th></th>{% endif %}</tr></thead>
     <tbody>
     {% for r in reservations %}
       <tr><td>#{{ r.id }}</td><td>{{ r.guest.name }}<br><small class="nowrap">{{ r.check_in|date:"Y-m-d" }} → {{ r.check_out|date:"Y-m-d" }}</small></td><td>{{ r.room.number }}</td>
       <td><span class="badge">{% tr r.status %}</span></td>
+      {% if can_manage %}
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="reservation_id" value="{{ r.id }}">
         <select name="status"><option value="Pending" {% if r.status == "Pending" %}selected{% endif %}>{% tr "Pending" %}</option><option value="Checked-In" {% if r.status == "Checked-In" %}selected{% endif %}>{% tr "Checked-In" %}</option><option value="Checked-Out" {% if r.status == "Checked-Out" %}selected{% endif %}>{% tr "Checked-Out" %}</option></select>
         <button class="btn ghost" type="submit">{% tr "Save" %}</button>
-      </form></td></tr>
+      </form></td>
+      {% endif %}
+      </tr>
     {% empty %}<tr><td colspan="5">{% tr "No reservations yet" %}</td></tr>{% endfor %}
     </tbody>
   </table>

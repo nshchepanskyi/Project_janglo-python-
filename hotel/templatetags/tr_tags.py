@@ -13,6 +13,6 @@ def tr(context, key, **kwargs):
     prev = l10n.CURRENT_LANG
     l10n.CURRENT_LANG = lang
     try:
-        return l10n.tr(key, **kwargs)
+        return l10n.tr(str(key), **kwargs)
     finally:
         l10n.CURRENT_LANG = prev

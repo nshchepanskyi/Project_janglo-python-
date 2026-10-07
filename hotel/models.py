@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Count, Sum
@@ -84,6 +85,16 @@ class Guest(models.Model):
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="reservations")
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="reservations")
+    # Хто створив бронювання: для звичайного користувача — він сам
+    # (його записи видно лише в його профілі); NULL для записів, створених
+    # до запровадження ролей. Адмін бачить усі записи незалежно від поля.
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reservations",
+    )
     check_in = models.DateField()
     check_out = models.DateField()
     status = models.CharField(max_length=20, choices=RESERVATION_STATUSES, default="Pending")

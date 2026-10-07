@@ -167,6 +167,7 @@ TRANSLATIONS = {
         "Role": "Роль",
         "Administrator": "Адміністратор",
         "User": "Користувач",
+        "Admin": "Адмін",
         "Member since": "Дата реєстрації",
         "Last login": "Останній вхід",
         "Language": "Мова",
@@ -182,6 +183,15 @@ TRANSLATIONS = {
         "CHECKED-IN": "ЗАСЕЛЕНІ",
         "Profile updated": "Профіль оновлено",
         "Password changed": "Пароль змінено",
+
+        "Guest Portal": "Кабінет гостя",
+        "My Reservations": "Мої бронювання",
+        "MY RESERVATIONS": "МОЇ БРОНЮВАННЯ",
+        "NIGHTS": "НОЧІ",
+        "SPENT": "ВИТРАЧЕНО",
+        "CHECK OUT": "ВИЇЗД",
+        "Book a Room": "Забронювати номер",
+        "Access restricted to administrators": "Доступ лише для адміністраторів",
     },
 }
 

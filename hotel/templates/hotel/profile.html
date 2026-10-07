@@ -35,6 +35,7 @@
 
   <div class="card">
     <h2>{% tr "My Statistics" %}</h2>
+    {% if is_admin %}
     <div class="kpi-row two">
       <div class="card kpi mini"><div class="kpi-label">{% tr "GUESTS" %}</div><div class="kpi-value">{{ stats.guests }}</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "RESERVATIONS" %}</div><div class="kpi-value">{{ stats.reservations }}</div></div>
@@ -55,6 +56,35 @@
       {% endfor %}
       </tbody>
     </table>
+    {% else %}
+    <div class="kpi-row two">
+      <div class="card kpi mini"><div class="kpi-label">{% tr "MY RESERVATIONS" %}</div><div class="kpi-value">{{ stats.my_reservations }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "NIGHTS" %}</div><div class="kpi-value">{{ stats.nights }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "SPENT" %}</div><div class="kpi-value">${{ stats.amount|floatformat:0 }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
+    </div>
+
+    <h3>{% tr "My Reservations" %}</h3>
+    <table>
+      <thead><tr><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "CHECK OUT" %}</th><th>{% tr "NIGHTS" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
+      <tbody>
+      {% for r in recent %}
+        <tr>
+          <td><span class="pill">{{ r.room.number }}</span> · {% tr r.room.room_type %}</td>
+          <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td>
+          <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}</td>
+          <td>{{ r.nights }}</td>
+          <td><span class="badge">{% tr r.status %}</span></td>
+          <td>${{ r.amount }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">{% tr "No reservations yet" %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p><a class="btn primary" href="{% url 'reservations' %}">{% tr "Book a Room" %}</a></p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}
