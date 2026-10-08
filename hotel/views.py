@@ -240,7 +240,7 @@ def home_view(request):
     location, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
     if error:
         messages.error(request, error)
-    rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services")[:6])
+    rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services"))
     _annotate_cards(rooms, d_in, d_out)
     return render(request, "hotel/home.html", {
         "rooms": rooms,
