@@ -532,7 +532,7 @@
 }
 
 .cal-pop {
-  position: absolute;
+  position: fixed;
   z-index: 60;
   min-width: 290px;
   padding: 12px;

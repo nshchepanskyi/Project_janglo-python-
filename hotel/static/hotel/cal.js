@@ -98,7 +98,11 @@
     pop.hidden = true;
     pop.setAttribute("role", "dialog");
     pop.setAttribute("aria-label", STR.choose);
-    form.appendChild(pop);
+    /* Попап живе в <body>, а не в формі: картка отримує transform на
+       :hover (translateY), через що стає stacking context — і тоді
+       z-index випадайки «замикався» в межах картки, а сусідня картка
+       «Список бронювань» (пізніший sibling) малювала поверх календаря. */
+    document.body.appendChild(pop);
 
     var triggers = inputs.map(function (inp) {
       var btn = document.createElement("button");
@@ -233,18 +237,20 @@
       if (clear) clear.disabled = !s && !e;
     }
 
+    /* fixed + координати вікна: попап поза всіма картками/контейнерами,
+       його ніщо не обрізає і не перекриває. На мобільному лишаємо
+       нижній шит із медіа-запиту (прибираємо інлайн-координати). */
     function position(btn) {
+      if (!btn) return;
       if (window.innerWidth <= 560) { pop.style.top = ""; pop.style.left = ""; return; }
-      var fr = form.getBoundingClientRect();
       var br = btn.getBoundingClientRect();
       var w = pop.offsetWidth, h = pop.offsetHeight;
-      var top = br.bottom - fr.top + 8;
-      if (br.bottom + h + 16 > window.innerHeight && br.top - h - 8 > fr.top) {
-        top = br.top - fr.top - h - 8;
+      var top = br.bottom + 8;
+      if (br.bottom + h + 16 > window.innerHeight && br.top - h - 8 > 0) {
+        top = br.top - h - 8;
       }
-      var left = br.left - fr.left;
-      var max = form.clientWidth - w - 6;
-      if (left > max) left = max;
+      var left = br.left;
+      if (left + w > window.innerWidth - 6) left = window.innerWidth - w - 6;
       if (left < 6) left = 6;
       pop.style.top = top + "px";
       pop.style.left = left + "px";
@@ -301,9 +307,13 @@
       if (st.hover) { st.hover = null; paint(); }
     });
 
+    /* fixed-випадайку треба «приклеювати» до кнопки і при скролі */
     window.addEventListener("resize", function () {
       if (openPop === pop && !pop.hidden) position(openTrigger);
     });
+    document.addEventListener("scroll", function () {
+      if (openPop === pop && !pop.hidden) position(openTrigger);
+    }, true);
 
     /* обов'язкові дати: підсвітимо кнопку, якщо користувач не обрав */
     form.addEventListener("submit", function (ev) {
