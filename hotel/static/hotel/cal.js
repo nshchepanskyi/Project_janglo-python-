@@ -273,9 +273,12 @@
           commit();
           render();
         } else {
+          // «Сьогодні»: обираємо сьогоднішню дату (як нативний пікер),
+          // і стрибаємо на поточний місяць, щоб вибір було видно.
+          // pick() сам вирішує: це заїзд чи виїзд (див. гілки вище).
           st.vy = TODAY.getFullYear();
           st.vm = TODAY.getMonth();
-          render();
+          pick(new Date(TODAY.getTime()));
         }
         return;
       }
