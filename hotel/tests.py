@@ -695,3 +695,31 @@ class CurrencyLocalizationTests(TestCase):
         self.assertContains(resp, "₴6,225.00")   # картка номера
         resp = self.client.get("/")
         self.assertContains(resp, "₴6,225.00")   # рекомендовані на головній
+
+
+class CalendarWiringTests(TestCase):
+    """Красивий діапазонний календар (cal.js) підключений до всіх форм із датами."""
+
+    def test_cal_js_is_bundled(self):
+        from django.contrib.staticfiles import finders
+        self.assertIsNotNone(finders.find("hotel/cal.js"))
+
+    def test_home_search_uses_custom_calendar(self):
+        resp = self.client.get("/")
+        self.assertContains(resp, "hotel/cal.js")
+        self.assertContains(resp, 'class="js-cal"')
+        self.assertContains(resp, 'name="check_in"')
+        self.assertContains(resp, 'name="check_out"')
+
+    def test_place_page_uses_custom_calendar(self):
+        Room.objects.create(number="905", room_type="Single", price=Decimal("50"),
+                            title="Cal Test", location="Kyiv, Ukraine")
+        resp = self.client.get("/places/905/")
+        self.assertContains(resp, 'class="js-cal"')
+
+    def test_reservations_form_uses_custom_calendar(self):
+        User.objects.create_user("caluser", "caluser@test.com", "secret123")
+        self.client.login(username="caluser", password="secret123")
+        resp = self.client.get("/reservations/")
+        self.assertContains(resp, 'class="js-cal"')
+        self.assertContains(resp, 'class="js-cal" required')  # обов'язковість переїжджає на кнопку

@@ -11,8 +11,8 @@
     <input name="phone" placeholder="{% tr "Phone Number" %}"></div>
     <input name="email" type="email" placeholder="{% tr "Email" %}" value="{{ prefill_email }}" required>
     <select name="room_number" required><option value="">{% tr "Available Rooms" %}</option>{% for r in available_rooms %}<option value="{{ r.number }}" {% if prefill_room == r.number %}selected{% endif %}>{{ r.number }} — {% tr r.room_type %} ({% money r.price %})</option>{% endfor %}</select>
-    <input name="check_in" type="date" value="{{ prefill_check_in|default:today }}" required>
-    <input name="check_out" type="date" value="{{ prefill_check_out }}" required>
+    <input name="check_in" type="date" value="{{ prefill_check_in|default:today }}" class="js-cal" required>
+    <input name="check_out" type="date" value="{{ prefill_check_out }}" class="js-cal" required>
     <button class="btn primary" type="submit">{% tr "Create" %}</button>
   </form>
 </div>

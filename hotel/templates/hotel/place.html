@@ -37,10 +37,10 @@
     <h2>{% tr "Check availability" %}</h2>
     <form method="get" class="pd-form">
       <label>{% tr "Check In" %}
-        <input type="date" name="check_in" value="{{ search.check_in }}">
+        <input type="date" name="check_in" value="{{ search.check_in }}" class="js-cal">
       </label>
       <label>{% tr "Check Out" %}
-        <input type="date" name="check_out" value="{{ search.check_out }}">
+        <input type="date" name="check_out" value="{{ search.check_out }}" class="js-cal">
       </label>
       <label>{% tr "Guests" %}
         <input type="number" name="guests" min="1" max="{{ room.capacity }}" value="{{ search.guests|default:'1' }}">
