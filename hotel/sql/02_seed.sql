@@ -3,12 +3,13 @@
 -- + дані публічних карток (Фаза 1): назва, локація, місткість, рейтинг
 -- + каталог послуг у БД (модель Service) і «що є в кожному номері» (hotel_room_services)
 
-INSERT OR IGNORE INTO hotel_room (number, room_type, price, status, title, location, capacity, rating) VALUES
-    ('101', 'Single', 50, 'Available', 'Cozy Single with City View', 'Kyiv, Ukraine', 1, 4.6),
-    ('102', 'Single', 50, 'Available', 'Bright Single Room', 'Kyiv, Ukraine', 1, 4.5),
-    ('201', 'Double', 80, 'Available', 'Deluxe Double with Balcony', 'Kyiv, Ukraine', 2, 4.8),
-    ('202', 'Double', 80, 'Available', 'Comfort Double Room', 'Kyiv, Ukraine', 2, 4.7),
-    ('301', 'Suite', 150, 'Available', 'GrandStay Suite', 'Lviv, Ukraine', 3, 4.9);
+-- photo: колонка NOT NULL (додана у 0003) — без неї INSERT мовчки кидається OR IGNORE
+INSERT OR IGNORE INTO hotel_room (number, room_type, price, status, title, location, capacity, rating, photo) VALUES
+    ('101', 'Single', 50, 'Available', 'Cozy Single with City View', 'Kyiv, Ukraine', 1, 4.6, ''),
+    ('102', 'Single', 50, 'Available', 'Bright Single Room', 'Kyiv, Ukraine', 1, 4.5, ''),
+    ('201', 'Double', 80, 'Available', 'Deluxe Double with Balcony', 'Kyiv, Ukraine', 2, 4.8, ''),
+    ('202', 'Double', 80, 'Available', 'Comfort Double Room', 'Kyiv, Ukraine', 2, 4.7, ''),
+    ('301', 'Suite', 150, 'Available', 'GrandStay Suite', 'Lviv, Ukraine', 3, 4.9, '');
 
 -- Каталог послуг (ціни відповідають SERVICES_CATALOG у models.py):
 INSERT OR IGNORE INTO hotel_service (name, price) VALUES

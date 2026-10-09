@@ -49,7 +49,7 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 - **Валюта залежить від мови:** EN → **доларі `$`**, UA → **гривні `₴`**
   (конвертація `USD × USD_TO_UAH`, курс — у `hotel/currency.py`).
   У базі ціни зберігаються в USD, показуються через тег `{% money value N %}:
-  `{% money res.amount 2 %}` → `$504.00` / `₴20,916.00`.
+  `{% money res.amount 2 %}` → `$504.00` / `₴22,569.12`.
 - Курс: зміни `USD_TO_UAH` у `hotel/currency.py`, якщо потрібен інший.
 
 ## Публічна частина (Фази 1–2)
@@ -101,7 +101,9 @@ hotel/             # застосунок готелю
   static/hotel/landing.css  # публічна частина (зелений бренд)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 40 тестів (у т.ч. PublicSiteTests, ServiceExtrasTests, PlaceDetailTests)
+  tests.py         # 61 тест (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
+                   # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
+                   # CalendarWiringTests, RoleAccessTests тощо)
 ```
 
 ## Відповідність Flet → Django
