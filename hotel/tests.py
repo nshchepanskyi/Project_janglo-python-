@@ -663,8 +663,8 @@ class CurrencyLocalizationTests(TestCase):
         from .currency import money_str
         self.assertEqual(money_str("504", "en", 2), "$504.00")
         self.assertEqual(money_str("504", "en", 0), "$504")
-        self.assertEqual(money_str("100", "uk", 0), "₴4,150")  # 100 × 41.5
-        self.assertEqual(money_str("150", "uk", 2), "₴6,225.00")
+        self.assertEqual(money_str("100", "uk", 0), "₴4,478")  # 100 × 44.78
+        self.assertEqual(money_str("150", "uk", 2), "₴6,717.00")
         self.assertEqual(money_str(None, "en", 2), "$0.00")
         self.assertEqual(money_str("bad", "en", 2), "$0.00")
 
@@ -684,17 +684,17 @@ class CurrencyLocalizationTests(TestCase):
             "check_in": "2027-01-10", "check_out": "2027-01-13",
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "₴6,225.00")   # 150 × 41.5
-        self.assertContains(resp, "₴18,675.00")  # 450 × 41.5
-        self.assertContains(resp, "₴20,916.00")  # 504 × 41.5
+        self.assertContains(resp, "₴6,717.00")    # 150 × 44.78
+        self.assertContains(resp, "₴20,151.00")   # 450 × 44.78
+        self.assertContains(resp, "₴22,569.12")   # 504 × 44.78
         self.assertNotContains(resp, "$150.00")
 
     def test_ukrainian_catalog_and_card_prices(self):
         self.client.get("/lang/")
         resp = self.client.get("/places/")
-        self.assertContains(resp, "₴6,225.00")   # картка номера
+        self.assertContains(resp, "₴6,717.00")   # картка номера
         resp = self.client.get("/")
-        self.assertContains(resp, "₴6,225.00")   # рекомендовані на головній
+        self.assertContains(resp, "₴6,717.00")   # рекомендовані на головній
 
 
 class CalendarWiringTests(TestCase):
