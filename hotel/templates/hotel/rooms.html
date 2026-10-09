@@ -21,7 +21,7 @@
     <div class="svc-pick">
       {% for s in catalog %}
       <label class="svc-item"><input type="checkbox" name="services" value="{{ s.id }}">
-        <span>{% tr s.name %} — ${{ s.price }}</span>
+        <span>{% tr s.name %} — {% money s.price %}</span>
       </label>
       {% empty %}<span class="hint">{% tr "No services in the catalog yet" %}</span>{% endfor %}
     </div>
@@ -44,7 +44,7 @@
     {% for r in rooms %}
       <tr><td class="nowrap">{% if r.photo %}<img class="room-thumb" src="{{ r.photo.url }}" alt="">{% endif %}{{ r.number }}</td><td>{{ r.display_title }}<br><small class="nowrap">{{ r.location }} · ★ {{ r.rating }}</small>
         {% if r.services.all %}<div class="room-svc">{% for s in r.services.all %}<span class="mini-chip">{% tr s.name %}</span>{% endfor %}</div>{% endif %}
-      </td><td>{% tr r.room_type %}</td><td class="nowrap">${{ r.price }}</td>
+      </td><td>{% tr r.room_type %}</td><td class="nowrap">{% money r.price %}</td>
       <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
       <td><form method="post" class="inline">{% csrf_token %}
         <input type="hidden" name="action" value="status"><input type="hidden" name="room_id" value="{{ r.id }}">

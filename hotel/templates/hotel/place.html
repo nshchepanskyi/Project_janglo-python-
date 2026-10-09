@@ -58,18 +58,18 @@
 
     <div class="pd-check">
       {% if nights %}
-      <div class="pd-row"><span>${{ room.price|floatformat:2 }} × {{ nights }} {% tr "NIGHTS" %}</span><b>${{ subtotal|floatformat:2 }}</b></div>
-      <div class="pd-row"><span>{% tr "Service fee" %} (12%)</span><b>${{ fee|floatformat:2 }}</b></div>
-      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>${{ total|floatformat:2 }}</b></div>
+      <div class="pd-row"><span>{% money room.price 2 %} × {{ nights }} {% tr "NIGHTS" %}</span><b>{% money subtotal 2 %}</b></div>
+      <div class="pd-row"><span>{% tr "Service fee" %} (12%)</span><b>{% money fee 2 %}</b></div>
+      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>{% money total 2 %}</b></div>
       {% else %}
       <p class="hint">{% tr "Choose dates to see the total" %}</p>
-      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>${{ room.price|floatformat:2 }} <small>{% tr "per night" %}</small></b></div>
+      <div class="pd-row pd-total"><span>{% tr "Total" %}</span><b>{% money room.price 2 %} <small>{% tr "per night" %}</small></b></div>
       {% endif %}
     </div>
 
     {% if can_book %}
     <a class="btn primary big" href="{% url 'reservations' %}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}">
-      {% tr "Book" %}{% if nights %} · ${{ total|floatformat:0 }}{% endif %}
+      {% tr "Book" %}{% if nights %} · {% money total 0 %}{% endif %}
     </a>
     <p class="hint pd-hint">{% tr "You will confirm the booking on the next step" %}</p>
     {% endif %}

@@ -39,6 +39,22 @@ def _lang(request):
     return request.session.get("lang", "en")
 
 
+def _msg(request, key, **kwargs):
+    """Перекладає повідомлення з плейсхолдерами за мовою сесії.
+
+    Шаблони показують повідомлення через {% tr m %}, але ключ на кшталт
+    «Room {number} added» не збігається з уже відформатованим рядком —
+    тому такі повідомлення перекладаємо тут, одразу з параметрами.
+    """
+    from . import l10n
+    prev = l10n.CURRENT_LANG
+    l10n.CURRENT_LANG = request.session.get("lang", "en")
+    try:
+        return l10n.tr(key, **kwargs)
+    finally:
+        l10n.CURRENT_LANG = prev
+
+
 # ---------- roles: admin (staff) vs regular user ----------
 
 def is_admin(user):
@@ -397,7 +413,7 @@ def rooms_view(request):
             if not number:
                 messages.error(request, "Enter a room number")
             elif Room.objects.filter(number=number).exists():
-                messages.error(request, f"Room {number} already exists")
+                messages.error(request, _msg(request, "Room {number} already exists", number=number))
             else:
                 room = Room.objects.create(
                     number=number, room_type=room_type, price=price,
@@ -406,7 +422,7 @@ def rooms_view(request):
                 )
                 if service_ids:
                     room.services.set(Service.objects.filter(pk__in=service_ids))
-                messages.success(request, f"Room {number} added")
+                messages.success(request, _msg(request, "Room {number} added", number=number))
             return redirect("rooms")
         if action == "delete":
             number = request.POST.get("number", "").strip()
@@ -415,12 +431,13 @@ def rooms_view(request):
                 return redirect("rooms")
             room = Room.objects.filter(number=number).first()
             if not room:
-                messages.error(request, f"Room {number} not found")
+                messages.error(request, _msg(request, "Room {number} not found", number=number))
             elif Reservation.objects.filter(room=room).exists() or room.status != "Available":
-                messages.error(request, f"Cannot delete room {number} — it has active reservations")
+                messages.error(request, _msg(
+                    request, "Cannot delete room {number} — it has active reservations", number=number))
             else:
                 room.delete()
-                messages.success(request, f"Room {number} deleted")
+                messages.success(request, _msg(request, "Room {number} deleted", number=number))
             return redirect("rooms")
         if action == "status":
             room = get_object_or_404(Room, pk=request.POST.get("room_id"))
@@ -476,7 +493,7 @@ def reservations_view(request):
                 ).exists()
                 res.room.status = "Occupied" if still_booked else "Available"
                 res.room.save()
-            messages.success(request, f"Reservation {res.pk} updated")
+            messages.success(request, _msg(request, "Reservation {pk} updated", pk=res.pk))
             return redirect("reservations")
         # create
         name = request.POST.get("guest_name", "").strip()
@@ -599,7 +616,7 @@ def reservation_detail_view(request, pk):
                     if qty < 1:
                         raise ValueError
                 except ValueError:
-                    messages.error(request, f"Invalid quantity for {svc.name}")
+                    messages.error(request, _msg(request, "Invalid quantity for {name}", name=svc.name))
                     return redirect("reservation_detail", pk=res.pk)
                 ServiceOrder.objects.create(
                     guest=res.guest, reservation=res,

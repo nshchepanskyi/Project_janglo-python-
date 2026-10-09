@@ -8,18 +8,18 @@
     <h2>{% tr "My Account" %}</h2>
     <table class="kv">
       <tr><td>{% tr "Username" %}</td><td>{{ user.username }}</td></tr>
-      <tr><td>Email</td><td>{{ user.email|default:"—" }}</td></tr>
+      <tr><td>{% tr "Email" %}</td><td>{{ user.email|default:"—" }}</td></tr>
       <tr><td>{% tr "Role" %}</td><td>{% if user.is_superuser %}{% tr "Administrator" %}{% else %}{% tr "User" %}{% endif %}</td></tr>
       <tr><td>{% tr "Member since" %}</td><td>{{ user.date_joined|date:"Y-m-d" }}</td></tr>
       <tr><td>{% tr "Last login" %}</td><td>{{ user.last_login|date:"Y-m-d H:i" }}</td></tr>
       <tr><td>{% tr "Language" %}</td><td>{{ lang|upper }}</td></tr>
-      <tr><td>{% tr "Theme" %}</td><td>{{ theme|title }}</td></tr>
+      <tr><td>{% tr "Theme" %}</td><td>{% if theme == "light" %}{% tr "Light" %}{% else %}{% tr "Dark" %}{% endif %}</td></tr>
     </table>
 
     <h3>{% tr "Update Email" %}</h3>
     <form method="post" class="form-row">{% csrf_token %}
       <input type="hidden" name="action" value="email">
-      <input name="email" type="email" value="{{ user.email }}" placeholder="Email">
+      <input name="email" type="email" value="{{ user.email }}" placeholder="{% tr "Email" %}">
       <button class="btn primary" type="submit">{% tr "Save" %}</button>
     </form>
 
@@ -42,7 +42,7 @@
       <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ stats.occupancy }}%</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">${{ stats.revenue|floatformat:0 }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">{% money stats.revenue 0 %}</div></div>
     </div>
 
     <h3>{% tr "Recent Reservations" %}</h3>
@@ -60,7 +60,7 @@
     <div class="kpi-row two">
       <div class="card kpi mini"><div class="kpi-label">{% tr "MY RESERVATIONS" %}</div><div class="kpi-value">{{ stats.my_reservations }}</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "NIGHTS" %}</div><div class="kpi-value">{{ stats.nights }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "SPENT" %}</div><div class="kpi-value">${{ stats.amount|floatformat:0 }}</div></div>
+      <div class="card kpi mini"><div class="kpi-label">{% tr "SPENT" %}</div><div class="kpi-value">{% money stats.amount 0 %}</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
       <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
     </div>
@@ -76,7 +76,7 @@
           <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}</td>
           <td>{{ r.nights }}</td>
           <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
-          <td>${{ r.amount }}</td>
+          <td>{% money r.amount %}</td>
           <td><a class="btn ghost small" href="{% url 'reservation_detail' r.id %}">{% tr "Details" %}</a></td>
         </tr>
       {% empty %}

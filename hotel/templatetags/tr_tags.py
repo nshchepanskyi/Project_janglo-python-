@@ -1,7 +1,21 @@
 from django import template
 from hotel import l10n
+from hotel.currency import money_str
 
 register = template.Library()
+
+
+@register.simple_tag(takes_context=True)
+def money(context, value, decimals=2):
+    """Гроші за мовою сесії: $504.00 (en) / ₴20,916.00 (uk, конвертовано).
+
+    Приклад: {% money res.amount 2 %}
+    """
+    request = context.get("request")
+    lang = "en"
+    if request is not None:
+        lang = request.session.get("lang", "en")
+    return money_str(value, lang, decimals)
 
 
 @register.simple_tag(takes_context=True)

@@ -41,6 +41,17 @@ py manage.py runserver
 Відкрити: http://127.0.0.1:8000/ (публічна головна),
 http://127.0.0.1:8000/dashboard/ (редірект на логін).
 
+## Локалізація та валюта
+
+- **Мова** перемикається кнопкою **EN/UA** у шапці (`/lang/`, сесія `lang`).
+  Увесь текст (шаблони, повідомлення, помилки форм) іде через словник
+  `hotel/l10n.py` (тег `{% tr %}` / функція `tr()`).
+- **Валюта залежить від мови:** EN → **доларі `$`**, UA → **гривні `₴`**
+  (конвертація `USD × USD_TO_UAH`, курс — у `hotel/currency.py`).
+  У базі ціни зберігаються в USD, показуються через тег `{% money value N %}:
+  `{% money res.amount 2 %}` → `$504.00` / `₴20,916.00`.
+- Курс: зміни `USD_TO_UAH` у `hotel/currency.py`, якщо потрібен інший.
+
 ## Публічна частина (Фази 1–2)
 
 | URL | Що це |
@@ -73,6 +84,7 @@ hotel/             # застосунок готелю
                    # guests, auth, lang/theme, home/places/place_detail/page (публічна частина)
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
+  currency.py      # валюта: en → $, uk → ₴ (USD_TO_UAH)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
   templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
                    # home, places, place, _place_card, _search_panel, page,

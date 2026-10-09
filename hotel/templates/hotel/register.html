@@ -8,7 +8,7 @@
   {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}{% endif %}
   <form method="post">{% csrf_token %}
     <input name="username" placeholder="{% tr "Username" %}" required>
-    <input name="email" type="email" placeholder="Email" required>
+    <input name="email" type="email" placeholder="{% tr "Email" %}" required>
     <input name="password" type="password" placeholder="{% tr "Password" %}" required>
     <input name="confirm" type="password" placeholder="{% tr "Confirm Password" %}" required>
     <button class="btn primary" type="submit">{% tr "Register" %}</button>

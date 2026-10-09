@@ -48,7 +48,6 @@ TRANSLATIONS = {
         "{occupied} of {total} rooms occupied": "{occupied} з {total} номерів зайнято",
         "+2 Ready for cleaning": "+2 Готові до прибирання",
         "{count} Checked-in so far": "{count} заселилися",
-        "Rooms ${res_rev:,.0f}  ·  Services ${svc_rev:,.0f}": "Номери ${res_rev:,.0f}  ·  Послуги ${svc_rev:,.0f}",
 
         "Recent Reservations": "Останні бронювання",
         "VIEW ALL RECORDS": "ПЕРЕГЛЯНУТИ ВСІ",
@@ -93,6 +92,10 @@ TRANSLATIONS = {
         "Enter a room number": "Введіть номер кімнати",
         "Room {number} not found": "Номер {number} не знайдено",
         "Room {number} deleted": "Номер {number} видалено",
+        "Room {number} already exists": "Номер {number} вже існує",
+        "Room {number} added": "Номер {number} додано",
+        "Invalid price": "Некоректна ціна",
+        "Reservation {pk} updated": "Бронювання {pk} оновлено",
         "Cannot delete room {number} — it has active reservations": "Не можна видалити номер {number} — є активні бронювання",
 
         "Create Reservation": "Створити бронювання",
@@ -111,6 +114,8 @@ TRANSLATIONS = {
         "Select check in date": "Виберіть дату заїзду",
         "Select check out date": "Виберіть дату виїзду",
         "Check out must be later": "Виїзд має бути пізніше заїзду",
+        "Check out must be later than check in": "Виїзд має бути пізніше заїзду",
+        "This room is already booked for the selected dates": "Цей номер уже заброньовано на обрані дати",
         "Reservation created": "Бронювання створено",
         "Reservation failed": "Помилка бронювання",
 
@@ -172,6 +177,8 @@ TRANSLATIONS = {
         "Last login": "Останній вхід",
         "Language": "Мова",
         "Theme": "Тема",
+        "Light": "Світла",
+        "Dark": "Темна",
         "Update Email": "Оновити Email",
         "Change Password": "Змінити пароль",
         "Current Password": "Поточний пароль",

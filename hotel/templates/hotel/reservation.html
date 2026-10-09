@@ -18,10 +18,10 @@
 
     <h3>{% tr "Bill" %}</h3>
     <table class="kv">
-      <tr><td>${{ res.room.price }} × {{ res.nights }} {% tr "NIGHTS" %}</td><td class="nowrap">${{ res.amount|floatformat:2 }}</td></tr>
-      <tr><td>{% tr "Service fee" %} (12%)</td><td class="nowrap">${{ res.fee|floatformat:2 }}</td></tr>
-      <tr><td>{% tr "Extra services" %}</td><td class="nowrap">${{ extras_total|floatformat:2 }}</td></tr>
-      <tr><td><b>{% tr "Total" %}</b></td><td class="nowrap"><b>${{ grand_total|floatformat:2 }}</b></td></tr>
+      <tr><td>{% money res.room.price %} × {{ res.nights }} {% tr "NIGHTS" %}</td><td class="nowrap">{% money res.amount 2 %}</td></tr>
+      <tr><td>{% tr "Service fee" %} (12%)</td><td class="nowrap">{% money res.fee 2 %}</td></tr>
+      <tr><td>{% tr "Extra services" %}</td><td class="nowrap">{% money extras_total 2 %}</td></tr>
+      <tr><td><b>{% tr "Total" %}</b></td><td class="nowrap"><b>{% money grand_total 2 %}</b></td></tr>
     </table>
     <p><a class="btn ghost" href="{% url 'reservations' %}">← {% tr "Back to reservations" %}</a></p>
   </div>
@@ -36,7 +36,7 @@
         <tr>
           <td>{% tr o.service_name %}</td>
           <td>{{ o.quantity }}</td>
-          <td class="nowrap">${{ o.total|floatformat:2 }}</td>
+          <td class="nowrap">{% money o.total 2 %}</td>
           <td>{% if o.paid %}<span class="badge st-paid">{% tr "Paid" %}</span>{% else %}<span class="badge st-unpaid">{% tr "Unpaid" %}</span>{% endif %}</td>
         </tr>
       {% empty %}
@@ -46,10 +46,10 @@
     </table>
 
     {% if extras_due > 0 %}
-    <p class="due-line">{% tr "To pay before checkout" %}: <b>${{ extras_due|floatformat:2 }}</b></p>
+    <p class="due-line">{% tr "To pay before checkout" %}: <b>{% money extras_due 2 %}</b></p>
     <form method="post">{% csrf_token %}
       <input type="hidden" name="action" value="pay">
-      <button class="btn primary" type="submit">{% tr "Pay before checkout" %} · ${{ extras_due|floatformat:0 }}</button>
+      <button class="btn primary" type="submit">{% tr "Pay before checkout" %} · {% money extras_due 0 %}</button>
     </form>
     {% endif %}
 
@@ -60,7 +60,7 @@
       <div class="svc-pick">
         {% for s in catalog %}
         <label class="svc-item"><input type="checkbox" name="service" value="{{ s.id }}">
-          <span>{% tr s.name %} — ${{ s.price }}</span>
+          <span>{% tr s.name %} — {% money s.price %}</span>
           <input class="qty" name="qty_{{ s.id }}" type="number" value="1" min="1">
         </label>
         {% empty %}<span class="hint">{% tr "No services in the catalog yet" %}</span>{% endfor %}

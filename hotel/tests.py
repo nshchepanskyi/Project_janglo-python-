@@ -647,3 +647,51 @@ class AdjacentBookingTests(TestCase):
         # сусідні дати (заїзд у день виїзду) — проходять
         res.check_in = date(2026, 11, 15)
         res.full_clean()
+
+
+class CurrencyLocalizationTests(TestCase):
+    """Валюта: en → USD ($), uk → UAH (₴, конвертація за курсом USD_TO_UAH)."""
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="801", room_type="Suite", price=Decimal("150"),
+            title="Rate Test", location="Kyiv, Ukraine", capacity=3,
+            rating=Decimal("4.9"),
+        )
+
+    def test_money_str_helper(self):
+        from .currency import money_str
+        self.assertEqual(money_str("504", "en", 2), "$504.00")
+        self.assertEqual(money_str("504", "en", 0), "$504")
+        self.assertEqual(money_str("100", "uk", 0), "₴4,150")  # 100 × 41.5
+        self.assertEqual(money_str("150", "uk", 2), "₴6,225.00")
+        self.assertEqual(money_str(None, "en", 2), "$0.00")
+        self.assertEqual(money_str("bad", "en", 2), "$0.00")
+
+    def test_english_page_shows_dollars(self):
+        resp = self.client.get("/places/801/", {
+            "check_in": "2027-01-10", "check_out": "2027-01-13",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "$150.00")   # ціна за ніч
+        self.assertContains(resp, "$450.00")   # 3 ночі
+        self.assertContains(resp, "$504.00")   # + 12% збору
+        self.assertNotContains(resp, "₴")
+
+    def test_ukrainian_page_shows_hryvnias(self):
+        self.client.get("/lang/")  # en → uk
+        resp = self.client.get("/places/801/", {
+            "check_in": "2027-01-10", "check_out": "2027-01-13",
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "₴6,225.00")   # 150 × 41.5
+        self.assertContains(resp, "₴18,675.00")  # 450 × 41.5
+        self.assertContains(resp, "₴20,916.00")  # 504 × 41.5
+        self.assertNotContains(resp, "$150.00")
+
+    def test_ukrainian_catalog_and_card_prices(self):
+        self.client.get("/lang/")
+        resp = self.client.get("/places/")
+        self.assertContains(resp, "₴6,225.00")   # картка номера
+        resp = self.client.get("/")
+        self.assertContains(resp, "₴6,225.00")   # рекомендовані на головній

@@ -20,7 +20,7 @@
     </div>
     {% endif %}
     <div class="place-foot">
-      <div class="place-price">${{ r.price|floatformat:2 }} <small>{% tr "per night" %}</small></div>
+      <div class="place-price">{% money r.price 2 %} <small>{% tr "per night" %}</small></div>
       <a class="btn primary small" href="{% url 'reservations' %}?room={{ r.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}">{% tr "Book" %}</a>
     </div>
   </div>
