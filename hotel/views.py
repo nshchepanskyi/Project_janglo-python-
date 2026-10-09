@@ -12,6 +12,7 @@ from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
 from .models import (
     ACTIVE_STATUSES,
@@ -19,7 +20,9 @@ from .models import (
     MAX_GUESTS,
     ROOM_CAPACITY_LIMITS,
     Reservation,
+    Review,
     Room,
+    RoomFavorite,
     Service,
     ServiceOrder,
     STAY_DAY,
@@ -239,6 +242,18 @@ def _annotate_cards(rooms, d_in, d_out):
     return rooms
 
 
+def _fav_annotate(request, rooms):
+    """Додає до карток ознаку «в обраному» (★) для залогіненого гостя."""
+    if request.user.is_authenticated:
+        fav_ids = set(request.user.favorite_rooms.values_list("room_id", flat=True))
+        for r in rooms:
+            r.fav = r.pk in fav_ids
+    else:
+        for r in rooms:
+            r.fav = False
+    return rooms
+
+
 def _search_context(location, d_in, d_out, guests, raw):
     return {
         "location": location,
@@ -261,6 +276,7 @@ def home_view(request):
         messages.error(request, error)
     rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services"))
     _annotate_cards(rooms, d_in, d_out)
+    _fav_annotate(request, rooms)
     return render(request, "hotel/home.html", {
         "rooms": rooms,
         "found": search_rooms(location, d_in, d_out, guests).count(),
@@ -279,6 +295,7 @@ def places_view(request):
         messages.error(request, error)
     rooms = list(search_rooms(location, d_in, d_out, guests).prefetch_related("services"))
     _annotate_cards(rooms, d_in, d_out)
+    _fav_annotate(request, rooms)
     return render(request, "hotel/places.html", {
         "rooms": rooms,
         "found": len(rooms),
@@ -290,6 +307,39 @@ def places_view(request):
     })
 
 
+def _create_review(request, room):
+    """Відгук: лише після виселення з цього номера, одне повідомлення на бронювання.
+
+    Чесна схема «гість реально жив у цьому номері»: бронювання має належати
+    автору, бути в статусі Checked-Out і ще не мати відгуку (Review.reservation
+    — OneToOneField). Після створення сигнал оновить Room.rating.
+    """
+    res = Reservation.objects.filter(
+        pk=request.POST.get("reservation_id"),
+        user=request.user, room=room, status="Checked-Out",
+    ).first()
+    if res is None:
+        messages.error(request, "Only a checked-out guest can leave a review")
+        return redirect("place_detail", number=room.number)
+    if Review.objects.filter(reservation=res).exists():
+        messages.error(request, "You have already reviewed this stay")
+        return redirect("place_detail", number=room.number)
+    try:
+        rating = int(request.POST.get("rating", "0"))
+    except ValueError:
+        rating = 0
+    text = request.POST.get("text", "").strip()
+    if not (Review.RATING_MIN <= rating <= Review.RATING_MAX):
+        messages.error(request, "Rating must be between 1 and 5")
+    elif not text:
+        messages.error(request, "Write a few words about your stay")
+    else:
+        Review.objects.create(reservation=res, room=room, author=request.user,
+                              rating=rating, text=text)
+        messages.success(request, "Thank you for your review!")
+    return redirect("place_detail", number=room.number)
+
+
 def place_detail_view(request, number):
     """
     Фаза 2: сторінка місця — фото, деталі, чек і кнопка «Забронювати · $134».
@@ -298,14 +348,21 @@ def place_detail_view(request, number):
     прямо тут (GET-форма). Чек: ціна × ночі + сервісний збір 12%.
     Кнопка веде на форму бронювання з префілом; недоступна, якщо номер зайнятий
     на обрані дати або не вміщує стільки гостей.
+
+    Фаза 3: зірочка обраного + відгуки (лише після виселення) з живим рейтингом.
     """
     room = get_object_or_404(Room, number=number)
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return redirect(f"{reverse('login')}?next={reverse('place_detail', args=[number])}")
+        return _create_review(request, room)
     location, ci_raw, co_raw, guests_raw = _get_search(request)
     _, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
     if error:
         messages.error(request, error)
 
     _annotate_cards([room], d_in, d_out)  # room.free + бейдж
+    _fav_annotate(request, [room])
     nights = (d_out - d_in).days if d_in and d_out else 0
     subtotal = room.price * nights if nights else Decimal("0")
     fee = calc_service_fee(subtotal)
@@ -325,6 +382,18 @@ def place_detail_view(request, number):
             .prefetch_related("services")[:3]
         )
     _annotate_cards(others, d_in, d_out)
+    _fav_annotate(request, others)
+
+    # Відгуки (Фаза 3): публікуються тут; форму показуємо лише тому, хто вже
+    # виселився з цього номера і ще не залишив відгук (чесна схема).
+    reviews = list(room.reviews.select_related("author")[:30])
+    reviewable = []
+    if request.user.is_authenticated:
+        reviewable = list(
+            Reservation.objects.filter(
+                user=request.user, room=room, status="Checked-Out",
+            ).exclude(review__isnull=False)
+        )
 
     return render(request, "hotel/place.html", {
         "room": room,
@@ -335,11 +404,53 @@ def place_detail_view(request, number):
         "fits": fits,
         "can_book": can_book,
         "others": others,
+        "reviews": reviews,
+        "reviewable": reviewable,
+        "can_review": bool(reviewable),
+        "review_res": reviewable[0] if reviewable else None,
         "search": _search_context(location, d_in, d_out, guests,
                                   {"location": location, "check_in": ci_raw,
                                    "check_out": co_raw, "guests": guests_raw}),
         "pages": STATIC_PAGES,
     })
+
+
+@login_required
+def favorites_view(request):
+    """Фаза 3: сторінка «Обране» — картки збережених номерів."""
+    rooms = list(Room.objects.filter(favorited_by__user=request.user)
+                 .prefetch_related("services"))
+    _annotate_cards(rooms, None, None)
+    _fav_annotate(request, rooms)
+    return render(request, "hotel/favorites.html", {
+        "rooms": rooms,
+        "search": _search_context("", None, None, None,
+                                  {"location": "", "check_in": "",
+                                   "check_out": "", "guests": ""}),
+        "pages": STATIC_PAGES,
+    })
+
+
+def favorite_toggle_view(request, number):
+    """Зірочка «в обране»: POST-перемикач. Анонім → вхід з ?next=."""
+    room = get_object_or_404(Room, number=number)
+    if not request.user.is_authenticated:
+        return redirect(
+            f"{reverse('login')}?next={reverse('favorite_toggle', args=[number])}"
+        )
+    if request.method == "POST":
+        fav = RoomFavorite.objects.filter(user=request.user, room=room).first()
+        if fav:
+            fav.delete()
+            messages.success(request, "Removed from favorites")
+        else:
+            RoomFavorite.objects.create(user=request.user, room=room)
+            messages.success(request, "Added to favorites")
+    # Повернення на сторінку, де була зірочка (приховане поле next у шаблоні)
+    nxt = request.POST.get("next", "")
+    if nxt.startswith("/") and not nxt.startswith("//"):
+        return redirect(nxt)
+    return redirect("place_detail", number=number)
 
 
 def page_view(request, slug):
@@ -514,7 +625,14 @@ def reservations_view(request):
             stay_type = STAY_NIGHT
         if stay_type == STAY_DAY and check_in:
             check_out = check_in
-        if not name:
+        # Кількість гостей (Фаза 3): ліміт місткості перевіряє Reservation.clean()
+        try:
+            guests = int(request.POST.get("guests", "1") or 1)
+        except ValueError:
+            guests = 0
+        if guests < 1 or guests > MAX_GUESTS:
+            messages.error(request, "Invalid guests count")
+        elif not name:
             messages.error(request, "Enter guest name")
         elif not email or not _validate_email(email):
             messages.error(request, "Invalid email")
@@ -538,7 +656,7 @@ def reservations_view(request):
                 guest = Guest.objects.create(name=name, phone=f"{code}{phone}", email=email)
                 res = Reservation(
                     guest=guest, room=room, check_in=check_in, check_out=check_out,
-                    user=request.user, stay_type=stay_type,
+                    user=request.user, stay_type=stay_type, guests=guests,
                 )
                 try:
                     res.full_clean()
@@ -562,6 +680,12 @@ def reservations_view(request):
     prefill_stay = request.GET.get("stay", "").strip().capitalize()
     if prefill_stay not in ("Night", "Day"):
         prefill_stay = STAY_NIGHT
+    # Кількість гостей для префілу (?guests= із картки чи сторінки місця)
+    try:
+        prefill_guests = int(request.GET.get("guests", "1") or 1)
+    except ValueError:
+        prefill_guests = 1
+    prefill_guests = min(max(prefill_guests, 1), MAX_GUESTS)
     # Occupied теж показуємо: номер може бути вільним на обрані дати
     # (наприклад, заїзд одразу після виїзду попереднього гостя)
     bookable = Q(status__in=["Available", "Occupied"])
@@ -579,6 +703,8 @@ def reservations_view(request):
         "prefill_check_in": prefill_in,
         "prefill_check_out": prefill_out,
         "prefill_stay": prefill_stay,
+        "prefill_guests": prefill_guests,
+        "guests_choices": list(range(1, MAX_GUESTS + 1)),
     })
 
 

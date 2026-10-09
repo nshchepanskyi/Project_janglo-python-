@@ -1,0 +1,13 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{% tr "Favorites" %}{% endblock %}
+{% block content %}
+<h1>{% tr "Favorites" %}</h1>
+<div class="place-grid">
+  {% for r in rooms %}{% include "hotel/_place_card.html" %}{% empty %}
+  <div class="empty-state">
+    <p>{% tr "Your favorites will appear here — click the star on any room." %}</p>
+    <a class="btn ghost" href="{% url 'places' %}">{% tr "View all" %}</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

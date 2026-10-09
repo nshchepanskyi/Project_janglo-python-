@@ -12,6 +12,13 @@
     <div class="pd-photo">
       {% if room.photo %}<img src="{{ room.photo.url }}" alt="{{ room.display_title }}">{% else %}<span class="ph">{% tr "Photo" %}</span>{% endif %}
       <span class="place-tag {{ room.badge_kind }}">{% tr room.badge_key %}</span>
+      {# зірочка обраного (Фаза 3) #}
+      <form method="post" action="{% url 'favorite_toggle' room.number %}" class="fav-form">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="fav-star{% if room.fav %} on{% endif %}"
+                title="{% if room.fav %}{% tr "Remove from favorites" %}{% else %}{% tr "Add to favorites" %}{% endif %}"
+                aria-label="{% if room.fav %}{% tr "Remove from favorites" %}{% else %}{% tr "Add to favorites" %}{% endif %}">{% if room.fav %}★{% else %}☆{% endif %}</button>
+      </form>
     </div>
 
     <div class="pd-body">
@@ -68,13 +75,57 @@
     </div>
 
     {% if can_book %}
-    <a class="btn primary big" href="{% url 'reservations' %}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}">
+    <a class="btn primary big" href="{% url 'reservations' %}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}{% if search.guests %}&amp;guests={{ search.guests }}{% endif %}">
       {% tr "Book" %}{% if nights %} · {% money total 0 %}{% endif %}
     </a>
     <p class="hint pd-hint">{% tr "You will confirm the booking on the next step" %}</p>
     {% endif %}
   </aside>
 </section>
+
+{# ---------- Фаза 3: відгуки + форма для тих, хто вже виселився ---------- #}
+<section class="section reviews">
+  <div class="section-head">
+    <h2>{% tr "Reviews" %} ({{ reviews|length }})</h2>
+    <span class="pd-rate">★ {{ room.rating }}</span>
+  </div>
+  {% for rev in reviews %}
+  <article class="review">
+    <div class="review-head">
+      <b>{{ rev.author.username }}</b>
+      <span class="review-stars">{% for i in "12345" %}{% if forloop.counter <= rev.rating %}★{% else %}☆{% endif %}{% endfor %}</span>
+      <span class="hint">{{ rev.created_at|date:"Y-m-d" }}</span>
+    </div>
+    <p>{{ rev.text }}</p>
+  </article>
+  {% empty %}<p class="hint">{% tr "No reviews yet — be the first!" %}</p>{% endfor %}
+</section>
+
+{% if can_review %}
+<section class="section">
+  <div class="card review-form">
+    <h2>{% tr "Write a review" %}</h2>
+    <p class="hint">{% tr "Only guests who have stayed here can leave a review — one review per stay." %}</p>
+    <form method="post">{% csrf_token %}
+      <input type="hidden" name="action" value="review">
+      {% if reviewable|length > 1 %}
+      <label>{% tr "Stay" %}
+        <select name="reservation_id">{% for rsv in reviewable %}<option value="{{ rsv.pk }}">#{{ rsv.pk }} · {{ rsv.check_in|date:"Y-m-d" }} → {{ rsv.check_out|date:"Y-m-d" }}</option>{% endfor %}</select>
+      </label>
+      {% else %}
+      <input type="hidden" name="reservation_id" value="{{ review_res.pk }}">
+      {% endif %}
+      <label>{% tr "Your rating" %}
+        <select name="rating">{% for i in "12345" %}<option value="{{ forloop.counter }}">{{ forloop.counter }} ★</option>{% endfor %}</select>
+      </label>
+      <label>{% tr "Your review" %}
+        <textarea name="text" rows="3" placeholder="{% tr "Write a few words about the room, the staff and your stay." %}" required></textarea>
+      </label>
+      <button class="btn primary" type="submit">{% tr "Publish review" %}</button>
+    </form>
+  </div>
+</section>
+{% endif %}
 
 {% if others %}
 <section class="section">

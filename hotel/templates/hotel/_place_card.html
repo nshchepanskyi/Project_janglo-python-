@@ -1,13 +1,20 @@
 {% load tr_tags %}
 <article class="place-card">
-  <a class="place-link" href="{% url 'place_detail' r.number %}" tabindex="-1" aria-hidden="true">
+  <a class="place-link" href="{% url 'place_detail' r.number %}{% if request.GET %}{% querystring %}{% endif %}" tabindex="-1" aria-hidden="true">
   <div class="place-photo">
     {% if r.photo %}<img src="{{ r.photo.url }}" alt="{{ r.display_title }}">{% else %}<span class="ph">{% tr "Photo" %}</span>{% endif %}
     <span class="place-tag {{ r.badge_kind }}">{% tr r.badge_key %}</span>
   </div>
   </a>
+  {# зірочка обраного (Фаза 3): для аноніма view перенаправить на вхід #}
+  <form method="post" action="{% url 'favorite_toggle' r.number %}" class="fav-form">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="fav-star{% if r.fav %} on{% endif %}"
+            title="{% if r.fav %}{% tr "Remove from favorites" %}{% else %}{% tr "Add to favorites" %}{% endif %}"
+            aria-label="{% if r.fav %}{% tr "Remove from favorites" %}{% else %}{% tr "Add to favorites" %}{% endif %}">{% if r.fav %}★{% else %}☆{% endif %}</button>
+  </form>
   <div class="place-body">
-    <a class="place-link place-title" href="{% url 'place_detail' r.number %}">{{ r.display_title }}</a>
+    <a class="place-link place-title" href="{% url 'place_detail' r.number %}{% if request.GET %}{% querystring %}{% endif %}">{{ r.display_title }}</a>
     <div class="place-meta">
       <span class="place-loc">{% if r.location %}{{ r.location }}{% else %}{% tr r.room_type %}{% endif %}</span>
       <span class="place-rating">★ {{ r.rating }}</span>
@@ -21,7 +28,7 @@
     {% endif %}
     <div class="place-foot">
       <div class="place-price">{% money r.price 2 %} <small>{% tr "per night" %}</small></div>
-      <a class="btn primary small" href="{% url 'reservations' %}?room={{ r.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}">{% tr "Book" %}</a>
+      <a class="btn primary small" href="{% url 'reservations' %}?room={{ r.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}{% if search.guests %}&amp;guests={{ search.guests }}{% endif %}">{% tr "Book" %}</a>
     </div>
   </div>
 </article>

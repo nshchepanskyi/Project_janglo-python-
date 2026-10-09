@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Guest, Reservation, Room, Service, ServiceOrder
+from .models import Guest, Reservation, Review, Room, RoomFavorite, Service, ServiceOrder
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
@@ -30,3 +30,20 @@ class ReservationAdmin(admin.ModelAdmin):
 class ServiceOrderAdmin(admin.ModelAdmin):
     list_display = ("id", "guest", "service_name", "quantity", "total", "status", "timestamp")
     list_filter = ("status", "service_name")
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    """Модерація відгуків (Фаза 3): адмін бачить усі і може видаляти.
+
+    Видалення через адмінку теж перераховує Room.rating (сигнал post_delete).
+    """
+    list_display = ("id", "room", "author", "rating", "created_at")
+    list_filter = ("rating",)
+    search_fields = ("text", "room__number", "author__username")
+
+
+@admin.register(RoomFavorite)
+class RoomFavoriteAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "room", "created_at")
+    list_filter = ("room",)

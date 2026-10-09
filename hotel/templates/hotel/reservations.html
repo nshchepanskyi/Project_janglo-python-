@@ -18,6 +18,7 @@
       <option value="Day" {% if prefill_stay == "Day" %}selected{% endif %}>{% tr "Day stay (07:00–23:59)" %}</option>
     </select>
     <p class="hint">{% tr "Day stay: arrival 07:00, departure 23:59 — the same day, no overnight. For it the check-out date equals the check-in date." %}</p>
+    <select name="guests" aria-label="{% tr "Guests" %}">{% for g in guests_choices %}<option value="{{ g }}" {% if prefill_guests == g %}selected{% endif %}>{{ g }} {% tr "Guests" %}</option>{% endfor %}</select>
     <button class="btn primary" type="submit">{% tr "Create" %}</button>
   </form>
 </div>

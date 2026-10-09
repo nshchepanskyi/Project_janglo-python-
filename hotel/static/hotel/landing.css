@@ -657,3 +657,46 @@
 @media (prefers-reduced-motion: reduce) {
   .cal-pop, .cal-day.is-sel-start, .cal-day.is-sel-end { animation: none; }
 }
+
+/* ---------- Фаза 3: обране (зірочка) + відгуки ---------- */
+.place-card { position: relative; }
+
+.fav-form { position: absolute; top: 10px; right: 10px; z-index: 5; margin: 0; }
+
+.fav-star {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--l-border);
+  background: var(--l-surface);
+  color: var(--l-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.fav-star:hover { transform: scale(1.1); color: #f59e0b; box-shadow: 0 4px 12px rgba(15, 23, 42, .18); }
+.fav-star.on { color: #f59e0b; background: #fef3c7; border-color: #f59e0b; }
+[data-theme="dark"] .fav-star.on { background: rgba(245, 158, 11, .18); border-color: #f59e0b; }
+
+.fav-count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  margin-left: 4px;
+  border-radius: 9px;
+  background: var(--l-brand);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.review { border-top: 1px solid var(--l-border); padding: 14px 0; }
+.review:first-of-type { border-top: 0; }
+.review-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.review-stars { color: #f59e0b; letter-spacing: 2px; }
+.review p { margin: 0; line-height: 1.6; color: var(--l-text); }
+
+.review-form form { display: grid; gap: 10px; max-width: 480px; }
+.review-form textarea { resize: vertical; }

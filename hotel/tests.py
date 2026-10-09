@@ -10,7 +10,9 @@ from django.test import TestCase, override_settings
 from .models import (
     Guest,
     Reservation,
+    Review,
     Room,
+    RoomFavorite,
     Service,
     ServiceOrder,
     calc_reservation_revenue,
@@ -929,3 +931,196 @@ class DayStayTests(TestCase):
         self.assertContains(resp, "Денне бронювання (07:00–23:59)")
         self.assertContains(resp, "Нічне бронювання")
         self.assertContains(resp, "ДЕНЬ")
+
+
+class FavoritesReviewsTests(TestCase):
+    """Фаза 3: обране (зірочка) + відгуки після виселення з живим рейтингом."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("oleh", "oleh@test.com", "secret123")
+        self.other = User.objects.create_user("ivan", "ivan@test.com", "secret123")
+        self.room = Room.objects.create(
+            number="401", room_type="Double", price=Decimal("80"),
+            title="Sunny Double", location="Kyiv, Ukraine", capacity=2,
+            rating=Decimal("4.5"),
+        )
+        self.single = Room.objects.create(
+            number="402", room_type="Single", price=Decimal("50"), capacity=1,
+        )
+        self.guest = Guest.objects.create(name="Oleh", phone="+38000", email="oleh@test.com")
+
+    def _reservation(self, user=None, status="Checked-Out",
+                     check_in=date(2026, 9, 1), check_out=date(2026, 9, 3)):
+        return Reservation.objects.create(
+            guest=self.guest, room=self.room, user=user or self.user,
+            check_in=check_in, check_out=check_out, status=status,
+        )
+
+    # ---------- обране ----------
+
+    def test_favorite_toggle_requires_login(self):
+        resp = self.client.post("/favorites/toggle/401/", follow=False)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login/?next=", resp["Location"])
+        self.assertEqual(RoomFavorite.objects.count(), 0)
+
+    def test_favorite_toggle_add_and_remove(self):
+        self.client.login(username="oleh", password="secret123")
+        self.client.post("/favorites/toggle/401/", {"next": "/"})
+        fav = RoomFavorite.objects.get()
+        self.assertEqual(fav.user, self.user)
+        self.assertEqual(fav.room, self.room)
+        # другий клік — прибрати з обраного (toggle)
+        self.client.post("/favorites/toggle/401/", {"next": "/"})
+        self.assertEqual(RoomFavorite.objects.count(), 0)
+
+    def test_favorites_page_requires_login(self):
+        self.assertEqual(self.client.get("/favorites/").status_code, 302)
+
+    def test_favorites_page_lists_saved_rooms(self):
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.get("/favorites/")
+        self.assertContains(resp, "Your favorites will appear here")
+        RoomFavorite.objects.create(user=self.user, room=self.room)
+        RoomFavorite.objects.create(user=self.user, room=self.single)
+        resp = self.client.get("/favorites/")
+        self.assertContains(resp, "Sunny Double")
+        self.assertContains(resp, "Room 402")
+
+    def test_cards_show_star_and_header_counter(self):
+        self.client.login(username="oleh", password="secret123")
+        self.client.post("/favorites/toggle/401/")
+        resp = self.client.get("/")
+        # зірочка «в обраному» на картці 401 + лічильник у шапці
+        self.assertContains(resp, "fav-star on")
+        self.assertContains(resp, 'class="fav-count"')
+        self.assertContains(resp, "Remove from favorites")
+
+    # ---------- відгуки ----------
+
+    def test_review_requires_checked_out_reservation(self):
+        self.client.login(username="oleh", password="secret123")
+        self._reservation(status="Pending")
+        resp = self.client.post("/places/401/", {
+            "action": "review", "reservation_id": Reservation.objects.get().pk,
+            "rating": "5", "text": "Nice!",
+        }, follow=True)
+        self.assertContains(resp, "Only a checked-out guest can leave a review")
+        self.assertEqual(Review.objects.count(), 0)
+
+    def test_review_rejects_foreign_reservation(self):
+        self._reservation(user=self.other)
+        self.client.login(username="oleh", password="secret123")
+        res = Reservation.objects.get()
+        resp = self.client.post("/places/401/", {
+            "action": "review", "reservation_id": res.pk,
+            "rating": "5", "text": "Not mine",
+        }, follow=True)
+        self.assertContains(resp, "Only a checked-out guest can leave a review")
+        self.assertEqual(Review.objects.count(), 0)
+
+    def test_review_after_checkout_updates_room_rating(self):
+        res = self._reservation()
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.post("/places/401/", {
+            "action": "review", "reservation_id": res.pk,
+            "rating": "5", "text": "Excellent stay!",
+        }, follow=True)
+        self.assertContains(resp, "Thank you for your review!")
+        review = Review.objects.get()
+        self.assertEqual(review.author, self.user)
+        self.assertEqual(review.room, self.room)
+        # середня оцінка перетікає в Room.rating (живі зірочки)
+        self.room.refresh_from_db()
+        self.assertEqual(self.room.rating, Decimal("5.0"))
+
+    def test_one_review_per_reservation(self):
+        res = self._reservation()
+        self.client.login(username="oleh", password="secret123")
+        post = {"action": "review", "reservation_id": res.pk,
+                "rating": "5", "text": "Great!"}
+        self.client.post("/places/401/", post)
+        resp = self.client.post("/places/401/", post, follow=True)
+        self.assertContains(resp, "You have already reviewed this stay")
+        self.assertEqual(Review.objects.count(), 1)
+
+    def test_review_rating_bounds(self):
+        res = self._reservation()
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.post("/places/401/", {
+            "action": "review", "reservation_id": res.pk,
+            "rating": "9", "text": "Too good",
+        }, follow=True)
+        self.assertContains(resp, "Rating must be between 1 and 5")
+        self.assertEqual(Review.objects.count(), 0)
+
+    def test_review_delete_recalculates_rating(self):
+        r1 = self._reservation(check_in=date(2026, 9, 1), check_out=date(2026, 9, 3))
+        r2 = self._reservation(check_in=date(2026, 9, 5), check_out=date(2026, 9, 7))
+        v1 = Review.objects.create(reservation=r1, room=self.room, author=self.user, rating=5, text="A")
+        Review.objects.create(reservation=r2, room=self.room, author=self.user, rating=3, text="B")
+        self.room.refresh_from_db()
+        self.assertEqual(self.room.rating, Decimal("4.0"))
+        v1.delete()  # так само працює видалення в /admin/
+        self.room.refresh_from_db()
+        self.assertEqual(self.room.rating, Decimal("3.0"))
+
+    def test_place_page_shows_review_and_eligible_form(self):
+        res = self._reservation()
+        # форма відгуку показується лише після виселення
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.get("/places/401/")
+        self.assertContains(resp, "Publish review")
+        self.client.post("/places/401/", {
+            "action": "review", "reservation_id": res.pk,
+            "rating": "4", "text": "Cozy and clean",
+        })
+        resp = self.client.get("/places/401/")
+        self.assertContains(resp, "Cozy and clean")
+        self.assertNotContains(resp, "Publish review")  # вже відгукнувся
+
+    # ---------- дрібні UX-фікси: дати з пошуку + гості у формі ----------
+
+    def test_catalog_card_links_carry_dates(self):
+        resp = self.client.get("/places/", {"check_in": "2026-10-01", "check_out": "2026-10-03"})
+        self.assertContains(resp, "/places/401/?check_in=2026-10-01&amp;check_out=2026-10-03")
+        # без дат у пошуку — чистий лінк без зайвого «?»
+        resp = self.client.get("/places/")
+        self.assertContains(resp, 'href="/places/401/"')
+
+    def test_place_page_prefills_dates_and_guests_from_query(self):
+        resp = self.client.get("/places/401/", {
+            "check_in": "2026-10-01", "check_out": "2026-10-03", "guests": "2",
+        })
+        self.assertEqual(resp.context["search"]["check_in"], "2026-10-01")
+        self.assertEqual(resp.context["search"]["guests"], "2")
+        self.assertContains(resp, "&amp;guests=2")  # кнопка Book веде з гостями
+        self.assertTrue(resp.context["fits"])       # 2 гостей у Double вміщує
+        # однак для 5 гостей кнопка ховається
+        resp = self.client.get("/places/401/", {
+            "check_in": "2026-10-01", "check_out": "2026-10-03", "guests": "5",
+        })
+        self.assertFalse(resp.context["fits"])
+        self.assertFalse(resp.context["can_book"])
+
+    def test_booking_form_saves_guests(self):
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.get("/reservations/?room=401&guests=2")
+        self.assertEqual(resp.context["prefill_guests"], 2)
+        self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "401",
+            "check_in": "2026-12-01", "check_out": "2026-12-03", "guests": "2",
+        })
+        res = Reservation.objects.get()
+        self.assertEqual(res.guests, 2)
+
+    def test_booking_form_guests_capacity_error(self):
+        self.client.login(username="oleh", password="secret123")
+        resp = self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "402",
+            "check_in": "2026-12-01", "check_out": "2026-12-03", "guests": "2",
+        }, follow=True)
+        self.assertContains(resp, "A Single room fits 1 guest")
+        self.assertEqual(Reservation.objects.count(), 0)

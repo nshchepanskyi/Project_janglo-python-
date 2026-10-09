@@ -50,6 +50,27 @@
   Ніч-vs-ніч не змінився: сусідні дати дозволені. Хелпер використовують
   `clean()`, `search_rooms()`, `room_is_free()`.
 
+**Фаза 3 (нове): обране + відгуки (персоналізація гостя):**
+- **Обране** — модель `RoomFavorite` (користувач ↔ номер, міграція `0006`,
+  унікальна пара). Кнопка-зірочка ★/☆ на публічних картках і на сторінці
+  місця: для залогіненого — POST-перемикач `/favorites/toggle/<number>/`,
+  для аноніма — редирект на вхід з `?next=`. Сторінка **`/favorites/`**
+  показує збережені картки; лічильник — у шапці поруч із меню.
+- **Відгуки та рейтинг** — модель `Review` (автор, номер, бронювання,
+  оцінка 1–5, текст, дата). Писати можна **лише після виселення**
+  (Checked-Out) з конкретного номера і **лише одне повідомлення на
+  бронювання** (`OneToOneField`) — чесна схема «гість реально жив у цьому
+  номері». Форма відгуку зʼявляється на сторінці місця лише в того, хто
+  вже виселився і ще не відгукнувся; відгуки публікуються там само.
+  Середня оцінка **перетікає в `Room.rating`** (сигнали `post_save`/
+  `post_delete` → `recalc_room_rating`) — зірочки на картках «живі».
+  Модерація: `/admin/` бачить усі відгуки і може видаляти (рейтинг
+  перераховується автоматично).
+- **Два дрібні UX-фікси:** дати/гості з пошуку переносяться в лінки карток
+  на сторінку місця (`{% querystring %}`), а форма бронювання має поле
+  **Guests** (1–8, префіл `?guests=`, місткість перевіряє `Reservation.clean()`).
+- Усе — серверними формами без JS; EN/UA та ₴/$ як і раніше.
+
 ## Запуск
 
 ```bash
@@ -73,15 +94,17 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
   `{% money res.amount 2 %}` → `$504.00` / `₴22,569.12`.
 - Курс: зміни `USD_TO_UAH` у `hotel/currency.py`, якщо потрібен інший.
 
-## Публічна частина (Фази 1–2)
+## Публічна частина (Фази 1–3)
 
 | URL | Що це |
 |---|---|
 | `/` | головна: hero + панель пошуку + Recommended places + CTA |
 | `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
-| `/places/<number>/` | **сторінка місця**: фото, деталі, чек і кнопка **Book · $…** |
+| `/places/<number>/` | **сторінка місця**: фото, деталі, чек і кнопка **Book · $…**; нижче — відгуки та форма (після виселення) |
+| `/favorites/` | обрані номери (потребує вхіду) |
+| `/favorites/toggle/<number>/` | POST-перемикач зірочки ★/☆ (анонім → вхід з `?next=`) |
 | `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
-| `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена); опційний `&stay=day` добирає денне бронювання |
+| `/reservations/?room=101&check_in=...&check_out=...&guests=2` | кнопка **Book** з картки (після входу форма заповнена); `&stay=day` добирає денне бронювання |
 | `/reservations/<id>/` | сторінка бронювання: рахунок + додаткові послуги та оплата |
 
 Дати заїзду/виїзду вибираються **календарем** (`hotel/static/hotel/cal.js`,
@@ -111,23 +134,25 @@ Double — 2, Suite — максимум 8**. Перевірка (`capacity_erro
 ```
 config/            # налаштування Django
 hotel/             # застосунок готелю
-  models.py        # Room, Guest, Reservation, Service, ServiceOrder + бізнес-логіка + search_rooms
+  models.py        # Room, Guest, Reservation, Service, ServiceOrder, RoomFavorite,
+                   # Review + бізнес-логіка + search_rooms + recalc_room_rating (сигнали)
   views.py         # dashboard, rooms, reservations, reservation_detail (додаткові послуги),
-                   # guests, auth, lang/theme, home/places/place_detail/page (публічна частина)
+                   # guests, auth, lang/theme, home/places/place_detail/page/favorites (публічна частина)
   urls.py
   l10n.py          # словник EN/UK (порт з Flet)
   currency.py      # валюта: en → $, uk → ₴ (USD_TO_UAH)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
   templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
-                   # home, places, place, _place_card, _search_panel, page,
+                   # home, places, place, favorites, _place_card, _search_panel, page,
                    # dashboard, rooms, reservations, reservation, guests, login, register
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
-  static/hotel/landing.css  # публічна частина (зелений бренд)
+  static/hotel/landing.css  # публічна частина (зелений бренд) + зірочка/відгуки (Фаза 3)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 79 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
+  tests.py         # 95 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
                    # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
-                   # CalendarWiringTests, DayStayTests, RoleAccessTests тощо)
+                   # CalendarWiringTests, DayStayTests, FavoritesReviewsTests,
+                   # RoleAccessTests тощо)
 ```
 
 ## Відповідність Flet → Django

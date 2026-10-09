@@ -99,3 +99,32 @@ CREATE TABLE IF NOT EXISTS hotel_serviceorder (
 CREATE INDEX IF NOT EXISTS idx_serviceorder_guest ON hotel_serviceorder(guest_id);
 CREATE INDEX IF NOT EXISTS idx_serviceorder_reservation ON hotel_serviceorder(reservation_id);
 CREATE INDEX IF NOT EXISTS idx_serviceorder_status ON hotel_serviceorder(status);
+
+-- ---------- Фаза 3: обране + відгуки (міграція 0006) ----------
+
+-- Обране: користувач ↔ номер (зірочка на картці та сторінці місця)
+CREATE TABLE IF NOT EXISTS hotel_roomfavorite (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES hotel_room(id) ON DELETE CASCADE,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, room_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_roomfavorite_room ON hotel_roomfavorite(room_id);
+
+-- Відгуки гостей: лише після виселення (Checked-Out), одне повідомлення
+-- на бронювання (UNIQUE reservation_id); середня оцінка перетікає
+-- в hotel_room.rating (recalc_room_rating у models.py)
+CREATE TABLE IF NOT EXISTS hotel_review (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    reservation_id INTEGER NOT NULL UNIQUE REFERENCES hotel_reservation(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES hotel_room(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    text TEXT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_review_room ON hotel_review(room_id);
+CREATE INDEX IF NOT EXISTS idx_review_user ON hotel_review(user_id);

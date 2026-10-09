@@ -3,7 +3,9 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Count, Q, Sum
+from django.db.models import Avg, Count, Q, Sum
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 from django.utils import timezone
 
 
@@ -447,3 +449,83 @@ def room_is_free(room, check_in=None, check_out=None, stay_type=STAY_NIGHT):
         .filter(conflict_q(check_in, check_out, STAY_NIGHT))
         .exists()
     )
+
+
+# ---------- Фаза 3: обране + відгуки (персоналізація гостя) ----------
+
+def recalc_room_rating(room):
+    """Середня оцінка живих відгуків перетікає в Room.rating.
+
+    Поки відгуків немає — rating лишається початковим (seed із 02_seed.sql).
+    Викликається зі сигналів post_save/post_delete, тому видалення відгуку
+    в /admin/ теж перераховує зірочки на картках.
+    """
+    avg = room.reviews.aggregate(v=Avg("rating"))["v"]
+    if avg is None:
+        return
+    room.rating = Decimal(str(round(avg, 1)))
+    room.save(update_fields=["rating"])
+
+
+class RoomFavorite(models.Model):
+    """Обране: користувач ↔ номер (зірочка на картці та сторінці місця).
+
+    Кілька кліків по зірочці — toggle (у views.favorite_toggle_view).
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="favorite_rooms",
+    )
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="favorited_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "room")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user.username} ★ {self.room.number}"
+
+
+class Review(models.Model):
+    """Відгук гостя, який реально жив у номері.
+
+    Чесна схема: писати можна лише ПІСЛЯ виселення (Checked-Out) з цього
+    саме номера і лише одне повідомлення на бронювання (OneToOneField) —
+    див. hotel/views.py `_create_review`. Середня оцінка перетікає
+    в Room.rating через recalc_room_rating (зірочки на картках «живі»).
+    """
+
+    RATING_MIN, RATING_MAX = 1, 5
+
+    reservation = models.OneToOneField(
+        Reservation, on_delete=models.CASCADE, related_name="review",
+    )
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="reviews")
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reviews",
+    )
+    rating = models.PositiveSmallIntegerField()
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.room.number} ★{self.rating} ({self.author.username})"
+
+    def clean(self):
+        if self.rating is not None and not (self.RATING_MIN <= self.rating <= self.RATING_MAX):
+            raise ValidationError({"rating": "Rating must be between 1 and 5"})
+
+
+@receiver(post_save, sender=Review)
+@receiver(post_delete, sender=Review)
+def _review_rating_recalc(sender, instance, **kwargs):
+    """Збереження/видалення відгуку одразу оновлює Room.rating."""
+    recalc_room_rating(instance.room)

@@ -292,6 +292,30 @@ TRANSLATIONS = {
         "A Single room fits 1 guest": "Одномісний номер вміщує 1 гостя",
         "A Double room fits 2 guests": "Двомісний номер вміщує 2 гостей",
         "A Suite room fits up to 8 guests": "Люкс вміщує до 8 гостей",
+
+        # ---------- Фаза 3: обране + відгуки ----------
+        "Favorites": "Обране",
+        "Add to favorites": "Додати в обране",
+        "Remove from favorites": "Прибрати з обраного",
+        "Added to favorites": "Додано в обране",
+        "Removed from favorites": "Прибрано з обраного",
+        "Your favorites will appear here — click the star on any room.":
+            "Тут з'являться ваші обрані номери — натисніть зірочку на картці.",
+        "Reviews": "Відгуки",
+        "No reviews yet — be the first!": "Відгуків ще немає — станьте першим!",
+        "Write a review": "Написати відгук",
+        "Your rating": "Ваша оцінка",
+        "Your review": "Ваш відгук",
+        "Publish review": "Опублікувати відгук",
+        "Rating must be between 1 and 5": "Оцінка має бути від 1 до 5",
+        "Write a few words about your stay": "Напишіть кілька слів про проживання",
+        "Thank you for your review!": "Дякуємо за ваш відгук!",
+        "Only a checked-out guest can leave a review": "Відгук може залишити лише гість після виселення",
+        "You have already reviewed this stay": "Ви вже залишили відгук про це проживання",
+        "Only guests who have stayed here can leave a review — one review per stay.":
+            "Відгук може залишити лише гість, який зупинявся в цьому номері — один відгук на проживання.",
+        "Write a few words about the room, the staff and your stay.":
+            "Напишіть кілька слів про номер, персонал і ваше проживання.",
     },
 }
 
