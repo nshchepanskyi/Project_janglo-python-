@@ -595,3 +595,55 @@ class RoomCapacityTests(TestCase):
     def test_guests_input_limited_to_eight(self):
         resp = self.client.get("/")
         self.assertContains(resp, 'max="8"')
+
+
+class AdjacentBookingTests(TestCase):
+    """Сусідні дати: виїзд одного гостя = заїзд іншого, накладання заборонене.
+
+    Баг: після бронювання 10–15 число номера ставало Occupied і наступний
+    гість не міг забронювати з 15-го, хоча дати не перетинаються.
+    """
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="601", room_type="Double", price=Decimal("90"),
+            title="Twin View", location="Lviv, Ukraine", capacity=2,
+        )
+        User.objects.create_user("buyer6", "buyer6@test.com", "secret123")
+        self.client.login(username="buyer6", password="secret123")
+
+    def _book(self, ci, co, email):
+        return self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Guest One",
+            "country_code": "+380", "phone": "501112233",
+            "email": email, "room_number": "601",
+            "check_in": ci, "check_out": co,
+        })
+
+    def test_adjacent_booking_is_allowed(self):
+        # 10–15 листопада зайнято, з 15-го — вільно
+        self._book("2026-11-10", "2026-11-15", "a1@test.com")
+        self._book("2026-11-15", "2026-11-20", "a2@test.com")
+        self.assertEqual(Reservation.objects.filter(room=self.room).count(), 2)
+
+    def test_overlapping_booking_is_rejected(self):
+        self._book("2026-11-10", "2026-11-15", "b1@test.com")
+        self._book("2026-11-12", "2026-11-14", "b2@test.com")  # накладається
+        self.assertEqual(Reservation.objects.filter(room=self.room).count(), 1)
+
+    def test_model_clean_blocks_overlap(self):
+        g1 = Guest.objects.create(name="A", phone="+3801", email="c1@t.com")
+        Reservation.objects.create(
+            guest=g1, room=self.room,
+            check_in=date(2026, 11, 10), check_out=date(2026, 11, 15),
+        )
+        g2 = Guest.objects.create(name="B", phone="+3802", email="c2@t.com")
+        res = Reservation(
+            guest=g2, room=self.room,
+            check_in=date(2026, 11, 14), check_out=date(2026, 11, 16),
+        )
+        with self.assertRaises(ValidationError):
+            res.full_clean()
+        # сусідні дати (заїзд у день виїзду) — проходять
+        res.check_in = date(2026, 11, 15)
+        res.full_clean()

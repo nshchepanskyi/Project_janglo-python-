@@ -195,6 +195,19 @@ class Reservation(models.Model):
     def clean(self):
         if self.check_in and self.check_out and self.check_out <= self.check_in:
             raise ValidationError("Check out must be later than check in")
+        # Накладання дат: активне бронювання цього номера перетинається з новим.
+        # Сусідні дати (заїзд у день виїзду) дозволені — перетину немає.
+        if self.room_id and self.check_in and self.check_out:
+            clash = Reservation.objects.filter(
+                room_id=self.room_id,
+                status__in=ACTIVE_STATUSES,
+                check_in__lt=self.check_out,
+                check_out__gt=self.check_in,
+            ).exclude(pk=self.pk)
+            if clash.exists():
+                raise ValidationError(
+                    "This room is already booked for the selected dates"
+                )
         # Не більше гостей, ніж вміщує тип номера (Single 1, Double 2, Suite 8)
         if self.room_id and self.guests:
             err = capacity_error(self.room.room_type, self.guests)

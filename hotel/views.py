@@ -14,6 +14,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import (
+    ACTIVE_STATUSES,
     Guest,
     MAX_GUESTS,
     ROOM_CAPACITY_LIMITS,
@@ -437,6 +438,13 @@ def rooms_view(request):
 
 COUNTRY_CODES = ["+380", "+1", "+44", "+49", "+33", "+48", "+39", "+34", "+90", "+81", "+86", "+91"]
 
+
+def _validation_message(exc):
+    """Зрозуміле повідомлення з ValidationError (в т.ч. з error_dict)."""
+    if hasattr(exc, "error_dict"):
+        return "; ".join(str(m) for errs in exc.error_dict.values() for err in errs for m in err.messages)
+    return "; ".join(str(m) for m in exc.messages)
+
 @login_required
 def reservations_view(request):
     admin = is_admin(request.user)
@@ -461,7 +469,12 @@ def reservations_view(request):
                 res.room.status = "Occupied"
                 res.room.save()
             elif new_status == "Checked-Out":
-                res.room.status = "Available"
+                # Номер лишається Occupied, якщо є інші активні бронювання
+                # (наприклад, сусідні дати вже забронювані)
+                still_booked = res.room.reservations.filter(
+                    status__in=ACTIVE_STATUSES,
+                ).exists()
+                res.room.status = "Occupied" if still_booked else "Available"
                 res.room.save()
             messages.success(request, f"Reservation {res.pk} updated")
             return redirect("reservations")
@@ -486,7 +499,11 @@ def reservations_view(request):
         elif check_out <= check_in:
             messages.error(request, "Check out must be later")
         else:
-            room = Room.objects.filter(number=room_number, status="Available").first()
+            # Номер можна бронювати і в статусі Occupied: чи вільні дати,
+            # вирішує перевірка накладання у Reservation.clean()
+            # (заїзд у день виїзду попереднього гостя дозволений).
+            room = Room.objects.filter(number=room_number) \
+                .exclude(status__in=["Cleaning", "Maintenance"]).first()
             if not room:
                 messages.error(request, "Reservation failed")
             else:
@@ -503,7 +520,7 @@ def reservations_view(request):
                     messages.success(request, "Reservation created")
                 except ValidationError as e:
                     guest.delete()
-                    messages.error(request, "Reservation failed")
+                    messages.error(request, _validation_message(e) or "Reservation failed")
             return redirect("reservations")
     reservations = Reservation.objects.select_related("guest", "room").all()
     if not admin:
@@ -513,9 +530,12 @@ def reservations_view(request):
     prefill_room = request.GET.get("room", "").strip()
     prefill_in = request.GET.get("check_in", "").strip()
     prefill_out = request.GET.get("check_out", "").strip()
-    available_rooms = Room.objects.filter(status="Available")
+    # Occupied теж показуємо: номер може бути вільним на обрані дати
+    # (наприклад, заїзд одразу після виїзду попереднього гостя)
+    bookable = Q(status__in=["Available", "Occupied"])
+    available_rooms = Room.objects.filter(bookable)
     if prefill_room:
-        available_rooms = Room.objects.filter(Q(status="Available") | Q(number=prefill_room))
+        available_rooms = Room.objects.filter(bookable | Q(number=prefill_room))
     return render(request, "hotel/reservations.html", {
         "reservations": reservations,
         "available_rooms": available_rooms,
