@@ -6,7 +6,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 
 # Курс USD → UAH для відображення цін українською
-USD_TO_UAH = Decimal("41.5")
+USD_TO_UAH = Decimal("44.78")
 
 SYMBOLS = {"en": "$", "uk": "₴"}
 
