@@ -58,7 +58,6 @@ a.btn:hover{filter:brightness(1.08)}
    коли обрано Day — тоді виїзд приховується (він дорівнює заїзду). */
 .form-grid .night-only{display:contents}
 .form-grid.day-mode .night-only{display:none}
-.form-grid > .hint{grid-column:1/-1}
 input,select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
 .phone{display:flex;gap:8px}
 .inline{display:inline-flex;gap:6px}

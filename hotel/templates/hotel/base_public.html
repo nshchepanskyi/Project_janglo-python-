@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GrandStay — {% block title %}{% tr "Find your next stay" %}{% endblock %}</title>
-<link rel="stylesheet" href="{% static 'hotel/style.css' %}">
+<link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=4">
 <link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=2">
 </head>
 <body class="public">
@@ -57,7 +57,7 @@
   </div>
   <div class="p-copy">© 2026 GrandStay Hotel · {% tr "All rights reserved" %}</div>
 </footer>
-<script src="{% static 'hotel/app.js' %}" defer></script>
+<script src="{% static 'hotel/app.js' %}?v=4" defer></script>
 <script src="{% static 'hotel/cal.js' %}?v=3" defer></script>
 </body>
 </html>
