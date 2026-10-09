@@ -58,6 +58,21 @@ RESERVATION_STATUSES = [
     ("Checked-Out", "Checked-Out"),
 ]
 
+# Тип перебування: Night — класичний нічліг (заїзд → виїзд наступного дня),
+# Day — денне бронювання: гість приїхав зранку (наприклад, на зустріч увечері)
+# і хоче відпочити в номері лише на день, без ночівлі.
+STAY_NIGHT, STAY_DAY = "Night", "Day"
+STAY_TYPES = [
+    (STAY_NIGHT, "Night"),
+    (STAY_DAY, "Day"),
+]
+
+# Фіксовані години денного бронювання: заїзд о 07:00, виїзд о 23:59
+# («з 7am до 12am») того самого дня. У базі зберігається одна дата —
+# check_in == check_out.
+DAY_CHECK_IN_TIME = "07:00"
+DAY_CHECK_OUT_TIME = "23:59"
+
 SERVICE_ORDER_STATUSES = [
     ("Pending", "Pending"),
     ("In Progress", "In Progress"),
@@ -166,6 +181,28 @@ class Guest(models.Model):
         return f"{self.name} ({self.pk})"
 
 
+def conflict_q(check_in, check_out, stay_type=STAY_NIGHT):
+    """Q-фільтр активних бронювань, що перетинаються з бажаним інтервалом.
+
+    Нічліг [ci, co) конфліктує з нічлігом лише на справжньому перетині
+    (сусідні дати — заїзд у день виїзду — дозволені). Денне бронювання
+    займає ВЕСЬ день D (07:00 → 23:59), тому:
+    - день D конфліктує з нічлігом [ci, co] включно з обома межами
+      (гість нічлігу заїжджає того вечора, а виїжджає вранці дня D);
+    - нічліг конфліктує з усіма днями, що потрапили в [ci, co];
+    - день із днем — лише на рівну дату.
+    """
+    if stay_type == STAY_DAY:
+        return (
+            Q(stay_type=STAY_NIGHT, check_in__lte=check_in, check_out__gte=check_in)
+            | Q(stay_type=STAY_DAY, check_in=check_in)
+        )
+    return (
+        Q(stay_type=STAY_NIGHT, check_in__lt=check_out, check_out__gt=check_in)
+        | Q(stay_type=STAY_DAY, check_in__gte=check_in, check_in__lte=check_out)
+    )
+
+
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="reservations")
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="reservations")
@@ -184,6 +221,10 @@ class Reservation(models.Model):
     # Скільки гостей заселяється (для публічного пошуку/картки місця)
     guests = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=RESERVATION_STATUSES, default="Pending")
+    # Тип перебування: Night — нічліг (заїзд → виїзд наступного дня),
+    # Day — денне бронювання: 07:00 → 23:59 того самого дня (без ночівлі).
+    # Для Day у базі зберігається одна дата: check_in == check_out.
+    stay_type = models.CharField(max_length=10, choices=STAY_TYPES, default=STAY_NIGHT)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -193,17 +234,24 @@ class Reservation(models.Model):
         return f"R{self.pk} {self.guest.name} -> {self.room.number}"
 
     def clean(self):
-        if self.check_in and self.check_out and self.check_out <= self.check_in:
+        if self.stay_type == STAY_DAY:
+            # Денне бронювання: одна й та сама дата, години 07:00 → 23:59
+            if self.check_in and self.check_out and self.check_out != self.check_in:
+                raise ValidationError("A day stay is one day only")
+        elif self.check_in and self.check_out and self.check_out <= self.check_in:
             raise ValidationError("Check out must be later than check in")
         # Накладання дат: активне бронювання цього номера перетинається з новим.
-        # Сусідні дати (заїзд у день виїзду) дозволені — перетину немає.
+        # Сусідні дати нічлігу (заїзд у день виїзду) дозволені — перетину немає;
+        # день конфліктує з нічлігом на обох межах (07:00–23:59 — увесь день).
         if self.room_id and self.check_in and self.check_out:
-            clash = Reservation.objects.filter(
-                room_id=self.room_id,
-                status__in=ACTIVE_STATUSES,
-                check_in__lt=self.check_out,
-                check_out__gt=self.check_in,
-            ).exclude(pk=self.pk)
+            clash = (
+                Reservation.objects.filter(
+                    room_id=self.room_id,
+                    status__in=ACTIVE_STATUSES,
+                )
+                .filter(conflict_q(self.check_in, self.check_out, self.stay_type))
+                .exclude(pk=self.pk)
+            )
             if clash.exists():
                 raise ValidationError(
                     "This room is already booked for the selected dates"
@@ -215,15 +263,37 @@ class Reservation(models.Model):
                 raise ValidationError({"guests": err})
 
     @property
+    def is_day_use(self):
+        """Денне бронювання (07:00 → 23:59, без ночівлі)."""
+        return self.stay_type == STAY_DAY
+
+    @property
     def nights(self):
+        """Кількість ночей; для денного бронювання — 0 (ночівлі немає)."""
         try:
-            return max((self.check_out - self.check_in).days, 1)
+            n = (self.check_out - self.check_in).days
         except Exception:
-            return 1
+            n = 1
+        return 0 if self.is_day_use else max(n, 1)
+
+    @property
+    def days(self):
+        """Одиниць оплати: 1 день для денного бронювання, інакше — ночі."""
+        return 1 if self.is_day_use else self.nights
+
+    @property
+    def check_in_time(self):
+        """Година заїзду (лише для дня: 07:00)."""
+        return DAY_CHECK_IN_TIME if self.is_day_use else ""
+
+    @property
+    def check_out_time(self):
+        """Година виїзду (лише для дня: 23:59)."""
+        return DAY_CHECK_OUT_TIME if self.is_day_use else ""
 
     @property
     def amount(self):
-        return self.room.price * self.nights
+        return self.room.price * self.days
 
     @property
     def fee(self):
@@ -322,15 +392,19 @@ def arrivals_count():
 ACTIVE_STATUSES = ["Pending", "Checked-In"]
 
 
-def search_rooms(location="", check_in=None, check_out=None, guests=None):
+def search_rooms(location="", check_in=None, check_out=None, guests=None, stay_type=STAY_NIGHT):
     """
     Пошук місць для публічного каталогу.
 
     - location  — збіг у назві, локації або номері;
     - guests    — лише номери з місткістю не меншою за кількість гостей;
     - дати      — головне правило: номер вільний, якщо жодне активне бронювання
-                  не перетинається з бажаним інтервалом
-                  (new.check_in < other.check_out AND new.check_out > other.check_in).
+                  не перетинається з бажаним інтервалом (див. conflict_q):
+                  нічліг ↔ нічліг на напіввідкритому інтервалі
+                  (new.check_in < other.check_out AND new.check_out > other.check_in),
+                  а день (07:00–23:59) займає весь календарний день.
+    - stay_type — тип бажаного перебування: для дня достатньо лише check_in
+                  (check_out не потрібен — він дорівнює check_in).
     """
     qs = Room.objects.all()
     if location:
@@ -341,23 +415,35 @@ def search_rooms(location="", check_in=None, check_out=None, guests=None):
         )
     if guests:
         qs = qs.filter(capacity__gte=guests)
-    if check_in and check_out:
-        busy = Reservation.objects.filter(
-            status__in=ACTIVE_STATUSES,
-            check_in__lt=check_out,
-            check_out__gt=check_in,
-        ).values_list("room_id", flat=True)
+    if check_in and (check_out or stay_type == STAY_DAY):
+        busy = (
+            Reservation.objects.filter(status__in=ACTIVE_STATUSES)
+            .filter(conflict_q(check_in, check_out, stay_type))
+            .values_list("room_id", flat=True)
+        )
         qs = qs.exclude(pk__in=busy)
     return qs
 
 
-def room_is_free(room, check_in=None, check_out=None):
-    """Чи вільний номер: за датами — перевірка перетину, без дат — статус."""
+def room_is_free(room, check_in=None, check_out=None, stay_type=STAY_NIGHT):
+    """Чи вільний номер: за датами — перевірка перетину, без дат — статус.
+
+    Для денного бронювання (stay_type=Day) достатньо лише check_in —
+    номер зайнятий на весь день D, якщо є нічліг, що накриває D
+    (включно з межами), або інший день D.
+    """
+    if stay_type == STAY_DAY:
+        if not check_in:
+            return room.status == "Available"
+        return not (
+            Reservation.objects.filter(room=room, status__in=ACTIVE_STATUSES)
+            .filter(conflict_q(check_in, None, STAY_DAY))
+            .exists()
+        )
     if not (check_in and check_out):
         return room.status == "Available"
-    return not Reservation.objects.filter(
-        room=room,
-        status__in=ACTIVE_STATUSES,
-        check_in__lt=check_out,
-        check_out__gt=check_in,
-    ).exists()
+    return not (
+        Reservation.objects.filter(room=room, status__in=ACTIVE_STATUSES)
+        .filter(conflict_q(check_in, check_out, STAY_NIGHT))
+        .exists()
+    )

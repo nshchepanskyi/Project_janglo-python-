@@ -72,9 +72,9 @@
       {% for r in recent %}
         <tr>
           <td><span class="pill">{{ r.room.number }}</span> · {% tr r.room.room_type %}</td>
-          <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td>
-          <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}</td>
-          <td>{{ r.nights }}</td>
+          <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_in_time }}{% endif %}</td>
+          <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_out_time }}{% endif %}</td>
+          <td>{% if r.is_day_use %}<span class="pill">{% tr "DAY" %}</span>{% else %}{{ r.nights }}{% endif %}</td>
           <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
           <td>{% money r.amount %}</td>
           <td><a class="btn ghost small" href="{% url 'reservation_detail' r.id %}">{% tr "Details" %}</a></td>

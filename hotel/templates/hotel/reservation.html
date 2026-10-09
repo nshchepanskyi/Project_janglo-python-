@@ -7,18 +7,19 @@
   <div class="card">
     <h2>{% tr "Stay" %}</h2>
     <table class="kv">
+      <tr><td>{% tr "Stay type" %}</td><td>{% if res.is_day_use %}{% tr "Day stay" %} · {{ res.check_in_time }}–{{ res.check_out_time }}{% else %}{% tr "Night stay" %}{% endif %}</td></tr>
       <tr><td>{% tr "Room" %}</td><td><span class="pill">{{ res.room.number }}</span> · {% tr res.room.room_type %}</td></tr>
       {% if res.room.title %}<tr><td>{% tr "Title" %}</td><td>{{ res.room.title }}</td></tr>{% endif %}
       <tr><td>{% tr "Guest" %}</td><td>{{ res.guest.name }}</td></tr>
-      <tr><td>{% tr "Check In" %}</td><td>{{ res.check_in|date:"Y-m-d" }}</td></tr>
-      <tr><td>{% tr "Check Out" %}</td><td>{{ res.check_out|date:"Y-m-d" }}</td></tr>
-      <tr><td>{% tr "NIGHTS" %}</td><td>{{ res.nights }}</td></tr>
+      <tr><td>{% tr "Check In" %}</td><td>{{ res.check_in|date:"Y-m-d" }}{% if res.is_day_use %} · {{ res.check_in_time }}{% endif %}</td></tr>
+      <tr><td>{% tr "Check Out" %}</td><td>{{ res.check_out|date:"Y-m-d" }}{% if res.is_day_use %} · {{ res.check_out_time }}{% endif %}</td></tr>
+      <tr><td>{% if res.is_day_use %}{% tr "DAY" %}{% else %}{% tr "NIGHTS" %}{% endif %}</td><td>{{ res.days }}</td></tr>
       <tr><td>{% tr "Guests" %}</td><td>{{ res.guests }}</td></tr>
     </table>
 
     <h3>{% tr "Bill" %}</h3>
     <table class="kv">
-      <tr><td>{% money res.room.price %} × {{ res.nights }} {% tr "NIGHTS" %}</td><td class="nowrap">{% money res.amount 2 %}</td></tr>
+      <tr><td>{% money res.room.price %} × {{ res.days }} {% if res.is_day_use %}{% tr "DAY" %}{% else %}{% tr "NIGHTS" %}{% endif %}</td><td class="nowrap">{% money res.amount 2 %}</td></tr>
       <tr><td>{% tr "Service fee" %} (12%)</td><td class="nowrap">{% money res.fee 2 %}</td></tr>
       <tr><td>{% tr "Extra services" %}</td><td class="nowrap">{% money extras_total 2 %}</td></tr>
       <tr><td><b>{% tr "Total" %}</b></td><td class="nowrap"><b>{% money grand_total 2 %}</b></td></tr>

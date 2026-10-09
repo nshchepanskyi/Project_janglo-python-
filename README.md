@@ -29,6 +29,27 @@
   (`ServiceOrder.paid`). Немає несплачених послуг → виселення (Checked-Out)
   заблоковане повідомленням.
 
+**Денне бронювання (day use):**
+- Гість приїхав зранку (зустріч увечері) і бронює номер **лише на день**:
+  заїзд о **07:00**, виїзд о **23:59** того самого дня, без ночівлі.
+  У базі — `Reservation.stay_type` (`Night`/`Day`, міграція `0005`) і одна
+  дата: `check_out = check_in` (для `Day` це накладає ще й DB-free перевірка
+  `clean()`: «A day stay is one day only»).
+- **Форма `/reservations/`** має добір **Stay type** (Night stay /
+  Day stay (07:00–23:59)). У day-режимі поле виїзду ховається
+  (`.day-mode` ставить міні-JS в `app.js`) і сервер сам ставить
+  `check_out = check_in`; без JS поле лишається видимим — можна вписати ту саму
+  дату, бізнес-логіка живе на сервері. Префіл `?stay=day` одразу вмикає день.
+- **Розрахунок:** `nights = 0` (ночівлі немає), `days = 1`, `amount = ціна × 1`;
+  у чеку рядок «$120 × 1 DAY», години `07:00`/`23:59` у деталях і списках,
+  пігулка **DAY** замість діапазону дат (список, профіль).
+- **Правило вільності** (`conflict_q` у `models.py`): день D займає весь
+  календарний день, тому конфліктує з нічлігом `[ci, co]` **включно з обома
+  межами** (гість нічлігу заїжджає того вечора, а виїжджає вранці D), з іншим
+  днем — лише на рівну дату; нічліг конфліктує з усіма днями в `[ci, co]`.
+  Ніч-vs-ніч не змінився: сусідні дати дозволені. Хелпер використовують
+  `clean()`, `search_rooms()`, `room_is_free()`.
+
 ## Запуск
 
 ```bash
@@ -60,7 +81,7 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 | `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
 | `/places/<number>/` | **сторінка місця**: фото, деталі, чек і кнопка **Book · $…** |
 | `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
-| `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена) |
+| `/reservations/?room=101&check_in=...&check_out=...` | кнопка **Book** з картки (після входу форма заповнена); опційний `&stay=day` добирає денне бронювання |
 | `/reservations/<id>/` | сторінка бронювання: рахунок + додаткові послуги та оплата |
 
 Дати заїзду/виїзду вибираються **календарем** (`hotel/static/hotel/cal.js`,
@@ -71,9 +92,12 @@ http://127.0.0.1:8000/dashboard/ (редірект на логін).
 із датами: пошук, сторінка місця і `/reservations/`. Без JS поле
 відкочується до нативного `input[type=date]` (прогресивний підхід).
 
-Правило вільності (`search_rooms` у `models.py`): номер вільний, якщо жодне
-активне бронювання не перетинається з бажаним інтервалом
-(`check_in < other.check_out AND check_out > other.check_in`).
+Правило вільності (`search_rooms` / `room_is_free` у `models.py`, спільний
+Q-хелпер `conflict_q`): для нічлігів номер вільний, якщо жодне активне
+бронювання не перетинається з бажаним інтервалом
+(`check_in < other.check_out AND check_out > other.check_in`), а **денне
+бронювання** (07:00–23:59) конфліктує з нічлігом, що накриває цю дату
+(включно з межами), та з іншим днем на ту саму дату.
 Сервісний збір публічного бронювання — 12% (`SERVICE_FEE_RATE`).
 
 Ліміт місткості за типом номера (`ROOM_CAPACITY_LIMITS`): **Single — 1 гість,
@@ -101,9 +125,9 @@ hotel/             # застосунок готелю
   static/hotel/landing.css  # публічна частина (зелений бренд)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 61 тест (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
+  tests.py         # 79 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
                    # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
-                   # CalendarWiringTests, RoleAccessTests тощо)
+                   # CalendarWiringTests, DayStayTests, RoleAccessTests тощо)
 ```
 
 ## Відповідність Flet → Django

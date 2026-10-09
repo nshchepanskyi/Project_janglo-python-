@@ -76,10 +76,37 @@
     });
   }
 
+  /* ---------- 4. Stay type: добір «Night / Day» на формі бронювання ----------
+     У day-режимі (07:00 → 23:59) приховуємо поле виїзду та підставляємо
+     йому дату заїзду: сервер сам ставить check_out = check_in, а значення
+     поля потрібне, щоб міні-валідація cal.js не блокувала сабміт.
+     Без JS все працює теж: поле виїзду видиме, користувач вводить ту саму
+     дату — бізнес-логіка (день = 07:00 → 23:59) живе на сервері. */
+  function initStayType() {
+    Array.prototype.forEach.call(
+      document.querySelectorAll('form select[name="stay_type"]'),
+      function (sel) {
+        var form = sel.closest("form");
+        var checkIn = form && form.querySelector('input[name="check_in"]');
+        var checkOut = form && form.querySelector('input[name="check_out"]');
+        if (!form || !checkOut) return;
+        function sync() {
+          var day = sel.value === "Day";
+          form.classList.toggle("day-mode", day);
+          if (day && checkIn && checkIn.value) checkOut.value = checkIn.value;
+        }
+        sel.addEventListener("change", sync);
+        if (checkIn) checkIn.addEventListener("change", sync);
+        sync();
+      }
+    );
+  }
+
   function init() {
     try { animateNumbers(); } catch (e) {}
     try { animateBars(); } catch (e) {}
     try { pressFeedback(); } catch (e) {}
+    try { initStayType(); } catch (e) {}
   }
 
   if (document.readyState === "loading") {

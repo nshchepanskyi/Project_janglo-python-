@@ -18,6 +18,8 @@ from .models import (
     calc_service_revenue,
     get_occupancy_rate,
     get_services_summary,
+    room_is_free,
+    search_rooms,
 )
 
 # Тимчасове сховище для тестових завантажень фото
@@ -723,3 +725,207 @@ class CalendarWiringTests(TestCase):
         resp = self.client.get("/reservations/")
         self.assertContains(resp, 'class="js-cal"')
         self.assertContains(resp, 'class="js-cal" required')  # обов'язковість переїжджає на кнопку
+
+
+class DayStayTests(TestCase):
+    """Денне бронювання (day use): заїзд о 07:00, виїзд о 23:59 того самого дня.
+
+    Сценарій: гість приїхав зранку (зустріч увечері) і бронює номер лише на день.
+    У базі зберігається одна дата (check_in == check_out), рахується 1 день.
+    День займає весь календарний день: конфліктує з нічлігом, що накриває
+    цю дату (включно з межами), та з іншим днем на ту саму дату.
+    """
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="801", room_type="Double", price=Decimal("120"),
+            title="Day Use Room", location="Kyiv, Ukraine", capacity=2,
+        )
+        self.user = User.objects.create_user("dayuser", "dayuser@test.com", "secret123")
+        self.client.login(username="dayuser", password="secret123")
+        self.guest = Guest.objects.create(
+            name="Day Guest", phone="+380501112233", email="day@t.com",
+        )
+
+    def _day(self, d, save=False, user=None):
+        """Денне бронювання на дату d (нічліговий двомісний номер 801)."""
+        r = Reservation(
+            guest=self.guest, room=self.room, stay_type="Day",
+            check_in=d, check_out=d, user=user,
+        )
+        if save:
+            r.save()
+        return r
+
+    # ---------- модель ----------
+    def test_day_stay_is_one_day_amount(self):
+        r = self._day(date(2026, 11, 5))
+        r.full_clean()
+        self.assertEqual(r.nights, 0)          # ночівлі немає
+        self.assertEqual(r.days, 1)            # рахується 1 день
+        self.assertEqual(r.amount, Decimal("120"))
+        self.assertEqual(r.check_in_time, "07:00")
+        self.assertEqual(r.check_out_time, "23:59")
+        self.assertTrue(r.is_day_use)
+
+    def test_day_stay_must_be_one_date(self):
+        r = Reservation(
+            guest=self.guest, room=self.room, stay_type="Day",
+            check_in=date(2026, 11, 5), check_out=date(2026, 11, 6),
+        )
+        with self.assertRaises(ValidationError):
+            r.full_clean()
+
+    def test_night_stay_still_needs_later_checkout(self):
+        r = Reservation(
+            guest=self.guest, room=self.room, stay_type="Night",
+            check_in=date(2026, 11, 5), check_out=date(2026, 11, 5),
+        )
+        with self.assertRaises(ValidationError):
+            r.full_clean()
+
+    # ---------- накладання: день ↔ ніч ----------
+    def test_day_conflicts_with_night_on_edges(self):
+        # нічліг 10→15: день 10 (гість нічлігу заїжджає ввечері) і 15 (виїзд уранці)
+        # теж зайняті — день триває 07:00–23:59
+        Reservation.objects.create(
+            guest=self.guest, room=self.room,
+            check_in=date(2026, 11, 10), check_out=date(2026, 11, 15),
+        )
+        for d in (10, 12, 15):
+            with self.assertRaises(ValidationError, msg=f"день {d} мусить бути зайнятий"):
+                self._day(date(2026, 11, d)).full_clean()
+
+    def test_day_free_outside_night_interval(self):
+        Reservation.objects.create(
+            guest=self.guest, room=self.room,
+            check_in=date(2026, 11, 10), check_out=date(2026, 11, 15),
+        )
+        for d in (9, 16):  # 9-го гість нічлігу ще не заїхав, 16-го уже поїхав
+            self._day(date(2026, 11, d)).full_clean()
+
+    def test_night_conflicts_with_day_inside_interval(self):
+        self._day(date(2026, 11, 12), save=True)
+        for ci, co in ((11, 13), (12, 14), (10, 12)):  # нічліги, що накривають 12-те
+            r = Reservation(
+                guest=self.guest, room=self.room,
+                check_in=date(2026, 11, ci), check_out=date(2026, 11, co),
+            )
+            with self.assertRaises(ValidationError, msg=f"{ci}→{co} мусить конфліктувати"):
+                r.full_clean()
+        # сусідні нічліги без 12-го — можна (заїзд у день виїзду дозволений)
+        for ci, co in ((8, 11), (13, 15)):
+            Reservation(
+                guest=self.guest, room=self.room,
+                check_in=date(2026, 11, ci), check_out=date(2026, 11, co),
+            ).full_clean()
+
+    # ---------- накладання: день ↔ день ----------
+    def test_day_vs_day_same_date_conflicts(self):
+        self._day(date(2026, 11, 5), save=True)
+        with self.assertRaises(ValidationError):
+            self._day(date(2026, 11, 5)).full_clean()
+        self._day(date(2026, 11, 6)).full_clean()  # інший день — вільно
+
+    # ---------- публічний пошук ----------
+    def test_public_search_excludes_day_booking(self):
+        self._day(date(2026, 11, 12), save=True)
+        # день 12-го блокує нічліги, що його накривають (включно з межами)
+        for ci, co in (("2026-11-10", "2026-11-13"), ("2026-11-12", "2026-11-14"),
+                       ("2026-11-10", "2026-11-12")):
+            rooms = search_rooms(check_in=date.fromisoformat(ci), check_out=date.fromisoformat(co))
+            self.assertFalse(rooms.filter(pk=self.room.pk).exists(), f"{ci}→{co}")
+        # інтервали без 12-го — вільні
+        for ci, co in (("2026-11-08", "2026-11-11"), ("2026-11-13", "2026-11-15")):
+            rooms = search_rooms(check_in=date.fromisoformat(ci), check_out=date.fromisoformat(co))
+            self.assertTrue(rooms.filter(pk=self.room.pk).exists(), f"{ci}→{co}")
+
+    def test_room_is_free_day_mode(self):
+        self._day(date(2026, 11, 12), save=True)
+        # нічний режим: перетини як і раніше
+        self.assertFalse(room_is_free(self.room, date(2026, 11, 11), date(2026, 11, 13)))
+        self.assertTrue(room_is_free(self.room, date(2026, 11, 8), date(2026, 11, 11)))
+        # day-режим: достатньо лише однієї дати
+        self.assertFalse(room_is_free(self.room, date(2026, 11, 12), None, stay_type="Day"))
+        self.assertTrue(room_is_free(self.room, date(2026, 11, 11), None, stay_type="Day"))
+        self.assertTrue(room_is_free(self.room, date(2026, 11, 13), None, stay_type="Day"))
+
+    # ---------- форми / view ----------
+    def test_form_shows_stay_type_select(self):
+        resp = self.client.get("/reservations/")
+        self.assertContains(resp, 'name="stay_type"')
+        self.assertContains(resp, "Night stay")
+        self.assertContains(resp, "Day stay (07:00–23:59)")
+        self.assertContains(resp, 'class="night-only"')
+
+    def test_day_booking_from_form_ignores_checkout(self):
+        resp = self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "801",
+            "stay_type": "Day", "check_in": "2026-11-05", "check_out": "2026-11-09",
+        })
+        self.assertEqual(resp.status_code, 302)
+        res = Reservation.objects.get()
+        self.assertEqual(res.stay_type, "Day")
+        self.assertEqual(res.check_in, date(2026, 11, 5))
+        self.assertEqual(res.check_out, date(2026, 11, 5))  # виїзд = заїзду
+        self.assertEqual(res.amount, Decimal("120"))
+
+    def test_day_booking_without_checkout_date(self):
+        # у day-режимі поле виїзду можна лишити порожнім — сервер сам поставить дату
+        self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "801",
+            "stay_type": "Day", "check_in": "2026-11-05", "check_out": "",
+        }, follow=True)
+        res = Reservation.objects.get()
+        self.assertEqual(res.check_out, date(2026, 11, 5))
+
+    def test_night_booking_without_checkout_still_errors(self):
+        resp = self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "801",
+            "stay_type": "Night", "check_in": "2026-11-05", "check_out": "",
+        }, follow=True)
+        self.assertEqual(Reservation.objects.count(), 0)
+        self.assertContains(resp, "Select check out date")
+
+    def test_day_booking_blocks_night_booking(self):
+        self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Oleh", "country_code": "+380",
+            "phone": "501112233", "email": "oleh@test.com", "room_number": "801",
+            "stay_type": "Day", "check_in": "2026-11-05", "check_out": "",
+        })
+        resp = self.client.post("/reservations/", {
+            "action": "create", "guest_name": "Ivan", "country_code": "+380",
+            "phone": "501112234", "email": "ivan@test.com", "room_number": "801",
+            "stay_type": "Night", "check_in": "2026-11-04", "check_out": "2026-11-06",
+        }, follow=True)
+        self.assertEqual(Reservation.objects.count(), 1)
+        self.assertContains(resp, "This room is already booked for the selected dates")
+
+    def test_detail_page_shows_day_stay(self):
+        res = self._day(date(2026, 11, 5), save=True, user=self.user)
+        resp = self.client.get(f"/reservations/{res.pk}/")
+        self.assertContains(resp, "Day stay")
+        self.assertContains(resp, "07:00")
+        self.assertContains(resp, "23:59")
+        self.assertContains(resp, "× 1 DAY")  # рахунок: 1 день, а не 0 ночей
+
+    def test_reservations_list_shows_day_marker(self):
+        self._day(date(2026, 11, 5), save=True, user=self.user)
+        resp = self.client.get("/reservations/")
+        self.assertContains(resp, "07:00–23:59")
+        self.assertContains(resp, ">DAY<")  # пігулка DAY замість діапазону дат
+
+    def test_prefill_stay_day_selects_day_option(self):
+        resp = self.client.get("/reservations/?stay=day")
+        self.assertContains(resp, '<option value="Day" selected>')
+
+    def test_ukrainian_day_use_texts(self):
+        self._day(date(2026, 11, 5), save=True, user=self.user)
+        self.client.get("/lang/")  # en → uk
+        resp = self.client.get("/reservations/")
+        self.assertContains(resp, "Денне бронювання (07:00–23:59)")
+        self.assertContains(resp, "Нічне бронювання")
+        self.assertContains(resp, "ДЕНЬ")

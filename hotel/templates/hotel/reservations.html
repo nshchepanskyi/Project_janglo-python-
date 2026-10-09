@@ -11,8 +11,13 @@
     <input name="phone" placeholder="{% tr "Phone Number" %}"></div>
     <input name="email" type="email" placeholder="{% tr "Email" %}" value="{{ prefill_email }}" required>
     <select name="room_number" required><option value="">{% tr "Available Rooms" %}</option>{% for r in available_rooms %}<option value="{{ r.number }}" {% if prefill_room == r.number %}selected{% endif %}>{{ r.number }} — {% tr r.room_type %} ({% money r.price %})</option>{% endfor %}</select>
+    <select name="stay_type">
+      <option value="Night" {% if prefill_stay != "Day" %}selected{% endif %}>{% tr "Night stay" %}</option>
+      <option value="Day" {% if prefill_stay == "Day" %}selected{% endif %}>{% tr "Day stay (07:00–23:59)" %}</option>
+    </select>
     <input name="check_in" type="date" value="{{ prefill_check_in|default:today }}" class="js-cal" required>
-    <input name="check_out" type="date" value="{{ prefill_check_out }}" class="js-cal" required>
+    <span class="night-only"><input name="check_out" type="date" value="{{ prefill_check_out }}" class="js-cal" required></span>
+    <p class="hint">{% tr "Day stay: arrival 07:00, departure 23:59 — the same day, no overnight. For it the check-out date equals the check-in date." %}</p>
     <button class="btn primary" type="submit">{% tr "Create" %}</button>
   </form>
 </div>
@@ -22,7 +27,7 @@
     <thead><tr><th>{% tr "Reservation" %}</th><th>{% tr "Guest" %}</th><th>{% tr "Room" %}</th><th>{% tr "STATUS" %}</th>{% if can_manage %}<th></th>{% endif %}</tr></thead>
     <tbody>
     {% for r in reservations %}
-      <tr><td><a class="pill" href="{% url 'reservation_detail' r.id %}">#{{ r.id }}</a></td><td>{{ r.guest.name }}<br><small class="nowrap">{{ r.check_in|date:"Y-m-d" }} → {{ r.check_out|date:"Y-m-d" }}</small></td><td>{{ r.room.number }}</td>
+      <tr><td><a class="pill" href="{% url 'reservation_detail' r.id %}">#{{ r.id }}</a></td><td>{{ r.guest.name }}<br><small class="nowrap">{% if r.is_day_use %}{{ r.check_in|date:"Y-m-d" }} · {{ r.check_in_time }}–{{ r.check_out_time }} <span class="pill">{% tr "DAY" %}</span>{% else %}{{ r.check_in|date:"Y-m-d" }} → {{ r.check_out|date:"Y-m-d" }}{% endif %}</small></td><td>{{ r.room.number }}</td>
       <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
       {% if can_manage %}
       <td><form method="post" class="inline">{% csrf_token %}

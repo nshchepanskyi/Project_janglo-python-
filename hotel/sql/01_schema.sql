@@ -60,15 +60,24 @@ CREATE TABLE IF NOT EXISTS hotel_reservation (
     guests INTEGER NOT NULL DEFAULT 1 CHECK (guests >= 1),
     status VARCHAR(20) NOT NULL DEFAULT 'Pending'
         CHECK (status IN ('Pending', 'Checked-In', 'Checked-Out')),
+    -- тип перебування: Night — нічліг, Day — денне бронювання (07:00 → 23:59,
+    -- одна дата: check_out = check_in)
+    stay_type VARCHAR(10) NOT NULL DEFAULT 'Night'
+        CHECK (stay_type IN ('Night', 'Day')),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (check_out > check_in)
+    -- нічліг: виїзд пізніше заїзду; день: одна й та сама дата
+    CHECK (
+        (stay_type = 'Night' AND check_out > check_in)
+        OR (stay_type = 'Day' AND check_out = check_in)
+    )
 );
 
 CREATE INDEX IF NOT EXISTS idx_reservation_guest ON hotel_reservation(guest_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_room ON hotel_reservation(room_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_user ON hotel_reservation(user_id);
 CREATE INDEX IF NOT EXISTS idx_reservation_status ON hotel_reservation(status);
--- швидкий пошук вільності: перетин інтервалів (check_in < other.check_out AND check_out > other.check_in)
+-- швидкий пошук вільності: перетин інтервалів нічлігу
+-- (check_in < other.check_out AND check_out > other.check_in) + дні (stay_type = 'Day')
 CREATE INDEX IF NOT EXISTS idx_reservation_dates ON hotel_reservation(check_in, check_out);
 
 CREATE TABLE IF NOT EXISTS hotel_serviceorder (

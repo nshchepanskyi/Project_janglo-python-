@@ -22,6 +22,8 @@ from .models import (
     Room,
     Service,
     ServiceOrder,
+    STAY_DAY,
+    STAY_NIGHT,
     arrivals_count,
     calc_reservation_revenue,
     calc_service_fee,
@@ -503,6 +505,15 @@ def reservations_view(request):
         room_number = request.POST.get("room_number", "")
         check_in = request.POST.get("check_in", "")
         check_out = request.POST.get("check_out", "")
+        # Тип перебування: Day — номер лише на день (07:00 → 23:59).
+        # Для дня сервер сам ставить виїзд = заїзду (поле виїзду ігнорується),
+        # тому нормалізуємо ДО ланцюга перевірок — далі день іде шляхом
+        # звичайного створення, минаючи лише перевірку «виїзд пізніше заїзду».
+        stay_type = request.POST.get("stay_type", STAY_NIGHT)
+        if stay_type not in (STAY_NIGHT, STAY_DAY):
+            stay_type = STAY_NIGHT
+        if stay_type == STAY_DAY and check_in:
+            check_out = check_in
         if not name:
             messages.error(request, "Enter guest name")
         elif not email or not _validate_email(email):
@@ -513,7 +524,7 @@ def reservations_view(request):
             messages.error(request, "Select check in date")
         elif not check_out:
             messages.error(request, "Select check out date")
-        elif check_out <= check_in:
+        elif stay_type != STAY_DAY and check_out <= check_in:
             messages.error(request, "Check out must be later")
         else:
             # Номер можна бронювати і в статусі Occupied: чи вільні дати,
@@ -527,7 +538,7 @@ def reservations_view(request):
                 guest = Guest.objects.create(name=name, phone=f"{code}{phone}", email=email)
                 res = Reservation(
                     guest=guest, room=room, check_in=check_in, check_out=check_out,
-                    user=request.user,
+                    user=request.user, stay_type=stay_type,
                 )
                 try:
                     res.full_clean()
@@ -547,6 +558,10 @@ def reservations_view(request):
     prefill_room = request.GET.get("room", "").strip()
     prefill_in = request.GET.get("check_in", "").strip()
     prefill_out = request.GET.get("check_out", "").strip()
+    # ?stay=day — одразу добірати денне бронювання (07:00 → 23:59)
+    prefill_stay = request.GET.get("stay", "").strip().capitalize()
+    if prefill_stay not in ("Night", "Day"):
+        prefill_stay = STAY_NIGHT
     # Occupied теж показуємо: номер може бути вільним на обрані дати
     # (наприклад, заїзд одразу після виїзду попереднього гостя)
     bookable = Q(status__in=["Available", "Occupied"])
@@ -563,6 +578,7 @@ def reservations_view(request):
         "prefill_room": prefill_room,
         "prefill_check_in": prefill_in,
         "prefill_check_out": prefill_out,
+        "prefill_stay": prefill_stay,
     })
 
 

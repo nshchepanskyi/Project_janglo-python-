@@ -22,8 +22,8 @@ class GuestAdmin(admin.ModelAdmin):
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ("id", "guest", "room", "check_in", "check_out", "status")
-    list_filter = ("status",)
+    list_display = ("id", "guest", "room", "stay_type", "check_in", "check_out", "status")
+    list_filter = ("status", "stay_type")
 
 
 @admin.register(ServiceOrder)
