@@ -735,3 +735,75 @@
   .cta h2 { font-size: 20px }
   .review-form form { max-width: 100% }
 }
+
+/* ---------- бургер-меню (телефон): висувна шухляда зліва ----------
+   Без JS нічого не ховається: кнопки немає, меню лишається у шапці
+   (див. нижче ≤560px — pills). З JS app.js ставить html.burger-ready,
+   і nav перетворюється на фіксовану шухляду за екраном. */
+.p-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  background: var(--l-surface);
+  border: 1px solid var(--l-border);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.p-burger span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--l-text);
+  transition: transform .2s, opacity .2s;
+}
+/* анімація «гамбургер → хрестик» */
+.p-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg) }
+.p-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0 }
+.p-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg) }
+
+.nav-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(15, 23, 42, .45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s;
+}
+.nav-overlay.show { opacity: 1; pointer-events: auto }
+/* під відкритим меню сторінка за шухлядою не скролиться */
+html.nav-locked { overflow: hidden }
+
+@media (max-width: 900px) {
+  html.burger-ready .p-burger { display: flex }
+  html.burger-ready .p-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 60;
+    width: 262px;
+    max-width: 82vw;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 14px 12px;
+    background: var(--l-surface);
+    border-right: 1px solid var(--l-border);
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+  }
+  html.burger-ready .p-nav.open { transform: none }
+  html.burger-ready .p-nav a {
+    justify-content: flex-start;
+    padding: 11px 14px;
+    font-size: 15px;
+  }
+}

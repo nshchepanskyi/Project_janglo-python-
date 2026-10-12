@@ -5,12 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GrandStay — {% block title %}{% tr "Find your next stay" %}{% endblock %}</title>
 <link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=5">
-<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=6">
 </head>
 <body class="public">
 <header class="p-topbar">
+  {% tr "Menu" as menu_label %}
+  <button class="p-burger" type="button" aria-label="{{ menu_label }}" aria-expanded="false" aria-controls="p-nav"><span></span><span></span><span></span></button>
   <a class="p-brand" href="{% url 'home' %}">GrandStay</a>
-  <nav class="p-nav">
+  <nav class="p-nav" id="p-nav">
     <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">{% tr "Home" %}</a>
     <a href="{% url 'places' %}" class="{% if request.resolver_match.url_name == 'places' %}active{% endif %}">{% tr "Book" %}</a>
     {% if is_admin %}
@@ -58,7 +60,7 @@
   </div>
   <div class="p-copy">© 2026 GrandStay Hotel · {% tr "All rights reserved" %}</div>
 </footer>
-<script src="{% static 'hotel/app.js' %}?v=5" defer></script>
+<script src="{% static 'hotel/app.js' %}?v=6" defer></script>
 <script src="{% static 'hotel/cal.js' %}?v=5" defer></script>
 </body>
 </html>

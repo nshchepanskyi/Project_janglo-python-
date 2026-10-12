@@ -102,11 +102,56 @@
     );
   }
 
+  /* ---------- 5. Бургер-меню на телефоні (≤900px) ----------
+     На мобільних nav перетворюється на бічну шухляду (CSS: html.burger-ready),
+     а у шапці показується кнопка-бургер. Закриття: оверлей, ESC або клік по
+     пункту меню. Без JS нічого не ховається — меню лишається у шапці. */
+  function initBurger() {
+    var burger = document.querySelector(".p-burger");
+    var nav = document.querySelector(".p-nav");
+    if (!burger || !nav) return;
+    document.documentElement.classList.add("burger-ready");
+
+    var overlay = document.createElement("div");
+    overlay.className = "nav-overlay";
+    document.body.appendChild(overlay);
+
+    function setOpen(open) {
+      nav.classList.toggle("open", open);
+      overlay.classList.toggle("show", open);
+      burger.setAttribute("aria-expanded", open ? "true" : "false");
+      document.documentElement.classList.toggle("nav-locked", open);
+    }
+
+    burger.addEventListener("click", function () {
+      setOpen(!nav.classList.contains("open"));
+    });
+    overlay.addEventListener("click", function () {
+      setOpen(false);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") setOpen(false);
+    });
+    nav.addEventListener("click", function (e) {
+      if (e.target && e.target.closest && e.target.closest("a")) setOpen(false);
+    });
+    // вікно розширили до десктопу — шухляда більше не потрібна
+    if (window.matchMedia) {
+      var mq = window.matchMedia("(max-width: 900px)");
+      if (mq.addEventListener) {
+        mq.addEventListener("change", function (ev) {
+          if (!ev.matches) setOpen(false);
+        });
+      }
+    }
+  }
+
   function init() {
     try { animateNumbers(); } catch (e) {}
     try { animateBars(); } catch (e) {}
     try { pressFeedback(); } catch (e) {}
     try { initStayType(); } catch (e) {}
+    try { initBurger(); } catch (e) {}
   }
 
   if (document.readyState === "loading") {

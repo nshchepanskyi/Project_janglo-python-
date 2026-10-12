@@ -1218,6 +1218,27 @@ class MobileVersionTests(TestCase):
 
     def test_static_links_carry_cache_version(self):
         resp = self.client.get("/")
-        self.assertContains(resp, "landing.css?v=5")
+        self.assertContains(resp, "landing.css?v=6")
+        self.assertContains(resp, "app.js?v=6")
         resp = self.client.get("/login/")
         self.assertContains(resp, "style.css?v=5")
+
+    def test_burger_menu_markup(self):
+        # у шапці — кнопка-бургер (aria) і nav#p-nav як шухлядне меню
+        resp = self.client.get("/")
+        self.assertContains(resp, 'class="p-burger"')
+        self.assertContains(resp, 'aria-expanded="false"')
+        self.assertContains(resp, 'id="p-nav"')
+        # локалізація aria-label: за замовчуванням EN «Menu»
+        self.assertContains(resp, 'aria-label="Menu"')
+
+    def test_burger_wired_in_js_and_css(self):
+        from django.contrib.staticfiles import finders
+        with open(finders.find("hotel/app.js"), encoding="utf-8") as fh:
+            js = fh.read()
+        with open(finders.find("hotel/landing.css"), encoding="utf-8") as fh:
+            css = fh.read()
+        self.assertIn("initBurger", js)             # логіка відкриття/закриття
+        self.assertIn("burger-ready", js + css)     # клас, що вмикає шухляду
+        self.assertIn("translateX(-105%)", css)     # меню ховається за екран
+        self.assertIn(".nav-overlay", css)          # півтемний оверлей згори
