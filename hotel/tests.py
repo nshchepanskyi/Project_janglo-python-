@@ -1218,7 +1218,7 @@ class MobileVersionTests(TestCase):
 
     def test_static_links_carry_cache_version(self):
         resp = self.client.get("/")
-        self.assertContains(resp, "landing.css?v=6")
+        self.assertContains(resp, "landing.css?v=7")
         self.assertContains(resp, "app.js?v=6")
         resp = self.client.get("/login/")
         self.assertContains(resp, "style.css?v=5")
@@ -1242,3 +1242,7 @@ class MobileVersionTests(TestCase):
         self.assertIn("burger-ready", js + css)     # клас, що вмикає шухляду
         self.assertIn("translateX(-105%)", css)     # меню ховається за екран
         self.assertIn(".nav-overlay", css)          # півтемний оверлей згори
+        # шапка — sticky+z-index (стекінг-контекст): без підняття над оверлеєм
+        # шухляда виявляється під сірою "завісою" і тапи не потрапляють у меню
+        self.assertIn("burger-ready .p-topbar", css)
+        self.assertIn("burger-ready .p-burger", css)

@@ -781,7 +781,17 @@
 html.nav-locked { overflow: hidden }
 
 @media (max-width: 900px) {
-  html.burger-ready .p-burger { display: flex }
+  /* Шапка — sticky з z-index, тобто вона створює стекінг-контекст: шухляда
+     (дитина шапки) має бути над оверлеєм, тому піднімаємо саму шапку. */
+  html.burger-ready .p-topbar { z-index: 60 }
+  html.burger-ready .p-burger {
+    display: flex;
+    /* ✕ відкритого меню: фіксуємо ПОВЕРХ шухляди (шухляда перекриває шапку) */
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 61;
+  }
   html.burger-ready .p-nav {
     position: fixed;
     top: 0;
@@ -793,7 +803,7 @@ html.nav-locked { overflow: hidden }
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
-    padding: 14px 12px;
+    padding: 56px 12px 14px;  /* місце під кнопку ✕ зверху */
     background: var(--l-surface);
     border-right: 1px solid var(--l-border);
     overflow-y: auto;
