@@ -1195,3 +1195,29 @@ class ProfileAvatarTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("/login/", resp["Location"])
         self.assertEqual(Profile.objects.filter(user=self.user).count(), 1)
+
+
+class MobileVersionTests(TestCase):
+    """Телефонна версія: viewport meta, адаптивні медіа-запити, кеш ?v=5."""
+
+    def test_viewport_meta_on_public_and_auth_pages(self):
+        for url in ("/", "/login/", "/register/"):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200, url)
+            self.assertContains(resp, 'name="viewport"', msg_prefix=url)
+
+    def test_css_bundles_include_mobile_rules(self):
+        from django.contrib.staticfiles import finders
+        text = ""
+        for name in ("hotel/landing.css", "hotel/style.css"):
+            with open(finders.find(name), encoding="utf-8") as fh:
+                text += fh.read()
+        self.assertIn("@media (max-width: 560px)", text)  # дрібні екрани публічної частини
+        self.assertIn("@media(max-width:640px)", text)    # форми в стовпчик, KPI
+        self.assertIn("overflow-x:auto", text)            # широкі таблиці гортаються вбік
+
+    def test_static_links_carry_cache_version(self):
+        resp = self.client.get("/")
+        self.assertContains(resp, "landing.css?v=5")
+        resp = self.client.get("/login/")
+        self.assertContains(resp, "style.css?v=5")

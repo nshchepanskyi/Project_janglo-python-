@@ -71,6 +71,22 @@
   **Guests** (1–8, префіл `?guests=`, місткість перевіряє `Reservation.clean()`).
 - Усе — серверними формами без JS; EN/UA та ₴/$ як і раніше.
 
+**Профіль та телефонна версія (нове):**
+- **Фото профілю** — модель `Profile` (OneToOne до `auth.User`, міграція
+  `0007`; профіль створюється сигналом `post_save` при реєстрації). У
+  `/profile/` — завантаження фото (до 2 МБ, перевірка Pillow у
+  `Profile.clean()`: Django 6.x не валідує вміст ImageField на рівні моделі)
+  та кнопка «Прибрати фото»; старий файл автоматично прибирається з
+  `media/avatars/`. Фото показується в шапці сайту замість літери (без фото —
+  літера, як і раніше) та на сторінці профілю. `Pillow` додано в
+  `requirements.txt`; модель доступна в `/admin/` (Profile).
+- **Телефонна версія** — медіа-запити ≤900/≤640/≤560px у `style.css` та
+  `landing.css`: шапка перекидає меню в нижній рядок (на телефоні лишається
+  фото/літера без імені користувача), широкі таблиці (бронювання, номери,
+  гості) гортаються вбік, форми стають в один стовпчик, сітки KPI/номерів —
+  2/1 колонка, auth-сторінки підлаштовуються під вузький екран; календар уже
+  мав «нижній шит» із 560px. Кеш стилів оновлено до `?v=5`.
+
 ## Запуск
 
 ```bash
@@ -135,7 +151,8 @@ Double — 2, Suite — максимум 8**. Перевірка (`capacity_erro
 config/            # налаштування Django
 hotel/             # застосунок готелю
   models.py        # Room, Guest, Reservation, Service, ServiceOrder, RoomFavorite,
-                   # Review + бізнес-логіка + search_rooms + recalc_room_rating (сигнали)
+                   # Review, Profile (фото профілю) + бізнес-логіка + search_rooms
+                   # + сигнали: recalc_room_rating, створення профілю при реєстрації
   views.py         # dashboard, rooms, reservations, reservation_detail (додаткові послуги),
                    # guests, auth, lang/theme, home/places/place_detail/page/favorites (публічна частина)
   urls.py
@@ -149,10 +166,10 @@ hotel/             # застосунок готелю
   static/hotel/landing.css  # публічна частина (зелений бренд) + зірочка/відгуки (Фаза 3)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 95 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
+  tests.py         # 105 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
                    # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
                    # CalendarWiringTests, DayStayTests, FavoritesReviewsTests,
-                   # RoleAccessTests тощо)
+                   # ProfileAvatarTests, MobileVersionTests, RoleAccessTests тощо)
 ```
 
 ## Відповідність Flet → Django

@@ -702,3 +702,36 @@
 
 .review-form form { display: grid; gap: 10px; max-width: 480px; }
 .review-form textarea { resize: vertical; }
+
+/* ---------- телефонна версія: дрібні екрани (≤560px) ---------- */
+@media (max-width: 560px) {
+  .p-main.content { padding: 18px 14px 34px }
+  .p-topbar { gap: 8px; padding: 8px 12px }
+  .p-nav a { padding: 7px 10px; font-size: 13px }
+  .p-actions { gap: 6px }
+  /* на телефоні у шапці лишається лише фото/літера без імені */
+  .p-user { padding: 3px; border: none; background: transparent }
+  .p-user .p-user-name { display: none }
+
+  .hero { padding-top: 26px }
+  .hero h1 { font-size: 26px }
+  .hero-sub { font-size: 14.5px; margin-bottom: 18px }
+  .p-page-head { padding-top: 26px }
+  .section { margin-top: 30px }
+  .section-head { flex-wrap: wrap }
+  .section-head h2 { font-size: 19px }
+  .chips { margin-top: 10px }
+
+  .crumbs { margin-bottom: 12px }
+  .pd-title { font-size: 21px }
+  .pd-body { padding-top: 14px }
+  .pd-check { margin: 10px 0 }
+
+  .p-doc { padding-top: 26px }
+  .p-doc h1 { font-size: 24px }
+  .p-doc p { padding: 16px }
+
+  .cta { padding: 22px }
+  .cta h2 { font-size: 20px }
+  .review-form form { max-width: 100% }
+}
