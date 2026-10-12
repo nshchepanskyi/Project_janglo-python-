@@ -784,9 +784,10 @@ html.nav-locked { overflow: hidden }
   /* Шапка — sticky з z-index, тобто вона створює стекінг-контекст: шухляда
      (дитина шапки) має бути над оверлеєм, тому піднімаємо саму шапку. */
   html.burger-ready .p-topbar { z-index: 60 }
-  html.burger-ready .p-burger {
-    display: flex;
-    /* ✕ відкритого меню: фіксуємо ПОВЕРХ шухляди (шухляда перекриває шапку) */
+  html.burger-ready .p-burger { display: flex }
+  /* коли меню ВІДКРИТЕ — кнопка ✕ фіксується ПОВЕРХ шухляди
+     (у закритому стані вона у потоці шапки, поруч із брендом) */
+  html.burger-ready.nav-locked .p-burger {
     position: fixed;
     top: 10px;
     left: 10px;

@@ -1218,7 +1218,7 @@ class MobileVersionTests(TestCase):
 
     def test_static_links_carry_cache_version(self):
         resp = self.client.get("/")
-        self.assertContains(resp, "landing.css?v=7")
+        self.assertContains(resp, "landing.css?v=8")
         self.assertContains(resp, "app.js?v=6")
         resp = self.client.get("/login/")
         self.assertContains(resp, "style.css?v=5")
