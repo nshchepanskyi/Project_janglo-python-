@@ -9,6 +9,7 @@ from django.test import TestCase, override_settings
 
 from .models import (
     Guest,
+    Profile,
     Reservation,
     Review,
     Room,
@@ -1124,3 +1125,73 @@ class FavoritesReviewsTests(TestCase):
         }, follow=True)
         self.assertContains(resp, "A Single room fits 1 guest")
         self.assertEqual(Reservation.objects.count(), 0)
+
+
+@override_settings(MEDIA_ROOT=TEST_MEDIA_ROOT)
+class ProfileAvatarTests(TestCase):
+    """Фото профілю: завантаження в /profile/, показ у шапці, видалення, ліміти."""
+
+    def setUp(self):
+        self.user = User.objects.create_user("oleh", "oleh@test.com", "secret123")
+        self.client.login(username="oleh", password="secret123")
+
+    def _upload(self, name="me.gif", content=TEST_GIF, ctype="image/gif"):
+        return self.client.post("/profile/", {
+            "action": "avatar",
+            "avatar": SimpleUploadedFile(name, content, content_type=ctype),
+        }, follow=True)
+
+    def test_profile_created_for_new_user(self):
+        # сигнал post_save створює профіль при реєстрації
+        self.assertTrue(Profile.objects.filter(user=self.user).exists())
+
+    def test_upload_avatar_and_show_everywhere(self):
+        resp = self._upload()
+        self.assertContains(resp, "Profile photo updated")
+        profile = Profile.objects.get(user=self.user)
+        self.assertTrue(profile.avatar.name.startswith("avatars/"))
+        # фото видно на сторінці профілю та в шапці сайту
+        resp = self.client.get("/profile/")
+        self.assertContains(resp, "/media/avatars/")
+        resp = self.client.get("/")
+        self.assertContains(resp, 'class="avatar-img"')
+
+    def test_replace_avatar_removes_old_file(self):
+        from django.core.files.storage import default_storage
+        self._upload(name="first.gif")
+        old_name = Profile.objects.get(user=self.user).avatar.name
+        self.assertTrue(default_storage.exists(old_name))
+        self._upload(name="second.gif")
+        profile = Profile.objects.get(user=self.user)
+        self.assertNotEqual(profile.avatar.name, old_name)
+        self.assertFalse(default_storage.exists(old_name))  # старий файл прибрано
+
+    def test_reject_non_image(self):
+        resp = self._upload(name="me.txt", content=b"hello", ctype="text/plain")
+        self.assertContains(resp, "The file must be an image")
+        profile = Profile.objects.get(user=self.user)
+        self.assertFalse(profile.avatar.name)
+
+    def test_reject_too_large(self):
+        big = TEST_GIF + b"\x00" * (2 * 1024 * 1024)  # більше 2 МБ
+        resp = self._upload(name="big.gif", content=big)
+        self.assertContains(resp, "Photo must be under 2 MB")
+        profile = Profile.objects.get(user=self.user)
+        self.assertFalse(profile.avatar.name)
+
+    def test_remove_avatar(self):
+        self._upload()
+        resp = self.client.post("/profile/", {"action": "avatar_remove"}, follow=True)
+        self.assertContains(resp, "Profile photo removed")
+        profile = Profile.objects.get(user=self.user)
+        self.assertFalse(profile.avatar.name)
+        # друге видалення без фото — ввічлива помилка
+        resp = self.client.post("/profile/", {"action": "avatar_remove"}, follow=True)
+        self.assertContains(resp, "You have no profile photo")
+
+    def test_avatar_requires_login(self):
+        self.client.logout()
+        resp = self.client.post("/profile/", {"action": "avatar"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login/", resp["Location"])
+        self.assertEqual(Profile.objects.filter(user=self.user).count(), 1)

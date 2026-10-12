@@ -6,6 +6,32 @@
 <div class="grid-2">
   <div class="card">
     <h2>{% tr "My Account" %}</h2>
+
+    {# Фото профілю: показуємо поточне, поруч — завантаження/видалення #}
+    <h3>{% tr "Profile photo" %}</h3>
+    <div class="profile-avatar">
+      <div class="pa-photo">
+        {% if user.profile.avatar %}
+        <img class="avatar-big" src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+        {% else %}
+        <span class="avatar big">{{ user.username|first|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="pa-actions">
+        <form method="post" class="avatar-form" enctype="multipart/form-data">{% csrf_token %}
+          <input type="hidden" name="action" value="avatar">
+          <input type="file" name="avatar" accept="image/*" required>
+          <button class="btn primary" type="submit">{% tr "Upload photo" %}</button>
+        </form>
+        {% if user.profile.avatar %}
+        <form method="post" class="avatar-form">{% csrf_token %}
+          <input type="hidden" name="action" value="avatar_remove">
+          <button class="btn danger" type="submit">{% tr "Remove photo" %}</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
     <table class="kv">
       <tr><td>{% tr "Username" %}</td><td>{{ user.username }}</td></tr>
       <tr><td>{% tr "Email" %}</td><td>{{ user.email|default:"—" }}</td></tr>

@@ -316,6 +316,16 @@ TRANSLATIONS = {
             "Відгук може залишити лише гість, який зупинявся в цьому номері — один відгук на проживання.",
         "Write a few words about the room, the staff and your stay.":
             "Напишіть кілька слів про номер, персонал і ваше проживання.",
+
+        # ---------- Профіль: фото профілю ----------
+        "Profile photo": "Фото профілю",
+        "Profile photo updated": "Фото профілю оновлено",
+        "Profile photo removed": "Фото профілю видалено",
+        "You have no profile photo": "У вас немає фото профілю",
+        "Choose a photo": "Оберіть фото",
+        "Photo must be under 2 MB": "Фото має бути меншим за 2 МБ",
+        "The file must be an image": "Файл має бути зображенням",
+        "Remove photo": "Прибрати фото",
     },
 }
 

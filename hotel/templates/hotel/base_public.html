@@ -30,7 +30,7 @@
     <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
     <a class="btn ghost" href="{% url 'toggle_theme' %}">◐</a>
     {% if user.is_authenticated %}
-    <a class="p-user" href="{% url 'profile' %}"><span class="avatar">{{ user.username|first|upper }}</span>{{ user.username }}</a>
+    <a class="p-user" href="{% url 'profile' %}">{% if user.profile.avatar %}<img class="avatar-img" src="{{ user.profile.avatar.url }}" alt="">{% else %}<span class="avatar">{{ user.username|first|upper }}</span>{% endif %}<span class="p-user-name">{{ user.username }}</span></a>
     <a class="btn ghost" href="{% url 'logout' %}">{% tr "Logout" %}</a>
     {% else %}
     <a class="btn primary p-signin" href="{% url 'login' %}">{% tr "Sign In" %}</a>

@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
 from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -18,6 +19,7 @@ from .models import (
     ACTIVE_STATUSES,
     Guest,
     MAX_GUESTS,
+    Profile,
     ROOM_CAPACITY_LIMITS,
     Reservation,
     Review,
@@ -38,6 +40,9 @@ from .models import (
     room_is_free,
     search_rooms,
 )
+
+# Ліміт розміру фото профілю (2 МБ)
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
 
 
 def _lang(request):
@@ -798,11 +803,53 @@ def reservation_detail_view(request, pk):
 
 # ---------- profile (new page for the user's own info) ----------
 
+def _update_avatar(request, user):
+    """Завантаження/видалення фото профілю (дії з /profile/).
+
+    Перевіряємо розмір (MAX_AVATAR_BYTES), а «це справді зображення»
+    гарантує full_clean() ImageField (Pillow). Старий файл прибираємо
+    з диска після успішного збереження нового.
+    """
+    action = request.POST.get("action")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    if action == "avatar_remove":
+        if profile.avatar:
+            profile.avatar.delete(save=False)
+            profile.avatar = ""
+            profile.save()
+            messages.success(request, "Profile photo removed")
+        else:
+            messages.error(request, "You have no profile photo")
+        return redirect("profile")
+    # action == "avatar": завантаження нового фото
+    avatar = request.FILES.get("avatar")
+    if avatar is None:
+        messages.error(request, "Choose a photo")
+    elif avatar.size > MAX_AVATAR_BYTES:
+        messages.error(request, "Photo must be under 2 MB")
+    else:
+        prev_name = profile.avatar.name if profile.avatar else ""
+        profile.avatar = avatar
+        try:
+            profile.full_clean()  # Profile.clean() перевіряє Pillow: це зображення
+        except ValidationError as e:
+            messages.error(request, _validation_message(e) or "The file must be an image")
+        else:
+            profile.save()
+            if prev_name and prev_name != profile.avatar.name \
+                    and default_storage.exists(prev_name):
+                default_storage.delete(prev_name)
+            messages.success(request, "Profile photo updated")
+    return redirect("profile")
+
+
 @login_required
 def profile_view(request):
     user = request.user
     if request.method == "POST":
         action = request.POST.get("action")
+        if action in ("avatar", "avatar_remove"):
+            return _update_avatar(request, user)
         if action == "email":
             email = request.POST.get("email", "").strip()
             if not email:

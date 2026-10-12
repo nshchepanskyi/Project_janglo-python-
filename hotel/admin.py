@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Guest, Reservation, Review, Room, RoomFavorite, Service, ServiceOrder
+from .models import Guest, Profile, Reservation, Review, Room, RoomFavorite, Service, ServiceOrder
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
@@ -47,3 +47,10 @@ class ReviewAdmin(admin.ModelAdmin):
 class RoomFavoriteAdmin(admin.ModelAdmin):
     list_display = ("id", "user", "room", "created_at")
     list_filter = ("room",)
+
+
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    """Профілі: можна прибрати/замінити фото гостя (наприклад, за запитом)."""
+    list_display = ("id", "user", "avatar", "created_at")
+    search_fields = ("user__username",)

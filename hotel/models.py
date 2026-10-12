@@ -529,3 +529,55 @@ class Review(models.Model):
 def _review_rating_recalc(sender, instance, **kwargs):
     """Збереження/видалення відгуку одразу оновлює Room.rating."""
     recalc_room_rating(instance.room)
+
+
+# ---------- Профіль користувача: фото профілю ----------
+
+class Profile(models.Model):
+    """Профіль користувача з фото (шапка сайту + сторінка /profile/).
+
+    Розширює вбудований django.contrib.auth.User через OneToOneField —
+    не переписуємо auth, а додаємо своє поле. Профіль створюється
+    автоматично при реєстрації (сигнал post_save нижче); для акаунтів,
+    зроблених до цього, view викликає get_or_create.
+    """
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    avatar = models.ImageField(upload_to="avatars/", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Profile {self.user.username}"
+
+    def clean(self):
+        """Перевіряємо, що файл — справді зображення (Pillow).
+
+        Django 6.x не робить цього на рівні моделі (лише forms.ImageField),
+        тому перевірку робимо самі: і публічна форма /profile/, і /admin/
+        проходять через clean() у складі full_clean().
+        """
+        if not self.avatar:
+            return
+        from PIL import Image
+        try:
+            self.avatar.open()      # для вже збереженого файлу відкриває із сховища
+            self.avatar.seek(0)
+            Image.open(self.avatar).verify()
+        except Exception as e:
+            raise ValidationError({"avatar": "The file must be an image"}) from e
+        finally:
+            try:
+                self.avatar.seek(0)  # щоб save() записав файл цілком
+            except Exception:
+                pass
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def _create_profile(sender, instance, created, **kwargs):
+    """Кожен новий користувач одразу отримує порожній профіль."""
+    if created:
+        Profile.objects.get_or_create(user=instance)

@@ -100,6 +100,8 @@
 }
 .p-user:hover { border-color: var(--l-brand); text-decoration: none }
 .p-user .avatar { width: 26px; height: 26px; font-size: 12px }
+/* фото профілю в шапці (Profile.avatar); якщо його немає — літера вище */
+.avatar-img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: block }
 
 /* ---------- основний блок ---------- */
 .p-main {

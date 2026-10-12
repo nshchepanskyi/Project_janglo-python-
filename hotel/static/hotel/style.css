@@ -188,3 +188,14 @@ input[type="file"]::file-selector-button:active{transform:scale(.97)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;transition-duration:.001ms!important}
 }
+
+/* ---------- фото профілю (Profile.avatar) ---------- */
+.profile-avatar{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}
+.pa-actions{display:flex;flex-direction:column;gap:8px;flex:1;min-width:220px}
+.avatar-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.avatar-form .btn{white-space:nowrap}
+.avatar-big,.avatar.big{
+  width:84px;height:84px;flex:none;border-radius:50%;object-fit:cover;
+  border:3px solid var(--accent-bg);background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;
+}
