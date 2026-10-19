@@ -1,0 +1,33 @@
+{% extends "hotel/base.html" %}
+{% load tr_tags %}
+{% block title %}{{ form_title }}{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0;max-width:600px">
+  <p><a class="btn ghost" href="{% url 'hotel:booking_list' %}">← До списку</a></p>
+  <h1>{{ form_title }}</h1>
+
+  <form method="post" style="margin-top:1.5rem">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+    <div class="msg error" style="margin-bottom:1rem">
+      {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+    </div>
+    {% endif %}
+
+    {% for field in form %}
+    <div class="form-group" style="margin-bottom:1rem">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.errors %}
+        <div class="field-error" style="color:var(--red);font-size:.875rem;margin-top:.25rem">
+          {% for err in field.errors %}{{ err }}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn primary" style="margin-top:.5rem">Зберегти</button>
+    <a class="btn ghost" href="{% url 'hotel:booking_list' %}" style="margin-left:.5rem">Скасувати</a>
+  </form>
+</section>
+{% endblock %}

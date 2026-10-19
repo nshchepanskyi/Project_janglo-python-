@@ -6,6 +6,7 @@ from django.db import models
 from django.db.models import Avg, Count, Q, Sum
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone
 
 
@@ -158,6 +159,9 @@ class Room(models.Model):
     def __str__(self):
         return f"Room {self.number} ({self.status})"
 
+    def get_absolute_url(self):
+        return reverse("hotel:room_detail", kwargs={"pk": self.pk})
+
     def clean(self):
         if self.price is not None and self.price < 0:
             raise ValidationError("Price cannot be negative")
@@ -234,6 +238,9 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"R{self.pk} {self.guest.name} -> {self.room.number}"
+
+    def get_absolute_url(self):
+        return reverse("hotel:booking_detail", kwargs={"pk": self.pk})
 
     def clean(self):
         if self.stay_type == STAY_DAY:

@@ -74,7 +74,7 @@ def is_admin(user):
 
 def home_redirect(user):
     """Куди відправляти після входу/реєстрації."""
-    return "dashboard" if is_admin(user) else "profile"
+    return "hotel:dashboard" if is_admin(user) else "profile"
 
 
 def admin_required(view_func):
@@ -160,7 +160,8 @@ def login_view(request):
 
 
 def logout_view(request):
-    logout(request)
+    if request.method == "POST":
+        logout(request)
     return redirect("login")
 
 
@@ -359,7 +360,7 @@ def place_detail_view(request, number):
     room = get_object_or_404(Room, number=number)
     if request.method == "POST":
         if not request.user.is_authenticated:
-            return redirect(f"{reverse('login')}?next={reverse('place_detail', args=[number])}")
+            return redirect(f"{reverse('hotel:login')}?next={reverse('hotel:place_detail', args=[number])}")
         return _create_review(request, room)
     location, ci_raw, co_raw, guests_raw = _get_search(request)
     _, d_in, d_out, guests, error = _parse_search(location, ci_raw, co_raw, guests_raw)
@@ -441,7 +442,7 @@ def favorite_toggle_view(request, number):
     room = get_object_or_404(Room, number=number)
     if not request.user.is_authenticated:
         return redirect(
-            f"{reverse('login')}?next={reverse('favorite_toggle', args=[number])}"
+            f"{reverse('hotel:login')}?next={reverse('hotel:favorite_toggle', args=[number])}"
         )
     if request.method == "POST":
         fav = RoomFavorite.objects.filter(user=request.user, room=room).first()

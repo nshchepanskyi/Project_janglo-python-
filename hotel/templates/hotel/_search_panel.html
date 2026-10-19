@@ -1,5 +1,5 @@
 {% load tr_tags %}
-<form class="search-panel" method="get" action="{% url 'places' %}">
+<form class="search-panel" method="get" action="{% url 'hotel:places'%}">
   <label class="sp-field">
     <span>{% tr "Location" %}</span>
     <input name="location" value="{{ search.raw.location }}" placeholder="{% tr 'Where are you going?' %}">

@@ -1,0 +1,14 @@
+{% extends "hotel/base.html" %}
+{% block title %}Видалення бронювання #{{ object.pk }}{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0;max-width:500px">
+  <h1>Скасувати бронювання #{{ object.pk }}?</h1>
+  <p style="margin:1rem 0">Номер: <strong>{{ object.room.number }}</strong> · Гість: <strong>{{ object.guest.name }}</strong></p>
+  <p>Цю дію неможливо скасувати.</p>
+  <form method="post" style="margin-top:1.5rem;display:flex;gap:.75rem">
+    {% csrf_token %}
+    <button type="submit" class="btn primary" style="background:var(--red)">Так, скасувати</button>
+    <a class="btn ghost" href="{% url 'hotel:booking_list' %}">Назад</a>
+  </form>
+</section>
+{% endblock %}

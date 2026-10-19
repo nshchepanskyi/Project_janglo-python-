@@ -11,31 +11,31 @@
 <header class="p-topbar">
   {% tr "Menu" as menu_label %}
   <button class="p-burger" type="button" aria-label="{{ menu_label }}" aria-expanded="false" aria-controls="p-nav"><span></span><span></span><span></span></button>
-  <a class="p-brand" href="{% url 'home' %}">GrandStay</a>
+  <a class="p-brand" href="{% url 'hotel:home'%}">GrandStay</a>
   <nav class="p-nav" id="p-nav">
-    <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">{% tr "Home" %}</a>
-    <a href="{% url 'places' %}" class="{% if request.resolver_match.url_name == 'places' %}active{% endif %}">{% tr "Book" %}</a>
+    <a href="{% url 'hotel:home'%}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">{% tr "Home" %}</a>
+    <a href="{% url 'hotel:places'%}" class="{% if request.resolver_match.url_name == 'places' %}active{% endif %}">{% tr "Book" %}</a>
     {% if is_admin %}
-    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">{% tr "Dashboard" %}</a>
-    <a href="{% url 'rooms' %}" class="{% if request.resolver_match.url_name == 'rooms' %}active{% endif %}">{% tr "Rooms" %}</a>
+    <a href="{% url 'hotel:dashboard'%}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">{% tr "Dashboard" %}</a>
+    <a href="{% url 'hotel:rooms'%}" class="{% if request.resolver_match.url_name == 'rooms' %}active{% endif %}">{% tr "Rooms" %}</a>
     {% endif %}
-    <a href="{% url 'reservations' %}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% if is_admin %}{% tr "Reservations" %}{% else %}{% tr "My Bookings" %}{% endif %}</a>
+    <a href="{% url 'hotel:reservations'%}" class="{% if request.resolver_match.url_name == 'reservations' %}active{% endif %}">{% if is_admin %}{% tr "Reservations" %}{% else %}{% tr "My Bookings" %}{% endif %}</a>
     {% if is_admin %}
-    <a href="{% url 'guests' %}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">{% tr "Guests" %}</a>
+    <a href="{% url 'hotel:guests'%}" class="{% if request.resolver_match.url_name == 'guests' %}active{% endif %}">{% tr "Guests" %}</a>
     {% endif %}
     {% if user.is_authenticated %}
-    <a href="{% url 'favorites' %}" class="{% if request.resolver_match.url_name == 'favorites' %}active{% endif %}">★ {% tr "Favorites" %}{% if user.favorite_rooms.count %}<span class="fav-count">{{ user.favorite_rooms.count }}</span>{% endif %}</a>
-    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
+    <a href="{% url 'hotel:favorites'%}" class="{% if request.resolver_match.url_name == 'favorites' %}active{% endif %}">★ {% tr "Favorites" %}{% if user.favorite_rooms.count %}<span class="fav-count">{{ user.favorite_rooms.count }}</span>{% endif %}</a>
+    <a href="{% url 'hotel:profile'%}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{% tr "Profile" %}</a>
     {% endif %}
   </nav>
   <div class="p-actions">
-    <a class="btn ghost" href="{% url 'toggle_lang' %}">{{ lang|upper }}</a>
-    <a class="btn ghost" href="{% url 'toggle_theme' %}">◐</a>
+    <a class="btn ghost" href="{% url 'hotel:toggle_lang'%}">{{ lang|upper }}</a>
+    <a class="btn ghost" href="{% url 'hotel:toggle_theme'%}">◐</a>
     {% if user.is_authenticated %}
-    <a class="p-user" href="{% url 'profile' %}">{% if user.profile.avatar %}<img class="avatar-img" src="{{ user.profile.avatar.url }}" alt="">{% else %}<span class="avatar">{{ user.username|first|upper }}</span>{% endif %}<span class="p-user-name">{{ user.username }}</span></a>
-    <a class="btn ghost" href="{% url 'logout' %}">{% tr "Logout" %}</a>
+    <a class="p-user" href="{% url 'hotel:profile'%}">{% if user.profile.avatar %}<img class="avatar-img" src="{{ user.profile.avatar.url }}" alt="">{% else %}<span class="avatar">{{ user.username|first|upper }}</span>{% endif %}<span class="p-user-name">{{ user.username }}</span></a>
+    <form method="post" action="{% url 'hotel:logout'%}" style="display:inline">{% csrf_token %}<button type="submit" class="btn ghost">{% tr "Logout" %}</button></form>
     {% else %}
-    <a class="btn primary p-signin" href="{% url 'login' %}">{% tr "Sign In" %}</a>
+    <a class="btn primary p-signin" href="{% url 'hotel:login'%}">{% tr "Sign In" %}</a>
     {% endif %}
   </div>
 </header>
@@ -53,9 +53,9 @@
   <div class="p-foot-top">
     <div class="p-foot-brand">GrandStay</div>
     <nav class="p-foot-nav">
-      <a href="{% url 'page' 'terms' %}">{% tr "Terms of Service" %}</a>
-      <a href="{% url 'page' 'privacy' %}">{% tr "Privacy Policy" %}</a>
-      <a href="{% url 'page' 'help' %}">{% tr "Help Center" %}</a>
+      <a href="{% url 'hotel:page''terms' %}">{% tr "Terms of Service" %}</a>
+      <a href="{% url 'hotel:page''privacy' %}">{% tr "Privacy Policy" %}</a>
+      <a href="{% url 'hotel:page''help' %}">{% tr "Help Center" %}</a>
     </nav>
   </div>
   <div class="p-copy">© 2026 GrandStay Hotel · {% tr "All rights reserved" %}</div>

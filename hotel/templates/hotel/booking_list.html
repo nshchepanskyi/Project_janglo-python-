@@ -1,0 +1,59 @@
+{% extends "hotel/base.html" %}
+{% load tr_tags %}
+{% block title %}Мої бронювання{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <h1>{% if is_admin %}Усі бронювання{% else %}Мої бронювання{% endif %}</h1>
+    <a class="btn primary" href="{% url 'hotel:booking_create' %}">+ Нове бронювання</a>
+  </div>
+
+  {% if page_obj.object_list %}
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Номер</th>
+        <th>Гість</th>
+        <th>Заїзд</th>
+        <th>Виїзд</th>
+        <th>Статус</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in page_obj %}
+      <tr>
+        <td><a class="pill" href="{{ r.get_absolute_url }}">#{{ r.pk }}</a></td>
+        <td>{{ r.room.number }}</td>
+        <td>{{ r.guest.name }}</td>
+        <td>{{ r.check_in|date:"d.m.Y" }}</td>
+        <td>{% if r.is_day_use %}{{ r.check_in|date:"d.m.Y" }} (день){% else %}{{ r.check_out|date:"d.m.Y" }}{% endif %}</td>
+        <td><span class="pill status-{{ r.status|lower|cut:'-' }}">{{ r.status }}</span></td>
+        <td>
+          <a class="btn ghost small" href="{{ r.get_absolute_url }}">Деталі</a>
+          <a class="btn ghost small" href="{% url 'hotel:booking_update' r.pk %}">Ред.</a>
+          <a class="btn ghost small" href="{% url 'hotel:booking_delete' r.pk %}" style="color:var(--red)">Вид.</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_paginated %}
+  <nav class="pagination" style="margin-top:1.5rem;display:flex;gap:.5rem;justify-content:center">
+    {% if page_obj.has_previous %}
+      <a class="btn ghost small" href="?page={{ page_obj.previous_page_number }}">← Попередня</a>
+    {% endif %}
+    <span class="btn ghost small">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a class="btn ghost small" href="?page={{ page_obj.next_page_number }}">Наступна →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <p>Бронювань ще немає. <a href="{% url 'hotel:booking_create' %}">Створити перше?</a></p>
+  {% endif %}
+</section>
+{% endblock %}

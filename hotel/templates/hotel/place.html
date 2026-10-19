@@ -2,8 +2,8 @@
 {% block title %}{{ room.display_title }}{% endblock %}
 {% block content %}
 <nav class="crumbs">
-  <a href="{% url 'home' %}">{% tr "Home" %}</a> <span>→</span>
-  <a href="{% url 'places' %}">{% tr "Book" %}</a> <span>→</span>
+  <a href="{% url 'hotel:home'%}">{% tr "Home" %}</a> <span>→</span>
+  <a href="{% url 'hotel:places'%}">{% tr "Book" %}</a> <span>→</span>
   <span>{{ room.display_title }}</span>
 </nav>
 
@@ -13,7 +13,7 @@
       {% if room.photo %}<img src="{{ room.photo.url }}" alt="{{ room.display_title }}">{% else %}<span class="ph">{% tr "Photo" %}</span>{% endif %}
       <span class="place-tag {{ room.badge_kind }}">{% tr room.badge_key %}</span>
       {# зірочка обраного (Фаза 3) #}
-      <form method="post" action="{% url 'favorite_toggle' room.number %}" class="fav-form">{% csrf_token %}
+      <form method="post" action="{% url 'hotel:favorite_toggle'room.number %}" class="fav-form">{% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <button type="submit" class="fav-star{% if room.fav %} on{% endif %}"
                 title="{% if room.fav %}{% tr "Remove from favorites" %}{% else %}{% tr "Add to favorites" %}{% endif %}"
@@ -75,7 +75,7 @@
     </div>
 
     {% if can_book %}
-    <a class="btn primary big" href="{% url 'reservations' %}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}{% if search.guests %}&amp;guests={{ search.guests }}{% endif %}">
+    <a class="btn primary big" href="{% url 'hotel:reservations'%}?room={{ room.number }}{% if search.check_in %}&amp;check_in={{ search.check_in }}{% endif %}{% if search.check_out %}&amp;check_out={{ search.check_out }}{% endif %}{% if search.guests %}&amp;guests={{ search.guests }}{% endif %}">
       {% tr "Book" %}{% if nights %} · {% money total 0 %}{% endif %}
     </a>
     <p class="hint pd-hint">{% tr "You will confirm the booking on the next step" %}</p>

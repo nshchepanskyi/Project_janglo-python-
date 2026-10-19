@@ -1,0 +1,29 @@
+{% extends "hotel/base.html" %}
+{% load tr_tags %}
+{% block title %}Бронювання #{{ reservation.pk }}{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0">
+  <p><a class="btn ghost" href="{% url 'hotel:booking_list' %}">← До списку</a></p>
+  <h1>Бронювання #{{ reservation.pk }}</h1>
+
+  <div class="card" style="max-width:600px;margin-top:1.5rem">
+    <table class="data-table">
+      <tr><th>Гість</th><td>{{ reservation.guest.name }}</td></tr>
+      <tr><th>Email</th><td>{{ reservation.guest.email }}</td></tr>
+      <tr><th>Номер</th><td>{{ reservation.room.number }} ({{ reservation.room.room_type }})</td></tr>
+      <tr><th>Заїзд</th><td>{{ reservation.check_in|date:"d.m.Y" }}</td></tr>
+      <tr><th>Виїзд</th><td>{% if reservation.is_day_use %}{{ reservation.check_in|date:"d.m.Y" }} (день){% else %}{{ reservation.check_out|date:"d.m.Y" }}{% endif %}</td></tr>
+      <tr><th>Гостей</th><td>{{ reservation.guests }}</td></tr>
+      <tr><th>Статус</th><td><span class="pill status-{{ reservation.status|lower|cut:'-' }}">{{ reservation.status }}</span></td></tr>
+      <tr><th>Сума</th><td>${{ reservation.amount }}</td></tr>
+      <tr><th>Збір (12%)</th><td>${{ reservation.fee }}</td></tr>
+      <tr><th>Разом</th><td><strong>${{ reservation.total }}</strong></td></tr>
+    </table>
+
+    <div style="margin-top:1.5rem;display:flex;gap:.75rem">
+      <a class="btn primary" href="{% url 'hotel:booking_update' reservation.pk %}">Редагувати</a>
+      <a class="btn ghost" href="{% url 'hotel:booking_delete' reservation.pk %}" style="color:var(--red)">Видалити</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,7 +1,8 @@
 # GrandStay Hotel — Django-версія (порт з Flet)
 
 Веб-сайт управління готелем: номери, бронювання, гості, послуги, дашборд.
-Порт десктоп-застосунку Flet (`Practic/`) на Django + SQLite.
+**База даних:** PostgreSQL 17 (psycopg2-binary 2.9.10).
+
 **Фаза 1 (нове):** публічний сайт — головна з пошуком, каталог місць
 з перевіркою вільності дат, картки з ціною/рейтингом/бейджем, статичні
 сторінки футера (Terms/Privacy/Help).
@@ -92,28 +93,70 @@
 
 ## Запуск
 
+### 1. PostgreSQL
+
+Встановіть PostgreSQL 17+ і створіть базу та користувача:
+
 ```bash
-py -m pip install -r requirements.txt
-py manage.py migrate
-py manage.py createsuperuser   # опційно, для /admin/
-py manage.py runserver
+createuser --createdb janglo
+createdb -U janglo janglo_hotel
+```
+
+### 2. Змінні оточення
+
+Скопіюйте `.env.example` → `.env` і заповніть значення:
+
+```bash
+cp .env.example .env
+```
+
+Мінімальний вміст `.env`:
+
+```
+SECRET_KEY=your-secret-key-here
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=janglo_hotel
+DB_USER=janglo
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+> Файл `.env` не потрапляє до репозиторію (`.gitignore`). У репозиторії зберігається лише `.env.example` з назвами змінних без значень.
+
+### 3. Встановлення залежностей
+
+```bash
+python3 -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
+pip install -r requirements.txt
+```
+
+### 4. Міграції і тестові дані
+
+```bash
+python manage.py migrate
+python manage.py createsuperuser   # адмін для /admin/ та /dashboard/
+```
+
+### 5. Запуск сервера
+
+```bash
+python manage.py runserver
 ```
 
 Відкрити: http://127.0.0.1:8000/ (публічна головна),
-http://127.0.0.1:8000/dashboard/ (редірект на логін).
+http://127.0.0.1:8000/dashboard/ (потребує входу як staff/superuser).
 
-**З телефона (телефонна версія):** запусти сервер на всіх інтерфейсах і відкрий
+**З телефона (LAN):** запусти сервер на всіх інтерфейсах і відкрий
 його з телефона в тій самій Wi-Fi мережі:
 
 ```bash
-py manage.py runserver 0.0.0.0:8000
+python manage.py runserver 0.0.0.0:8000
 ```
 
-Потім на телефоні: `http://<IP-твого-ПК>:8000/` (IP дізнайся через
-`ipconfig` — наприклад, `http://10.5.50.197:8000/`). Якщо Windows питає
-дозвіл для Python у брандмауері — дозволь (для приватних мереж).
-`ALLOWED_HOSTS = ['*']` у `config/settings.py` дозволяє такі LAN-IP;
-перед деплоєм заміни його на конкретні домени.
+Потім на телефоні: `http://<IP-ПК>:8000/` (IP — через `ipconfig` / `ifconfig`).
 
 ## Локалізація та валюта
 

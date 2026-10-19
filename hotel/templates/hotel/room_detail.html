@@ -1,0 +1,41 @@
+{% extends "hotel/base_public.html" %}
+{% load tr_tags %}
+{% block title %}{{ room.display_title }}{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0">
+  <p><a class="btn ghost" href="{% url 'hotel:room_list' %}">← До каталогу</a></p>
+
+  <div class="card" style="max-width:700px;margin-top:1.5rem">
+    {% if room.photo %}
+      <img src="{{ room.photo.url }}" alt="{{ room.display_title }}" style="width:100%;border-radius:8px 8px 0 0;max-height:320px;object-fit:cover">
+    {% endif %}
+    <div style="padding:1.5rem">
+      <h1>{{ room.display_title }}</h1>
+      <p class="place-location">{{ room.location }}</p>
+      <p>★ {{ room.rating }} · {{ room.capacity }} гостей · {{ room.room_type }}</p>
+      <p style="font-size:1.5rem;font-weight:700;margin:.75rem 0">${{ room.price }} / ніч</p>
+      <p>Статус: <span class="pill">{{ room.status }}</span></p>
+
+      {% if room.services.all %}
+      <p style="margin-top:1rem"><strong>Послуги:</strong>
+        {% for s in room.services.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+      </p>
+      {% endif %}
+
+      <a class="btn primary" href="{% url 'hotel:booking_create' %}?room={{ room.pk }}" style="margin-top:1.5rem;display:inline-block">
+        Забронювати
+      </a>
+    </div>
+  </div>
+
+  {% if reviews %}
+  <h2 style="margin-top:2rem">Відгуки ({{ reviews|length }})</h2>
+  {% for rev in reviews %}
+  <div class="card" style="max-width:700px;margin-top:1rem;padding:1rem">
+    <p><strong>{{ rev.author.username }}</strong> · ★{{ rev.rating }} · {{ rev.created_at|date:"d.m.Y" }}</p>
+    <p>{{ rev.text }}</p>
+  </div>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

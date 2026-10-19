@@ -1,0 +1,51 @@
+{% extends "hotel/base_public.html" %}
+{% load tr_tags %}
+{% block title %}Каталог номерів{% endblock %}
+{% block content %}
+<section class="container" style="padding:2rem 0">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <h1>Каталог номерів</h1>
+  </div>
+
+  <form method="get" style="display:flex;gap:.5rem;margin-bottom:1.5rem">
+    <input type="text" name="q" value="{{ q }}" placeholder="Пошук за назвою, локацією..." class="input" style="flex:1">
+    <button type="submit" class="btn primary">Знайти</button>
+    {% if q %}<a class="btn ghost" href="{% url 'hotel:room_list' %}">✕</a>{% endif %}
+  </form>
+
+  {% if rooms %}
+  <div class="rooms-grid">
+    {% for room in rooms %}
+    <div class="card place-card">
+      {% if room.photo %}
+        <img src="{{ room.photo.url }}" alt="{{ room.display_title }}" class="place-photo">
+      {% else %}
+        <div class="place-photo-placeholder">Фото</div>
+      {% endif %}
+      <div class="place-body">
+        <h3>{{ room.display_title }}</h3>
+        <p class="place-location">{{ room.location }}</p>
+        <p>${{ room.price }} / ніч · {{ room.capacity }} гостей · ★{{ room.rating }}</p>
+        <a class="btn primary" href="{{ room.get_absolute_url }}">Переглянути</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <nav class="pagination" style="margin-top:2rem;display:flex;gap:.5rem;justify-content:center">
+    {% if page_obj.has_previous %}
+      <a class="btn ghost small" href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.previous_page_number }}">← Попередня</a>
+    {% endif %}
+    <span class="btn ghost small">{{ page_obj.number }} / {{ paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+      <a class="btn ghost small" href="?{% if q %}q={{ q }}&{% endif %}page={{ page_obj.next_page_number }}">Наступна →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <p>Номерів не знайдено.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -6,7 +6,7 @@
   {% for r in rooms %}{% include "hotel/_place_card.html" %}{% empty %}
   <div class="empty-state">
     <p>{% tr "Your favorites will appear here — click the star on any room." %}</p>
-    <a class="btn ghost" href="{% url 'places' %}">{% tr "View all" %}</a>
+    <a class="btn ghost" href="{% url 'hotel:places'%}">{% tr "View all" %}</a>
   </div>
   {% endfor %}
 </div>
