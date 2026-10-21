@@ -1,7 +1,7 @@
 {% load tr_tags %}{% load static %}<!DOCTYPE html>
 <html lang="{{ lang }}" data-theme="{{ theme }}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GrandStay — {% tr "Login" %}</title><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=5"></head>
+<title>GrandStay — {% tr "Login" %}</title><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=5"></head>
 <body class="auth-page">
 <div class="auth-card">
   <h1>GrandStay {% tr "Login" %}</h1>
@@ -13,9 +13,9 @@
     <button class="btn primary" type="submit">{% tr "Login" %}</button>
   </form>
   <div class="auth-actions">
-    <a class="btn ghost" href="{% url 'hotel:home'%}">{% tr "Home" %}</a>
-    <a class="btn primary" href="{% url 'hotel:register'%}">{% tr "Create account" %}</a>
-    <a class="btn ghost" href="{% url 'hotel:toggle_lang'%}">{{ lang|upper }}</a>
+    <a class="btn ghost" href="{% url 'hotel:home' %}">{% tr "Home" %}</a>
+    <a class="btn primary" href="{% url 'hotel:register' %}">{% tr "Create account" %}</a>
+    <a class="btn ghost" href="{% url 'hotel:toggle_lang' %}">{{ lang|upper }}</a>
   </div>
 </div>
 </body>

@@ -17,6 +17,7 @@ urlpatterns = [
     path('', views.home_view, name='home'),
     path('places/', views.places_view, name='places'),
     path('places/<str:number>/', views.place_detail_view, name='place_detail'),
+    path('places/<str:number>/share/', views.share_room_view, name='share_room'),
     path('favorites/', views.favorites_view, name='favorites'),
     path('favorites/toggle/<str:number>/', views.favorite_toggle_view, name='favorite_toggle'),
     path('pages/<slug:slug>/', views.page_view, name='page'),
@@ -24,6 +25,7 @@ urlpatterns = [
     # ---------- auth ----------
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
+    path('verify-email/', views.verify_email_view, name='verify_email'),
     path('logout/', views.logout_view, name='logout'),
     path('lang/', views.toggle_lang, name='toggle_lang'),
     path('theme/', views.toggle_theme, name='toggle_theme'),

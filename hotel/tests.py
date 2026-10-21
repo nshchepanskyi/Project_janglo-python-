@@ -1,8 +1,10 @@
+import re
 import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
@@ -92,16 +94,72 @@ class ReservationFlowTests(TestCase):
         self.assertEqual(summary[0]["count"], 2)
 
 
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 class AuthPagesTests(TestCase):
-    def test_register_login_flow(self):
+    def _register(self):
         resp = self.client.post("/register/", {
             "username": "ivan", "email": "ivan@test.com",
             "password": "secret123", "confirm": "secret123",
         })
-        self.assertEqual(resp.status_code, 302)
-        self.assertTrue(User.objects.filter(username="ivan").exists())
-        resp = self.client.post("/login/", {"login": "ivan", "password": "secret123"})
-        self.assertEqual(resp.status_code, 302)
+        self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
+        user = User.objects.get(username="ivan")
+        self.assertFalse(user.is_active)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["ivan@test.com"])
+        code = re.search(
+            r"Your email verification code is: ([A-Z0-9]{6})",
+            mail.outbox[0].body,
+        ).group(1)
+        return user, code
+
+    def test_register_requires_email_verification_then_logs_in_to_home(self):
+        user, code = self._register()
+        response = self.client.post("/verify-email/", {"code": code.lower()})
+
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(self.client.session["_auth_user_id"], str(user.pk))
+
+    def test_invalid_verification_code_does_not_activate_user(self):
+        user, code = self._register()
+        wrong_code = "AAAAAA" if code != "AAAAAA" else "BBBBBB"
+
+        response = self.client.post("/verify-email/", {"code": wrong_code})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Invalid verification code")
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+
+    def test_resend_verification_code(self):
+        user, _ = self._register()
+        response = self.client.post("/verify-email/", {"action": "resend"})
+
+        self.assertRedirects(response, "/verify-email/", fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 2)
+        new_code = re.search(
+            r"Your email verification code is: ([A-Z0-9]{6})",
+            mail.outbox[1].body,
+        ).group(1)
+        response = self.client.post("/verify-email/", {"code": new_code})
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+
+    def test_pending_verification_remains_available_after_another_login(self):
+        user, code = self._register()
+        User.objects.create_user("admin", "admin@test.com", "admin-pass")
+        self.assertTrue(self.client.login(username="admin", password="admin-pass"))
+
+        response = self.client.get("/verify-email/")
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post("/verify-email/", {"code": code})
+
+        self.assertRedirects(response, "/", fetch_redirect_response=False)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertEqual(self.client.session["_auth_user_id"], str(user.pk))
 
     def test_dashboard_requires_login(self):
         resp = self.client.get("/dashboard/")
@@ -532,6 +590,65 @@ class PlaceDetailTests(TestCase):
         resp = self.client.get("/places/501/", {"guests": "4"})
         self.assertFalse(resp.context["fits"])
         self.assertFalse(resp.context["can_book"])
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    DEFAULT_FROM_EMAIL="noreply@grandstay.example",
+)
+class RoomEmailRecommendationTests(TestCase):
+    """Email recommendation flow for a public room detail page."""
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="512", room_type="Double", price=Decimal("90"),
+            title="Riverside Room", location="Dnipro, Ukraine", capacity=2,
+        )
+
+    def test_room_page_links_to_email_form(self):
+        response = self.client.get("/places/512/")
+        self.assertContains(response, 'href="/places/512/share/"')
+        self.assertContains(response, "Recommend this room by email")
+
+    def test_email_form_sends_room_link_and_comment(self):
+        response = self.client.post("/places/512/share/", {
+            "name": "Olena",
+            "email": "olena@example.com",
+            "to": "friend@example.com",
+            "comments": "This looks perfect for our trip.",
+        })
+
+        self.assertRedirects(response, "/places/512/", fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        sent = mail.outbox[0]
+        self.assertEqual(sent.to, ["friend@example.com"])
+        self.assertEqual(sent.from_email, "noreply@grandstay.example")
+        self.assertIn("Olena", sent.subject)
+        self.assertIn("Riverside Room", sent.body)
+        self.assertIn("http://testserver/places/512/", sent.body)
+        self.assertIn("This looks perfect for our trip.", sent.body)
+
+    def test_invalid_recipient_does_not_send_email(self):
+        response = self.client.post("/places/512/share/", {
+            "name": "Olena",
+            "email": "olena@example.com",
+            "to": "not-an-email",
+            "comments": "",
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors["to"])
+        self.assertEqual(mail.outbox, [])
+
+
+class ReservationAvailabilityIndexTests(TestCase):
+    def test_active_date_search_index_is_declared(self):
+        index = next(
+            index for index in Reservation._meta.indexes
+            if index.name == "res_status_dates_room_idx"
+        )
+        self.assertEqual(index.fields, ["status", "check_in", "check_out", "room"])
+        self.assertIsNone(index.condition)
 
 
 class RoomCapacityTests(TestCase):

@@ -1,0 +1,34 @@
+{% load tr_tags %}{% load static %}<!DOCTYPE html>
+<html lang="{{ lang }}" data-theme="{{ theme }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrandStay — {% tr "Verify your email" %}</title><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=5"></head>
+<body class="auth-page">
+<div class="auth-card">
+  <h1>{% tr "Verify your email" %}</h1>
+  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}{% endif %}
+  <p>{% tr "Enter the 6-character code sent to" %} <strong>{{ email }}</strong>.</p>
+  <form method="post">{% csrf_token %}
+    <input name="code" type="text" minlength="6" maxlength="6" pattern="[A-Za-z0-9]{6}"
+           autocomplete="one-time-code" autocapitalize="characters" placeholder="{% tr 'Verification code' %}"
+           aria-label="{% tr 'Verification code' %}" required autofocus>
+    <button class="btn primary" type="submit">{% tr "Verify" %}</button>
+  </form>
+  <form method="post">{% csrf_token %}
+    <button class="btn ghost" type="submit" name="action" value="resend">{% tr "Send a new code" %}</button>
+  </form>
+  <div class="auth-actions">
+    <a class="btn ghost" href="{% url 'hotel:home' %}">{% tr "Home" %}</a>
+    <a class="btn ghost" href="{% url 'hotel:toggle_lang' %}">{{ lang|upper }}</a>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('form[method="post"]').forEach((form) => {
+    form.addEventListener("submit", () => {
+      const cookie = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+      const token = form.querySelector('input[name="csrfmiddlewaretoken"]');
+      if (cookie && token) token.value = decodeURIComponent(cookie[1]);
+    });
+  });
+</script>
+</body>
+</html>

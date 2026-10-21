@@ -23,7 +23,7 @@
     {% for r in rooms %}{% include "hotel/_place_card.html" %}{% empty %}
     <div class="empty-state">
       <p>{% tr "Nothing found for your search" %}</p>
-      <a class="btn ghost" href="{% url 'hotel:home'%}">{% tr "Back to home" %}</a>
+      <a class="btn ghost" href="{% url 'hotel:home' %}">{% tr "Back to home" %}</a>
     </div>
     {% endfor %}
   </div>

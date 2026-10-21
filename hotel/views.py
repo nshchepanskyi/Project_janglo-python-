@@ -1,19 +1,29 @@
 import re
+import secrets
+import string
+import time
 from datetime import date
 from decimal import Decimal
 from functools import wraps
+from smtplib import SMTPException
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
-from django.core.files.storage import default_storage
-from django.core.validators import validate_email as django_validate_email
 from django.core.exceptions import ValidationError
+from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.core.mail.message import BadHeaderError
+from django.core.validators import validate_email as django_validate_email
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import (
     ACTIVE_STATUSES,
@@ -40,9 +50,14 @@ from .models import (
     room_is_free,
     search_rooms,
 )
+from .forms import ShareRoomForm
 
 # Ліміт розміру фото профілю (2 МБ)
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
+REGISTRATION_CODE_LENGTH = 6
+REGISTRATION_CODE_TTL_SECONDS = 10 * 60
+REGISTRATION_CODE_MAX_ATTEMPTS = 10
+REGISTRATION_CODE_ALPHABET = string.ascii_uppercase + string.digits
 
 
 def _lang(request):
@@ -74,7 +89,7 @@ def is_admin(user):
 
 def home_redirect(user):
     """Куди відправляти після входу/реєстрації."""
-    return "hotel:dashboard" if is_admin(user) else "profile"
+    return "hotel:dashboard" if is_admin(user) else "hotel:profile"
 
 
 def admin_required(view_func):
@@ -83,7 +98,7 @@ def admin_required(view_func):
     def wrapper(request, *args, **kwargs):
         if not is_admin(request.user):
             messages.error(request, "Access restricted to administrators")
-            return redirect("profile")
+            return redirect("hotel:profile")
         return view_func(request, *args, **kwargs)
     return login_required(wrapper)
 
@@ -106,6 +121,41 @@ def _validate_email(email):
         return False
 
 
+def _new_registration_code():
+    return "".join(
+        secrets.choice(REGISTRATION_CODE_ALPHABET)
+        for _ in range(REGISTRATION_CODE_LENGTH)
+    )
+
+
+def _send_registration_code(user, code):
+    body = (
+        f"Hello {user.username},\n\n"
+        "Welcome to GrandStay!\n"
+        f"Your email verification code is: {code}\n\n"
+        "Enter this 6-character code on the verification page to confirm "
+        "that this email address belongs to you. The code expires in 10 minutes.\n\n"
+        "If you did not create a GrandStay account, you can ignore this email.\n\n"
+        "GrandStay team"
+    )
+    try:
+        return send_mail(
+            subject="Verify your email address — GrandStay",
+            message=body,
+            from_email=None,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+    except (BadHeaderError, OSError, SMTPException):
+        return 0
+
+
+def _verification_delivery_message():
+    if settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+        return "Development email printed to server console."
+    return "Verification code sent. Check your email."
+
+
 def register_view(request):
     if request.user.is_authenticated:
         return redirect(home_redirect(request.user))
@@ -122,15 +172,79 @@ def register_view(request):
             messages.error(request, "Password must contain at least 6 characters")
         elif password != confirm:
             messages.error(request, "Passwords do not match")
-        elif User.objects.filter(username=username).exists():
+        elif User.objects.filter(username__iexact=username).exists():
             messages.error(request, "Username already exists")
-        elif User.objects.filter(email=email).exists():
+        elif User.objects.filter(email__iexact=email).exists():
             messages.error(request, "Email already exists")
         else:
-            User.objects.create_user(username=username, email=email, password=password)
-            messages.success(request, "Registration successful")
-            return redirect("login")
+            user = User.objects.create_user(
+                username=username, email=email, password=password, is_active=False,
+            )
+            code = _new_registration_code()
+            if not _send_registration_code(user, code):
+                user.delete()
+                messages.error(request, "Verification email could not be sent. Please try again.")
+            else:
+                request.session["pending_registration"] = {
+                    "user_id": user.pk,
+                    "code_hash": make_password(code),
+                    "expires_at": int(time.time()) + REGISTRATION_CODE_TTL_SECONDS,
+                    "attempts": 0,
+                }
+                messages.success(request, _verification_delivery_message())
+                return redirect("hotel:verify_email")
     return render(request, "hotel/register.html")
+
+
+def verify_email_view(request):
+    pending = request.session.get("pending_registration")
+    if request.user.is_authenticated and not isinstance(pending, dict):
+        return redirect(home_redirect(request.user))
+    if not isinstance(pending, dict):
+        messages.error(request, "Verification session expired. Please register again.")
+        return redirect("hotel:register")
+
+    user = User.objects.filter(pk=pending.get("user_id"), is_active=False).first()
+    if user is None:
+        request.session.pop("pending_registration", None)
+        messages.error(request, "Verification session expired. Please register again.")
+        return redirect("hotel:register")
+
+    if request.method == "POST":
+        if request.POST.get("action") == "resend":
+            code = _new_registration_code()
+            if _send_registration_code(user, code):
+                pending.update({
+                    "code_hash": make_password(code),
+                    "expires_at": int(time.time()) + REGISTRATION_CODE_TTL_SECONDS,
+                    "attempts": 0,
+                })
+                request.session["pending_registration"] = pending
+                messages.success(request, _verification_delivery_message())
+            else:
+                messages.error(request, "Verification email could not be sent. Please try again.")
+            return redirect("hotel:verify_email")
+
+        if int(time.time()) >= int(pending.get("expires_at", 0)):
+            messages.error(request, "Verification code expired. Please request a new one.")
+        elif int(pending.get("attempts", 0)) >= REGISTRATION_CODE_MAX_ATTEMPTS:
+            messages.error(request, "Too many incorrect attempts. Please request a new code.")
+        else:
+            code = request.POST.get("code", "").strip().upper()
+            code_hash = pending.get("code_hash", "")
+            if re.fullmatch(r"[A-Z0-9]{6}", code) and check_password(code, code_hash):
+                user.is_active = True
+                user.save(update_fields=["is_active"])
+                request.session.pop("pending_registration", None)
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+                messages.success(request, "Email verified. Welcome to GrandStay!")
+                return redirect("hotel:home")
+
+            pending["attempts"] = int(pending.get("attempts", 0)) + 1
+            request.session["pending_registration"] = pending
+            messages.error(request, "Invalid verification code")
+
+    return render(request, "hotel/verify_email.html", {"email": user.email})
 
 
 def login_view(request):
@@ -162,7 +276,7 @@ def login_view(request):
 def logout_view(request):
     if request.method == "POST":
         logout(request)
-    return redirect("login")
+    return redirect("hotel:login")
 
 
 def toggle_lang(request):
@@ -326,10 +440,10 @@ def _create_review(request, room):
     ).first()
     if res is None:
         messages.error(request, "Only a checked-out guest can leave a review")
-        return redirect("place_detail", number=room.number)
+        return redirect("hotel:place_detail", number=room.number)
     if Review.objects.filter(reservation=res).exists():
         messages.error(request, "You have already reviewed this stay")
-        return redirect("place_detail", number=room.number)
+        return redirect("hotel:place_detail", number=room.number)
     try:
         rating = int(request.POST.get("rating", "0"))
     except ValueError:
@@ -343,7 +457,7 @@ def _create_review(request, room):
         Review.objects.create(reservation=res, room=room, author=request.user,
                               rating=rating, text=text)
         messages.success(request, "Thank you for your review!")
-    return redirect("place_detail", number=room.number)
+    return redirect("hotel:place_detail", number=room.number)
 
 
 def place_detail_view(request, number):
@@ -421,6 +535,43 @@ def place_detail_view(request, number):
     })
 
 
+def share_room_view(request, number):
+    """Send a room recommendation with a link to its public detail page."""
+    room = get_object_or_404(Room, number=number)
+    if request.method == "POST":
+        form = ShareRoomForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            public_url = reverse("hotel:place_detail", kwargs={"number": room.number})
+            share_url = request.build_absolute_uri(public_url)
+            message = render_to_string("hotel/email/share_room.txt", {
+                "room": room,
+                "name": data["name"],
+                "email": data["email"],
+                "comments": data["comments"],
+                "share_url": share_url,
+            })
+            try:
+                sent = send_mail(
+                    subject=f"{data['name']} recommends a room at GrandStay",
+                    message=message,
+                    from_email=None,
+                    recipient_list=[data["to"]],
+                    fail_silently=False,
+                )
+            except (BadHeaderError, OSError, SMTPException):
+                sent = 0
+
+            if sent:
+                messages.success(request, "Recommendation email sent")
+                return redirect(public_url)
+            messages.error(request, "Email could not be sent. Check the email settings and try again.")
+    else:
+        form = ShareRoomForm()
+
+    return render(request, "hotel/share_room.html", {"room": room, "form": form})
+
+
 @login_required
 def favorites_view(request):
     """Фаза 3: сторінка «Обране» — картки збережених номерів."""
@@ -456,7 +607,7 @@ def favorite_toggle_view(request, number):
     nxt = request.POST.get("next", "")
     if nxt.startswith("/") and not nxt.startswith("//"):
         return redirect(nxt)
-    return redirect("place_detail", number=number)
+    return redirect("hotel:place_detail", number=number)
 
 
 def page_view(request, slug):
@@ -510,7 +661,7 @@ def rooms_view(request):
                 price = float(request.POST.get("price", "0") or 0)
             except ValueError:
                 messages.error(request, "Invalid price")
-                return redirect("rooms")
+                return redirect("hotel:rooms")
             # Перевірка місткості за типом: Single → 1, Double → 2, Suite → до 8
             raw_capacity = request.POST.get("capacity", "").strip()
             if raw_capacity:
@@ -518,14 +669,14 @@ def rooms_view(request):
                     capacity = int(raw_capacity)
                 except ValueError:
                     messages.error(request, "Invalid capacity")
-                    return redirect("rooms")
+                    return redirect("hotel:rooms")
             else:
                 # порожнє поле → значення, що точно влізає в ліміт типу
                 capacity = min(2, ROOM_CAPACITY_LIMITS.get(room_type, 2))
             capacity_err = capacity_error(room_type, capacity)
             if capacity_err:
                 messages.error(request, capacity_err)
-                return redirect("rooms")
+                return redirect("hotel:rooms")
             photo = request.FILES.get("photo")
             # Галочки «що є в цьому номері» — id з каталогу послуг (hotel_service)
             service_ids = [s for s in request.POST.getlist("services") if s.isdigit()]
@@ -542,12 +693,12 @@ def rooms_view(request):
                 if service_ids:
                     room.services.set(Service.objects.filter(pk__in=service_ids))
                 messages.success(request, _msg(request, "Room {number} added", number=number))
-            return redirect("rooms")
+            return redirect("hotel:rooms")
         if action == "delete":
             number = request.POST.get("number", "").strip()
             if not number:
                 messages.error(request, "Enter a room number")
-                return redirect("rooms")
+                return redirect("hotel:rooms")
             room = Room.objects.filter(number=number).first()
             if not room:
                 messages.error(request, _msg(request, "Room {number} not found", number=number))
@@ -557,12 +708,12 @@ def rooms_view(request):
             else:
                 room.delete()
                 messages.success(request, _msg(request, "Room {number} deleted", number=number))
-            return redirect("rooms")
+            return redirect("hotel:rooms")
         if action == "status":
             room = get_object_or_404(Room, pk=request.POST.get("room_id"))
             room.status = request.POST.get("status", room.status)
             room.save()
-            return redirect("rooms")
+            return redirect("hotel:rooms")
     return render(request, "hotel/rooms.html", {
         "rooms": Room.objects.prefetch_related("services").all(),
         "catalog": Service.objects.all(),
@@ -590,14 +741,14 @@ def reservations_view(request):
             # Змінювати статуси (заселення/виселення) може лише адміністратор
             if not admin:
                 messages.error(request, "Access restricted to administrators")
-                return redirect("reservations")
+                return redirect("hotel:reservations")
             res = get_object_or_404(Reservation, pk=request.POST.get("reservation_id"))
             new_status = request.POST.get("status", res.status)
             # Виселення можливе лише після оплати додаткових послуг,
             # як у реальному готелі: рахунок закривають перед виїздом.
             if new_status == "Checked-Out" and res.extras_due > 0:
                 messages.error(request, "Pay the extras before checkout")
-                return redirect("reservation_detail", pk=res.pk)
+                return redirect("hotel:reservation_detail", pk=res.pk)
             res.status = new_status
             res.save()
             # keep room status in sync (port of create_reservation side-effect)
@@ -613,7 +764,7 @@ def reservations_view(request):
                 res.room.status = "Occupied" if still_booked else "Available"
                 res.room.save()
             messages.success(request, _msg(request, "Reservation {pk} updated", pk=res.pk))
-            return redirect("reservations")
+            return redirect("hotel:reservations")
         # create
         name = request.POST.get("guest_name", "").strip()
         code = request.POST.get("country_code", "+380")
@@ -673,7 +824,7 @@ def reservations_view(request):
                 except ValidationError as e:
                     guest.delete()
                     messages.error(request, _validation_message(e) or "Reservation failed")
-            return redirect("reservations")
+            return redirect("hotel:reservations")
     reservations = Reservation.objects.select_related("guest", "room").all()
     if not admin:
         # Звичайний користувач бачить лише власні бронювання
@@ -742,18 +893,18 @@ def reservation_detail_view(request, pk):
     owner = is_admin(request.user) or res.user_id == request.user.id
     if not owner:
         messages.error(request, "This booking is not available to you")
-        return redirect("profile")
+        return redirect("hotel:profile")
 
     if request.method == "POST":
         action = request.POST.get("action", "add")
         if action == "add":
             if res.status == "Checked-Out":
                 messages.error(request, "The stay is already over")
-                return redirect("reservation_detail", pk=res.pk)
+                return redirect("hotel:reservation_detail", pk=res.pk)
             selected = [s for s in request.POST.getlist("service") if s.isdigit()]
             if not selected:
                 messages.error(request, "Select at least one service")
-                return redirect("reservation_detail", pk=res.pk)
+                return redirect("hotel:reservation_detail", pk=res.pk)
             created = 0
             for service_id in selected:
                 svc = Service.objects.filter(pk=service_id).first()
@@ -765,7 +916,7 @@ def reservation_detail_view(request, pk):
                         raise ValueError
                 except ValueError:
                     messages.error(request, _msg(request, "Invalid quantity for {name}", name=svc.name))
-                    return redirect("reservation_detail", pk=res.pk)
+                    return redirect("hotel:reservation_detail", pk=res.pk)
                 ServiceOrder.objects.create(
                     guest=res.guest, reservation=res,
                     service_name=svc.name, service_price=svc.price,
@@ -776,7 +927,7 @@ def reservation_detail_view(request, pk):
                 messages.success(request, "Services ordered")
             else:
                 messages.error(request, "Failed to create orders")
-            return redirect("reservation_detail", pk=res.pk)
+            return redirect("hotel:reservation_detail", pk=res.pk)
 
         if action == "pay":
             paid = res.service_orders.filter(paid=False).exclude(status="Cancelled")
@@ -785,7 +936,7 @@ def reservation_detail_view(request, pk):
                 messages.success(request, "Payment successful")
             else:
                 messages.error(request, "Nothing to pay")
-            return redirect("reservation_detail", pk=res.pk)
+            return redirect("hotel:reservation_detail", pk=res.pk)
 
     orders = list(res.service_orders.all())
     context = {
@@ -821,7 +972,7 @@ def _update_avatar(request, user):
             messages.success(request, "Profile photo removed")
         else:
             messages.error(request, "You have no profile photo")
-        return redirect("profile")
+        return redirect("hotel:profile")
     # action == "avatar": завантаження нового фото
     avatar = request.FILES.get("avatar")
     if avatar is None:
@@ -841,7 +992,7 @@ def _update_avatar(request, user):
                     and default_storage.exists(prev_name):
                 default_storage.delete(prev_name)
             messages.success(request, "Profile photo updated")
-    return redirect("profile")
+    return redirect("hotel:profile")
 
 
 @login_required
@@ -859,7 +1010,7 @@ def profile_view(request):
                 user.email = email
                 user.save()
                 messages.success(request, "Profile updated")
-            return redirect("profile")
+            return redirect("hotel:profile")
         if action == "password":
             form = PasswordChangeForm(user, request.POST)
             if form.is_valid():
@@ -869,7 +1020,7 @@ def profile_view(request):
             else:
                 for err in form.errors.values():
                     messages.error(request, " ".join(err))
-            return redirect("profile")
+            return redirect("hotel:profile")
 
     admin = is_admin(user)
     if admin:

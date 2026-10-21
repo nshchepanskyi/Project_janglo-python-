@@ -1,0 +1,26 @@
+{% extends "hotel/base_public.html" %}{% load tr_tags %}
+{% block title %}{% tr "Recommend this room by email" %}{% endblock %}
+{% block content %}
+<nav class="crumbs">
+  <a href="{% url 'hotel:home' %}">{% tr "Home" %}</a> <span>→</span>
+  <a href="{% url 'hotel:place_detail' room.number %}">{{ room.display_title }}</a> <span>→</span>
+  <span>{% tr "Recommend by email" %}</span>
+</nav>
+
+<section class="section">
+  <div class="card review-form">
+    <h1>{% tr "Recommend this room by email" %}</h1>
+    <p class="hint">{{ room.display_title }}{% if room.location %} · {{ room.location }}{% endif %}</p>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <label for="{{ field.id_for_label }}">{% tr field.label %}
+        {{ field }}
+        {% for error in field.errors %}<span class="msg error">{{ error }}</span>{% endfor %}
+      </label>
+      {% endfor %}
+      <button class="btn primary" type="submit">{% tr "Send recommendation" %}</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

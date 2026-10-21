@@ -61,6 +61,9 @@ RESERVATION_STATUSES = [
     ("Checked-Out", "Checked-Out"),
 ]
 
+# Бронювання з цими статусами займають номер і враховуються під час пошуку.
+ACTIVE_STATUSES = ["Pending", "Checked-In"]
+
 # Тип перебування: Night — класичний нічліг (заїзд → виїзд наступного дня),
 # Day — денне бронювання: гість приїхав зранку (наприклад, на зустріч увечері)
 # і хоче відпочити в номері лише на день, без ночівлі.
@@ -235,6 +238,12 @@ class Reservation(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["status", "check_in", "check_out", "room"],
+                name="res_status_dates_room_idx",
+            ),
+        ]
 
     def __str__(self):
         return f"R{self.pk} {self.guest.name} -> {self.room.number}"
@@ -397,9 +406,6 @@ def arrivals_count():
 
 
 # ---------- публічний пошук (Фаза 1) ----------
-
-ACTIVE_STATUSES = ["Pending", "Checked-In"]
-
 
 def search_rooms(location="", check_in=None, check_out=None, guests=None, stay_type=STAY_NIGHT):
     """

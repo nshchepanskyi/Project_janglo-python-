@@ -1,0 +1,10 @@
+{% autoescape off %}
+{{ name }} ({{ email }}) recommends this room at GrandStay:
+
+{{ room.display_title }}{% if room.location %} — {{ room.location }}{% endif %}
+{{ share_url }}
+{% if comments %}
+Message from {{ name }}:
+{{ comments }}
+{% endif %}
+{% endautoescape %}

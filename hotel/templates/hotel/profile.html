@@ -103,14 +103,14 @@
           <td>{% if r.is_day_use %}<span class="pill">{% tr "DAY" %}</span>{% else %}{{ r.nights }}{% endif %}</td>
           <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
           <td>{% money r.amount %}</td>
-          <td><a class="btn ghost small" href="{% url 'hotel:reservation_detail'r.id %}">{% tr "Details" %}</a></td>
+          <td><a class="btn ghost small" href="{% url 'hotel:reservation_detail' r.id %}">{% tr "Details" %}</a></td>
         </tr>
       {% empty %}
         <tr><td colspan="7">{% tr "No reservations yet" %}</td></tr>
       {% endfor %}
       </tbody>
     </table>
-    <p><a class="btn primary" href="{% url 'hotel:reservations'%}">{% tr "Book a Room" %}</a></p>
+    <p><a class="btn primary" href="{% url 'hotel:reservations' %}">{% tr "Book a Room" %}</a></p>
     {% endif %}
   </div>
 </div>

@@ -190,6 +190,21 @@ class RoomSearchForm(Form):
         return cleaned
 
 
+# ---------- Форма рекомендації номера електронною поштою ----------
+
+class ShareRoomForm(Form):
+    """Дані відправника й адресата для рекомендації сторінки номера."""
+
+    name = forms.CharField(max_length=100, label="Your name")
+    email = forms.EmailField(label="Your email")
+    to = forms.EmailField(label="Recipient email")
+    comments = forms.CharField(
+        required=False,
+        label="Additional comments",
+        widget=forms.Textarea(attrs={"rows": 4}),
+    )
+
+
 # ---------- Форма для номера кімнати (адмін) ----------
 
 class RoomForm(ModelForm):

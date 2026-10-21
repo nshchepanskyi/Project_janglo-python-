@@ -51,6 +51,37 @@
   Ніч-vs-ніч не змінився: сусідні дати дозволені. Хелпер використовують
   `clean()`, `search_rooms()`, `room_is_free()`.
 
+**Рекомендація номера електронною поштою:**
+- На сторінці номера є посилання **Recommend this room by email**. Форма
+  приймає ім'я та email відправника, email одержувача й необов'язковий коментар;
+  одержувач отримує лист із повним посиланням на публічну сторінку номера.
+- Листи надсилаються стандартним Django `send_mail()`. Локально вони
+  друкуються в консоль; для доставки через SMTP задайте в `.env`
+  `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST`,
+  `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `EMAIL_USE_TLS` і
+  `DEFAULT_FROM_EMAIL`. Пароль SMTP не зберігайте в коді.
+
+**Підтвердження email при реєстрації:**
+- Після реєстрації надсилається англомовний 6-символьний код (літери A–Z і
+  цифри), дійсний 10 хвилин. До введення правильного коду акаунт неактивний;
+  після підтвердження користувач автоматично входить і потрапляє на головну.
+- Локально листи друкуються в консоль. Щоб вони приходили у справжню поштову
+  скриньку, налаштуйте SMTP у `.env` за параметрами вище.
+
+**Індекс пошуку доступності:**
+- `Reservation.Meta.indexes` містить складений індекс
+  `res_status_dates_room_idx` по `status`, `check_in`, `check_out`, `room`.
+  Він відповідає фільтрам статусу та перетину дат у `search_rooms()` і
+  `Reservation.clean()`; міграція `0008`.
+- Щоб порівняти план і час пошуку без зміни реальних таблиць, виконайте
+  `python manage.py benchmark_room_index --rows 100000 --runs 100`. Команда
+  створює й видаляє тимчасову таблицю з синтетичними бронюваннями, показує
+  час із/без індексу, коефіцієнт і план запиту. Результат залежить від СУБД,
+  обсягу даних і вибраного діапазону дат. Локальний замір на SQLite
+  (100 000 рядків, 100 запусків): **24.727 → 10.798 мс/запит (2.29×)**;
+  план змінився зі сканування таблиці на використання індексу для обох гілок
+  пошуку дат.
+
 **Фаза 3 (нове): обране + відгуки (персоналізація гостя):**
 - **Обране** — модель `RoomFavorite` (користувач ↔ номер, міграція `0006`,
   унікальна пара). Кнопка-зірочка ★/☆ на публічних картках і на сторінці
@@ -176,6 +207,7 @@ python manage.py runserver 0.0.0.0:8000
 | `/` | головна: hero + панель пошуку + Recommended places + CTA |
 | `/places/` | каталог/результати пошуку: `?location=&check_in=&check_out=&guests=` |
 | `/places/<number>/` | **сторінка місця**: фото, деталі, чек і кнопка **Book · $…**; нижче — відгуки та форма (після виселення) |
+| `/places/<number>/share/` | форма рекомендації номера електронною поштою |
 | `/favorites/` | обрані номери (потребує вхіду) |
 | `/favorites/toggle/<number>/` | POST-перемикач зірочки ★/☆ (анонім → вхід з `?next=`) |
 | `/pages/terms/`, `/pages/privacy/`, `/pages/help/` | статичні сторінки футера |
@@ -219,17 +251,84 @@ hotel/             # застосунок готелю
   currency.py      # валюта: en → $, uk → ₴ (USD_TO_UAH)
   context_processors.py / templatetags/tr_tags.py  # мова і тема в шаблонах
   templates/hotel/ # base_public (спільна шапка+футер), base (успадковує її),
-                   # home, places, place, favorites, _place_card, _search_panel, page,
-                   # dashboard, rooms, reservations, reservation, guests, login, register
+                    # home, places, place, share_room, email/share_room.txt, favorites,
+                    # _place_card, _search_panel, page,
+                    # dashboard, rooms, reservations, reservation, guests, login, register
+  management/commands/benchmark_room_index.py  # план/швидкість індексу
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
   static/hotel/landing.css  # публічна частина (зелений бренд) + зірочка/відгуки (Фаза 3)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
   sql/01_schema.sql, 02_seed.sql
-  tests.py         # 105 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
-                   # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
+  tests.py         # 111 тестів (PublicSiteTests, ServiceExtrasTests, PlaceDetailTests,
+                    # RoomEmailRecommendationTests, ReservationAvailabilityIndexTests,
+                    # RoomCapacityTests, AdjacentBookingTests, CurrencyLocalizationTests,
                    # CalendarWiringTests, DayStayTests, FavoritesReviewsTests,
                    # ProfileAvatarTests, MobileVersionTests, RoleAccessTests тощо)
+e2e_tests/        # 2 E2E-тести в справжньому браузері (Chrome, Selenium) —
+                   # окремий пакет поза застосунком, див. «E2E-тести» нижче
+  base.py             # SeleniumLiveTestCase: живий сервер + Chrome + помічники
+  test_guest_booking.py  # E2E №1: пошук → сторінка місця → бронювання → профіль
+  test_admin_rooms.py    # E2E №2: адмін додає номер → він у публічному каталозі
 ```
+
+## E2E-тести (Selenium)
+
+Крім швидких юніт-тестів (`hotel/tests.py`, Django test-client) є два
+E2E-тести, які проходять **через Selenium** у справжньому браузері Chrome:
+живий сервер Django піднімається автоматично, сторінки відкриваються,
+по кнопках реально клікають, а результат перевіряється і на екрані, і в БД.
+
+Вони лежать в **окремій папці `e2e_tests/`** (поза застосунком `hotel`):
+
+```
+e2e_tests/
+    base.py                # SeleniumLiveTestCase — база (живий сервер + Chrome + помічники)
+    test_guest_booking.py  # E2E №1 — сценарій гостя
+    test_admin_rooms.py    # E2E №2 — сценарій адміністратора
+    README.md              # деталі та технічні нюанси
+```
+
+| Тест | Що перевіряє |
+|---|---|
+| `test_guest_booking.GuestBookingFlowTests.test_guest_books_room_and_sees_it_in_profile` | Сценарій гостя: пошук номера в Одесі на 2 гостей → сторінка місця (чек: 3 ночі × $80 + 12% збору = $269) → «Book» → вхід (з поверненням на форму за `?next=`) → бронювання → рядок у «My Bookings», KPI в профілі та запис у БД |
+| `test_admin_rooms.AdminRoomManagementTests.test_admin_adds_room_and_it_appears_in_public_catalog` | Сценарій адміністратора: вхід → дашборд → «Rooms» → додавання номера (Suite, місткість 4, ціна $99, фото, послуга «Spa») → номер у адмін-таблиці та в публічному каталозі `/places/` |
+
+### Запуск
+
+```bash
+# лише E2E-тести
+python manage.py test e2e_tests -v 2
+
+# усі тести разом (E2E включно)
+python manage.py test e2e_tests hotel -v 2
+```
+
+Потрібен встановлений **Chrome**; `chromedriver` Selenium Manager завантажує
+сам (вже є у кеші `~/.cache/selenium`).
+
+**Браузер відкривається видимо** — тест сам заходить на потрібні сторінки
+застосунку й клікає по кнопках, тож увесь сценарій видно на екрані.
+Для CI або сервера без GUI — headless-режим:
+
+```bash
+set SELENIUM_HEADLESS=1        # Windows
+```
+
+Якщо Selenium Manager не зміг завантажити драйвер — вказати шлях уручну:
+
+```bash
+set CHROMEDRIVER_PATH=C:\\path\\to\\chromedriver.exe
+```
+
+### Технічні деталі
+
+- `LiveServerTestCase` піднімає реальний HTTP-сервер; статика (CSS/JS)
+  віддається через `staticfiles`-finders, тож тест бачить той самий
+  фронтенд, що й користувач.
+- Анімації появи (`fadeUp`) та «докручування» KPI-лічильників вимкнено
+  для тестової вкладки — інакше Selenium читав би ще не підсумкове число.
+- Поля `input[type=date]` заповнюються через DOM: нативне поле дат Chromium
+  приймає текст у локалі браузера, тож це не залежить від locale.
 
 ## Відповідність Flet → Django
 
