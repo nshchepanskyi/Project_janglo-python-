@@ -158,6 +158,16 @@ class Room(models.Model):
 
     class Meta:
         ordering = ["number"]
+        constraints = [
+            # Одне й те саме фото не можна дати двом номерам: у каталозі
+            # фото мають бути різними. Умова «photo <> ''» залишає можливість
+            # мати номери взагалі без фото (плейсхолдер «Фото»).
+            models.UniqueConstraint(
+                fields=["photo"],
+                condition=~models.Q(photo=""),
+                name="room_photo_unique_per_room",
+            ),
+        ]
 
     def __str__(self):
         return f"Room {self.number} ({self.status})"

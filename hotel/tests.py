@@ -2,6 +2,7 @@ import re
 import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 
 from django.contrib.auth.models import User
 from django.core import mail
@@ -1363,3 +1364,93 @@ class MobileVersionTests(TestCase):
         # шухляда виявляється під сірою "завісою" і тапи не потрапляють у меню
         self.assertIn("burger-ready .p-topbar", css)
         self.assertIn("burger-ready .p-burger", css)
+
+
+class RoomPhotoTests(TestCase):
+    """Фото номерів: унікальність у БД + команда роздачі фото з media/rooms."""
+
+    def setUp(self):
+        self.room = Room.objects.create(
+            number="701", room_type="Single", price=Decimal("50"),
+            photo="rooms/unsplash_01.jpg",
+        )
+
+    def test_same_photo_cannot_be_used_twice(self):
+        from django.db import IntegrityError, transaction
+        duplicate = Room(number="702", room_type="Single", price=Decimal("50"),
+                         photo="rooms/unsplash_01.jpg")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                duplicate.save()
+
+    def test_rooms_without_photo_are_allowed(self):
+        Room.objects.create(number="703", room_type="Single", price=Decimal("40"))
+        Room.objects.create(number="704", room_type="Single", price=Decimal("40"))
+        self.assertEqual(Room.objects.filter(photo="").count(), 2)
+
+    def test_unique_constraint_is_declared(self):
+        constraint = next(
+            c for c in Room._meta.constraints if c.name == "room_photo_unique_per_room"
+        )
+        self.assertEqual(list(constraint.fields), ["photo"])
+
+
+class AssignRoomPhotosCommandTests(TestCase):
+    """Команда assign_room_photos: один файл — один номер, без повторів."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix="grandstay_photos_")
+        self.rooms_dir = Path(self.tmp) / "rooms"
+        self.rooms_dir.mkdir(parents=True)
+        for name in ("unsplash_01.jpg", "unsplash_02.jpg", "unsplash_03.jpg"):
+            (self.rooms_dir / name).write_bytes(TEST_GIF)
+        for number in ("101", "102", "103"):
+            Room.objects.create(number=number, room_type="Single", price=Decimal("50"))
+
+    def _run(self, *args):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        with self.settings(MEDIA_ROOT=self.tmp):
+            call_command("assign_room_photos", *args, stdout=out)
+        return out.getvalue()
+
+    def test_assigns_unique_photo_per_room(self):
+        self._run()
+        photos = [room.photo.name for room in Room.objects.order_by("number")]
+        self.assertEqual(len(photos), 3)
+        self.assertEqual(len(set(photos)), 3)          # жодного повтору
+        self.assertTrue(all(p.startswith("rooms/") for p in photos))
+
+    def test_dry_run_does_not_change_database(self):
+        self._run("--dry-run")
+        self.assertEqual(Room.objects.exclude(photo="").count(), 0)
+
+    def test_use_numbered_prefers_file_named_after_room(self):
+        (self.rooms_dir / "101.jpg").write_bytes(TEST_GIF)
+        self._run("--use-numbered")
+        self.assertEqual(Room.objects.get(number="101").photo.name, "rooms/101.jpg")
+
+
+class FaviconTests(TestCase):
+    """Логотип на вкладці: favicon-посилання на всіх сторінках + /favicon.ico."""
+
+    def test_favicon_link_present_on_public_pages(self):
+        Room.objects.create(number="101", room_type="Single", price=Decimal("50"))
+        for url in ("/", "/places/", "/places/101/", "/catalog/", "/login/", "/register/"):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 200, url)
+            self.assertContains(resp, "favicon-180.png", msg_prefix=url)
+            self.assertContains(resp, "favicon-32.png", msg_prefix=url)
+
+    def test_root_favicon_ico_is_served(self):
+        resp = self.client.get("/favicon.ico")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "image/x-icon")
+
+    def test_static_favicon_files_exist(self):
+        from django.contrib.staticfiles import finders
+        for name in ("hotel/favicon-180.png", "hotel/favicon-32.png", "hotel/favicon.ico"):
+            self.assertIsNotNone(finders.find(name), name)

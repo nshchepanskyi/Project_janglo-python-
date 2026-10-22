@@ -19,6 +19,21 @@
 - **Фото номерів** — `Room.photo` це `ImageField` (`media/rooms/…`), вантажиться
   формою «Add Room» (`enctype="multipart/form-data"`), показується на публічних
   картках і в списку номерів (плейсхолдер, якщо фото немає).
+- **Масове проставлення фото** — команда
+  `python manage.py assign_room_photos` роздає файли з `media/rooms/`
+  (`unsplash_*.jpg`) номерам **без повторів**: кожне фото йде рівно до
+  одного номера, підбір іде за типом (Single → спальні, Double → спальні й
+  вітальні, Suite → апартаменти з кухнею). Корисні прапорці:
+  `--dry-run` (показати розподіл), `--use-numbered` (файл `101.jpg` → №101),
+  `--keep-existing`, `--sequential`, `--pattern`. Файли не копіюються — у базі
+  зберігається шлях `rooms/<файл>`.
+- **Унікальність фото на рівні БД** — обмеження `room_photo_unique_per_room`
+  (міграція `0009`): два номери не можуть мати одне й те саме фото; номери без
+  фото (`photo = ''`) лишаються можливими.
+- **Логотип на вкладці** — `hotel/static/hotel/favicon-180.png` (180×180),
+  `favicon-32.png` (32×32) і `favicon.ico` для старих браузерів; підключені в
+  `base_public.html` та на сторінках входу/реєстрації/підтвердження email.
+  Маршрут `/favicon.ico` віддає логотип (браузери запитують його самі).
 - **Каталог послуг у базі** — модель `Service` (таблиця `hotel_service`,
   наповнюється міграцією `0004` з `SERVICES_CATALOG`; редагується в `/admin/`).
   Вкладку Services прибрано з меню.
@@ -255,6 +270,7 @@ hotel/             # застосунок готелю
                     # _place_card, _search_panel, page,
                     # dashboard, rooms, reservations, reservation, guests, login, register
   management/commands/benchmark_room_index.py  # план/швидкість індексу
+  management/commands/assign_room_photos.py   # роздача фото з media/rooms номерам
   static/hotel/style.css    # адмінка: світла/темна тема + анімації
   static/hotel/landing.css  # публічна частина (зелений бренд) + зірочка/відгуки (Фаза 3)
   static/hotel/app.js       # лічильники KPI, прогрес-смуги
