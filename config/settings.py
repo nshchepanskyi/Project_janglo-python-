@@ -4,6 +4,7 @@ Django settings for config project.
 
 import os
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlparse
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,20 +93,42 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 #
-# Локально — SQLite (див. .env: DB_ENGINE=django.db.backends.sqlite3).
-# На Render + TiDB Cloud: DB_ENGINE=django.db.backends.mysql, порт 4000,
-# TLS (параметри DB_SSL_* нижче). Також підтримується PostgreSQL.
+# DATABASE_URL (наприклад Render PostgreSQL) має пріоритет, якщо заданий.
+# Інакше можна використовувати окремі DB_* змінні; для TiDB/MySQL нижче
+# налаштовується TLS.
 
-DATABASES = {
-    'default': {
-        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
-        'NAME': os.environ.get('DB_NAME', 'janglo_hotel'),
-        'USER': os.environ.get('DB_USER', 'janglo'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+_database_url = os.environ.get('DATABASE_URL', '').strip()
+if _database_url:
+    _parsed_database_url = urlparse(_database_url)
+    if _parsed_database_url.scheme not in ('postgres', 'postgresql'):
+        raise ValueError('DATABASE_URL must use the postgres:// or postgresql:// scheme')
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': unquote(_parsed_database_url.path.lstrip('/')),
+            'USER': unquote(_parsed_database_url.username or ''),
+            'PASSWORD': unquote(_parsed_database_url.password or ''),
+            'HOST': _parsed_database_url.hostname or '',
+            'PORT': str(_parsed_database_url.port or 5432),
+        }
     }
-}
+    _database_query = parse_qs(_parsed_database_url.query)
+    if _database_query:
+        DATABASES['default']['OPTIONS'] = {
+            key: values[-1] for key, values in _database_query.items()
+        }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+            'NAME': os.environ.get('DB_NAME', 'janglo_hotel'),
+            'USER': os.environ.get('DB_USER', 'janglo'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+        }
+    }
 
 if DATABASES['default']['ENGINE'].endswith('.mysql'):
     # TiDB Cloud (і MySQL) приймає клієнтів через TLS.

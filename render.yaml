@@ -21,19 +21,11 @@ services:
       # HTTPS за зовнішнім проксі Render → Django бачить https
       - key: TRUST_X_FORWARDED_PROTO
         value: "true"
-      # TiDB Cloud (MySQL-сумісний), значення заповнити в Dashboard → Environment
+      # Render PostgreSQL: вставити Internal Database URL у Dashboard → Environment
       - key: DB_ENGINE
-        value: django.db.backends.mysql
-      - key: DB_PORT
-        value: "4000"
-      - key: DB_HOST
-        sync: false        # напр. gateway01.eu-central-1.aws.tidbcloud.com
-      - key: DB_NAME
-        sync: false        # назва бази в TiDB Cloud
-      - key: DB_USER
-        sync: false        # користувач TiDB
-      - key: DB_PASSWORD
-        sync: false        # пароль TiDB
+        value: django.db.backends.postgresql
+      - key: DATABASE_URL
+        sync: false        # Internal Database URL із Render Postgres
       # Початковий адмін; прибрати ці секрети з Render після першого успішного deploy
       - key: DJANGO_SUPERUSER_USERNAME
         sync: false
