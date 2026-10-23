@@ -16,20 +16,20 @@ ROOM_TYPES = [
     ("Suite", "Suite"),
 ]
 
-# Ліміт місткості за типом номера: одномісний → 1 гість, двомісний → 2,
-# люкс → максимум 8. Правило використовують Room.clean() (адмінка /admin/),
-# Reservation.clean() і форма «Add Room» у панелі керування.
+
+
+
 ROOM_CAPACITY_LIMITS = {
     "Single": 1,
     "Double": 2,
     "Suite": 8,
 }
 
-# Глобальний максимум гостей (величезний Suite): поле Guests на публічному
-# сайті обмежене цим значенням.
+
+
 MAX_GUESTS = max(ROOM_CAPACITY_LIMITS.values())
 
-# Статичні (перекладувані) тексти помилок перевірки місткості
+
 CAPACITY_ERRORS = {
     "Single": "A Single room fits 1 guest",
     "Double": "A Double room fits 2 guests",
@@ -61,21 +61,21 @@ RESERVATION_STATUSES = [
     ("Checked-Out", "Checked-Out"),
 ]
 
-# Бронювання з цими статусами займають номер і враховуються під час пошуку.
+
 ACTIVE_STATUSES = ["Pending", "Checked-In"]
 
-# Тип перебування: Night — класичний нічліг (заїзд → виїзд наступного дня),
-# Day — денне бронювання: гість приїхав зранку (наприклад, на зустріч увечері)
-# і хоче відпочити в номері лише на день, без ночівлі.
+
+
+
 STAY_NIGHT, STAY_DAY = "Night", "Day"
 STAY_TYPES = [
     (STAY_NIGHT, "Night"),
     (STAY_DAY, "Day"),
 ]
 
-# Фіксовані години денного бронювання: заїзд о 07:00, виїзд о 23:59
-# («з 7am до 12am») того самого дня. У базі зберігається одна дата —
-# check_in == check_out.
+
+
+
 DAY_CHECK_IN_TIME = "07:00"
 DAY_CHECK_OUT_TIME = "23:59"
 
@@ -86,9 +86,9 @@ SERVICE_ORDER_STATUSES = [
     ("Cancelled", "Cancelled"),
 ]
 
-# Початкові дані каталогу послуг (порт SERVICES_CATALOG з Flet hotel_data.py).
-# У базі це таблиця hotel_service (модель Service) — список лише наповнює її
-# під час міграції та слугує довідкою для hotel/sql/02_seed.sql.
+
+
+
 SERVICES_CATALOG = [
     {"name": "Breakfast", "price": Decimal("10")},
     {"name": "Laundry", "price": Decimal("15")},
@@ -107,8 +107,8 @@ SERVICES_CATALOG = [
 
 SERVICE_PRICES = {s["name"]: s["price"] for s in SERVICES_CATALOG}
 
-# Сервісний збір публічного бронювання: 12% від суми за ночі,
-# округлено до цілих доларів — саме так, як на макеті ($120 + $14 = $134).
+
+
 SERVICE_FEE_RATE = Decimal("0.12")
 
 
@@ -146,22 +146,22 @@ class Room(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=ROOM_STATUSES, default="Available")
 
-    # Публічна картка (Фаза 1): назва, локація, місткість, рейтинг, фото.
-    # Фото вантажиться у media/rooms/ (FileField); якщо порожньо — плейсхолдер «Фото».
+
+
     title = models.CharField(max_length=120, blank=True, default="")
     location = models.CharField(max_length=120, blank=True, default="")
     capacity = models.PositiveIntegerField(default=2)
     rating = models.DecimalField(max_digits=2, decimal_places=1, default=Decimal("4.5"))
     photo = models.ImageField(upload_to="rooms/", blank=True)
-    # «Що є в цьому номері» — галочки з каталогу послуг при додаванні номера
+
     services = models.ManyToManyField(Service, blank=True, related_name="rooms")
 
     class Meta:
         ordering = ["number"]
         constraints = [
-            # Одне й те саме фото не можна дати двом номерам: у каталозі
-            # фото мають бути різними. Умова «photo <> ''» залишає можливість
-            # мати номери взагалі без фото (плейсхолдер «Фото»).
+
+
+
             models.UniqueConstraint(
                 fields=["photo"],
                 condition=~models.Q(photo=""),
@@ -225,9 +225,9 @@ def conflict_q(check_in, check_out, stay_type=STAY_NIGHT):
 class Reservation(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="reservations")
     room = models.ForeignKey(Room, on_delete=models.PROTECT, related_name="reservations")
-    # Хто створив бронювання: для звичайного користувача — він сам
-    # (його записи видно лише в його профілі); NULL для записів, створених
-    # до запровадження ролей. Адмін бачить усі записи незалежно від поля.
+
+
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -237,12 +237,12 @@ class Reservation(models.Model):
     )
     check_in = models.DateField()
     check_out = models.DateField()
-    # Скільки гостей заселяється (для публічного пошуку/картки місця)
+
     guests = models.PositiveIntegerField(default=1)
     status = models.CharField(max_length=20, choices=RESERVATION_STATUSES, default="Pending")
-    # Тип перебування: Night — нічліг (заїзд → виїзд наступного дня),
-    # Day — денне бронювання: 07:00 → 23:59 того самого дня (без ночівлі).
-    # Для Day у базі зберігається одна дата: check_in == check_out.
+
+
+
     stay_type = models.CharField(max_length=10, choices=STAY_TYPES, default=STAY_NIGHT)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -263,14 +263,14 @@ class Reservation(models.Model):
 
     def clean(self):
         if self.stay_type == STAY_DAY:
-            # Денне бронювання: одна й та сама дата, години 07:00 → 23:59
+
             if self.check_in and self.check_out and self.check_out != self.check_in:
                 raise ValidationError("A day stay is one day only")
         elif self.check_in and self.check_out and self.check_out <= self.check_in:
             raise ValidationError("Check out must be later than check in")
-        # Накладання дат: активне бронювання цього номера перетинається з новим.
-        # Сусідні дати нічлігу (заїзд у день виїзду) дозволені — перетину немає;
-        # день конфліктує з нічлігом на обох межах (07:00–23:59 — увесь день).
+
+
+
         if self.room_id and self.check_in and self.check_out:
             clash = (
                 Reservation.objects.filter(
@@ -284,7 +284,7 @@ class Reservation(models.Model):
                 raise ValidationError(
                     "This room is already booked for the selected dates"
                 )
-        # Не більше гостей, ніж вміщує тип номера (Single 1, Double 2, Suite 8)
+
         if self.room_id and self.guests:
             err = capacity_error(self.room.room_type, self.guests)
             if err:
@@ -346,8 +346,8 @@ class Reservation(models.Model):
 
 class ServiceOrder(models.Model):
     guest = models.ForeignKey(Guest, on_delete=models.CASCADE, related_name="service_orders")
-    # До якого бронювання належить послуга (для рахунку «перед виселенням»).
-    # NULL — записи, створені до цього поля (зберігаємо історію).
+
+
     reservation = models.ForeignKey(
         Reservation, null=True, blank=True,
         on_delete=models.CASCADE, related_name="service_orders",
@@ -358,7 +358,7 @@ class ServiceOrder(models.Model):
     total = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
     timestamp = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=SERVICE_ORDER_STATUSES, default="Pending")
-    # Оплата: гість сплачує додаткові послуги перед виселенням
+
     paid = models.BooleanField(default=False)
 
     class Meta:
@@ -372,7 +372,7 @@ class ServiceOrder(models.Model):
         super().save(*args, **kwargs)
 
 
-# Business-logic helpers (ported from hotel_data.py calc_*/get_*)
+
 
 def calc_reservation_revenue():
     total = Decimal("0")
@@ -409,13 +409,13 @@ def get_services_summary(limit=5):
 def arrivals_count():
     today = timezone.localdate()
     by_date = Reservation.objects.filter(check_in=today).count()
-    # Flet version counted Pending/Checked-In as "arrivals"; keep both metrics
+
     active = Reservation.objects.filter(status__in=["Pending", "Checked-In"]).count()
     checked_in = Reservation.objects.filter(status="Checked-In").count()
     return {"today": by_date, "active": active, "checked_in": checked_in}
 
 
-# ---------- публічний пошук (Фаза 1) ----------
+
 
 def search_rooms(location="", check_in=None, check_out=None, guests=None, stay_type=STAY_NIGHT):
     """
@@ -474,7 +474,7 @@ def room_is_free(room, check_in=None, check_out=None, stay_type=STAY_NIGHT):
     )
 
 
-# ---------- Фаза 3: обране + відгуки (персоналізація гостя) ----------
+
 
 def recalc_room_rating(room):
     """Середня оцінка живих відгуків перетікає в Room.rating.
@@ -554,7 +554,7 @@ def _review_rating_recalc(sender, instance, **kwargs):
     recalc_room_rating(instance.room)
 
 
-# ---------- Профіль користувача: фото профілю ----------
+
 
 class Profile(models.Model):
     """Профіль користувача з фото (шапка сайту + сторінка /profile/).
@@ -587,14 +587,14 @@ class Profile(models.Model):
             return
         from PIL import Image
         try:
-            self.avatar.open()      # для вже збереженого файлу відкриває із сховища
+            self.avatar.open()
             self.avatar.seek(0)
             Image.open(self.avatar).verify()
         except Exception as e:
             raise ValidationError({"avatar": "The file must be an image"}) from e
         finally:
             try:
-                self.avatar.seek(0)  # щоб save() записав файл цілком
+                self.avatar.seek(0)
             except Exception:
                 pass
 

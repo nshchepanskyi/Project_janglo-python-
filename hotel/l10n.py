@@ -230,7 +230,7 @@ TRANSLATIONS = {
         "Book a Room": "Забронювати номер",
         "Access restricted to administrators": "Доступ лише для адміністраторів",
 
-        # ---------- публічний сайт (Фаза 1) ----------
+
         "Home": "Головна",
         "Book": "Забронювати",
         "My Bookings": "Мої бронювання",
@@ -261,7 +261,7 @@ TRANSLATIONS = {
         "Invalid guests count": "Невірна кількість гостей",
         "Title": "Назва",
 
-        # ---------- статичні сторінки футера ----------
+
         "Terms of Service": "Умови користування",
         "Privacy Policy": "Політика конфіденційності",
         "Help Center": "Центр допомоги",
@@ -270,7 +270,7 @@ TRANSLATIONS = {
         "GrandStay stores only the data you provide for a booking: name, e-mail, phone and stay dates. We never sell or share your data with third parties and you can ask us to delete your account at any time.": "GrandStay зберігає лише дані, які ви надаєте для бронювання: ім'я, e-mail, телефон та дати проживання. Ми ніколи не продаємо й не передаємо ваші дані третім сторонам, а обліковий запис можна видалити будь-коли.",
         "Need help? E-mail support@grandstay.example or call +380 44 000 00 00 (24/7). You can manage your bookings in the My Bookings section after signing in.": "Потрібна допомога? Пишіть на support@grandstay.example або телефонуйте +380 44 000 00 00 (цілодобово). Керувати бронюваннями можна в розділі «Мої бронювання» після входу.",
 
-        # ---------- додаткові послуги та фото (каталог у БД) ----------
+
         "Booking details": "Деталі бронювання",
         "Details": "Деталі",
         "Stay": "Проживання",
@@ -296,7 +296,7 @@ TRANSLATIONS = {
         "Extra services are paid before checkout, like in a real hotel.": "Додаткові послуги оплачують перед виселенням, як у реальному готелі.",
         "Back to reservations": "Назад до бронювань",
 
-        # ---------- Фаза 2: сторінка місця ----------
+
         "Check availability": "Перевірити наявність",
         "Available for these dates": "Вільно на обрані дати",
         "Not available for these dates": "Немає вільності на обрані дати",
@@ -306,7 +306,7 @@ TRANSLATIONS = {
         "You will confirm the booking on the next step": "Ви підтвердите бронювання на наступному кроці",
         "A comfortable room with everything you need for a pleasant stay.": "Комфортний номер з усім необхідним для приємного відпочинку.",
 
-        # ---------- Перевірка місткості за типом номера ----------
+
         "Capacity limit: Single — 1, Double — 2, Suite — up to 8":
             "Ліміт місткості: одномісний — 1, двомісний — 2, люкс — до 8",
         "Invalid capacity": "Некоректна місткість",
@@ -315,7 +315,7 @@ TRANSLATIONS = {
         "A Double room fits 2 guests": "Двомісний номер вміщує 2 гостей",
         "A Suite room fits up to 8 guests": "Люкс вміщує до 8 гостей",
 
-        # ---------- Фаза 3: обране + відгуки ----------
+
         "Favorites": "Обране",
         "Add to favorites": "Додати в обране",
         "Remove from favorites": "Прибрати з обраного",
@@ -339,7 +339,7 @@ TRANSLATIONS = {
         "Write a few words about the room, the staff and your stay.":
             "Напишіть кілька слів про номер, персонал і ваше проживання.",
 
-        # ---------- Профіль: фото профілю ----------
+
         "Profile photo": "Фото профілю",
         "Profile photo updated": "Фото профілю оновлено",
         "Profile photo removed": "Фото профілю видалено",
@@ -349,7 +349,7 @@ TRANSLATIONS = {
         "The file must be an image": "Файл має бути зображенням",
         "Remove photo": "Прибрати фото",
 
-        # ---------- Телефонна версія: бургер-меню ----------
+
         "Menu": "Меню",
     },
 }

@@ -106,7 +106,7 @@ class Command(BaseCommand):
 
     @staticmethod
     def _time_query(cursor, sql, params, runs):
-        # Warm up the statement/cache before timing repeated executions.
+
         for _ in range(min(5, runs)):
             cursor.execute(sql, params)
             cursor.fetchall()

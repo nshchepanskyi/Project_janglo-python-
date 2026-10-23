@@ -21,20 +21,20 @@ from django.db import transaction
 
 from hotel.models import Room
 
-# Фото, які лежать у media/rooms, але не є фото номерів (напр. тестові GIF
-# з E2E-тестів або згенеровані картки-плейсхолдери) — їх пропускаємо.
+
+
 EXCLUDED_PATTERNS = (
     re.compile(r"^grandstay_e2e_room", re.IGNORECASE),
 )
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 
-# Підбір фото під тип номера: Single → спальні, Double → просторніші спальні
-# та вітальні, Suite → апартаменти з вітальнею/кухнею/каміном. Ключ — номер
-# кімнати, значення — файл із media/rooms. Кожен файл використовується рівно
-# один раз.
+
+
+
+
 ROOM_PHOTO_MAP = {
-    # --- Single (101–122) ---
+
     "101": "unsplash_01.jpg",
     "102": "unsplash_30.jpg",
     "103": "unsplash_25.jpg",
@@ -57,7 +57,7 @@ ROOM_PHOTO_MAP = {
     "120": "unsplash_37.jpg",
     "121": "unsplash_27.jpg",
     "122": "unsplash_39.jpg",
-    # --- Double (201–226) ---
+
     "201": "unsplash_26.jpg",
     "202": "unsplash_34.jpg",
     "203": "unsplash_49.jpg",
@@ -84,7 +84,7 @@ ROOM_PHOTO_MAP = {
     "224": "unsplash_61.jpg",
     "225": "unsplash_08.jpg",
     "226": "unsplash_21.jpg",
-    # --- Suite (301–317) ---
+
     "301": "unsplash_41.jpg",
     "302": "unsplash_18.jpg",
     "303": "unsplash_17.jpg",
@@ -149,8 +149,8 @@ class Command(BaseCommand):
             self.stderr.write(f"Folder not found: {folder}")
             return
 
-        # Основний пул — фото за маскою; додатково шукаємо файли, названі
-        # за номером кімнати (101.jpg), незалежно від маски.
+
+
         candidates = {
             path.name: path
             for path in folder.iterdir()
@@ -198,9 +198,9 @@ class Command(BaseCommand):
             return
 
         with transaction.atomic():
-            # Спершу звільняємо фото в номерах, які перепризначаємо: інакше
-            # під час «перестановки» (фото А стає фото Б) тимчасово виникне
-            # дубль і спрацює UNIQUE-обмеження бази.
+
+
+
             for room, _ in assignments:
                 if room.photo:
                     room.photo.name = ""
@@ -219,7 +219,7 @@ class Command(BaseCommand):
         assigned_rooms = set()
         candidates = candidates or available
 
-        # 1) Файл, названий за номером кімнати (101.jpg → №101) — найточніший збіг.
+
         if use_numbered:
             for room in rooms:
                 match = next(
@@ -232,7 +232,7 @@ class Command(BaseCommand):
                     used.add(match)
                     assigned_rooms.add(room.pk)
 
-        # 2) Явний підбір за типом номера (спальня / вітальня / апартамент).
+
         if not sequential:
             for room in rooms:
                 if room.pk in assigned_rooms:
@@ -243,7 +243,7 @@ class Command(BaseCommand):
                     used.add(name)
                     assigned_rooms.add(room.pk)
 
-        # 3) Решта номерів отримує будь-які вільні фото по порядку.
+
         rest = [name for name in sorted(available) if name not in used]
         pending = [room for room in rooms if room.pk not in assigned_rooms]
         for room, name in zip(pending, rest):

@@ -1,12 +1,11 @@
-/* GrandStay — light animations: KPI count-up + animated progress bars.
-   All effects degrade gracefully: if anything fails, the page still works. */
+
 (function () {
   "use strict";
 
   var reduceMotion = window.matchMedia &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- 1. Count-up for KPI numbers (e.g. "$260", "20%", "1,234") ---------- */
+
   function animateNumbers() {
     if (reduceMotion) return;
     var nodes = document.querySelectorAll(".kpi-value");
@@ -28,7 +27,7 @@
       function frame(now) {
         if (start === null) start = now;
         var p = Math.min((now - start) / duration, 1);
-        var eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+        var eased = 1 - Math.pow(1 - p, 3);
         var value = target * eased;
         var text = value.toFixed(decimals);
         if (useGroup) {
@@ -39,20 +38,19 @@
         }
         el.textContent = prefix + text + suffix;
         if (p < 1) requestAnimationFrame(frame);
-        else el.textContent = prefix + numText + suffix; // точне значення в кінці
+        else el.textContent = prefix + numText + suffix;
       }
       requestAnimationFrame(frame);
     });
   }
 
-  /* ---------- 2. Progress bars grow from 0 to their target width ---------- */
+
   function animateBars() {
     if (reduceMotion) return;
     document.querySelectorAll(".bar div").forEach(function (bar) {
       var target = bar.style.width;
       if (!target) return;
       bar.style.width = "0%";
-      // force reflow so the transition actually runs
       void bar.offsetWidth;
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
@@ -62,7 +60,7 @@
     });
   }
 
-  /* ---------- 3. Subtle press feedback for buttons ---------- */
+
   function pressFeedback() {
     document.querySelectorAll(".btn").forEach(function (btn) {
       btn.addEventListener("pointerdown", function () {
@@ -76,12 +74,7 @@
     });
   }
 
-  /* ---------- 4. Stay type: добір «Night / Day» на формі бронювання ----------
-     У day-режимі (07:00 → 23:59) приховуємо поле виїзду та підставляємо
-     йому дату заїзду: сервер сам ставить check_out = check_in, а значення
-     поля потрібне, щоб міні-валідація cal.js не блокувала сабміт.
-     Без JS все працює теж: поле виїзду видиме, користувач вводить ту саму
-     дату — бізнес-логіка (день = 07:00 → 23:59) живе на сервері. */
+
   function initStayType() {
     Array.prototype.forEach.call(
       document.querySelectorAll('form select[name="stay_type"]'),
@@ -102,10 +95,7 @@
     );
   }
 
-  /* ---------- 5. Бургер-меню на телефоні (≤900px) ----------
-     На мобільних nav перетворюється на бічну шухляду (CSS: html.burger-ready),
-     а у шапці показується кнопка-бургер. Закриття: оверлей, ESC або клік по
-     пункту меню. Без JS нічого не ховається — меню лишається у шапці. */
+
   function initBurger() {
     var burger = document.querySelector(".p-burger");
     var nav = document.querySelector(".p-nav");
@@ -135,7 +125,6 @@
     nav.addEventListener("click", function (e) {
       if (e.target && e.target.closest && e.target.closest("a")) setOpen(false);
     });
-    // вікно розширили до десктопу — шухляда більше не потрібна
     if (window.matchMedia) {
       var mq = window.matchMedia("(max-width: 900px)");
       if (mq.addEventListener) {

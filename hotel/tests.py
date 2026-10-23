@@ -28,10 +28,10 @@ from .models import (
     search_rooms,
 )
 
-# Тимчасове сховище для тестових завантажень фото
+
 TEST_MEDIA_ROOT = tempfile.mkdtemp(prefix="grandstay_test_media_")
 
-# 1×1 GIF для тесту завантаження фото номера
+
 TEST_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff"
     b"!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
@@ -296,7 +296,7 @@ class PublicSiteTests(TestCase):
             rating=Decimal("4.9"),
         )
         guest = Guest.objects.create(name="Busy Guest", phone="+38000", email="b@b.com")
-        # 201 зайнятий 10–13.09.2026
+
         Reservation.objects.create(
             guest=guest, room=self.double,
             check_in=date(2026, 9, 10), check_out=date(2026, 9, 13),
@@ -327,7 +327,7 @@ class PublicSiteTests(TestCase):
         self.assertIn("301", numbers)
 
     def test_adjacent_dates_are_free(self):
-        # заїзд у день виїзду іншого гостя — не є перетином
+
         resp = self.client.get("/places/", {"check_in": "2026-09-13", "check_out": "2026-09-15"})
         self.assertIn("201", [r.number for r in resp.context["rooms"]])
 
@@ -336,7 +336,7 @@ class PublicSiteTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         msgs = [str(m) for m in resp.context["messages"]]
         self.assertIn("Check out must be later", msgs)
-        # без фільтра дат показуємо весь каталог
+
         self.assertEqual(len(resp.context["rooms"]), 3)
 
     def test_bad_date_format_shows_error(self):
@@ -356,7 +356,7 @@ class PublicSiteTests(TestCase):
         self.assertEqual(self.client.get("/pages/nope/").status_code, 404)
 
     def test_service_fee_and_total(self):
-        # макет: $120 × 1 ніч + збір 12% ($14) = $134
+
         self.assertEqual(calc_service_fee(Decimal("120")), Decimal("14"))
         r = Reservation.objects.create(
             guest=Guest.objects.create(name="G", phone="+380", email="g@g.com"),
@@ -384,13 +384,13 @@ class PublicSiteTests(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(resp.url.endswith("/reservations/"), resp.url)
-        # приховане поле next у формі входу (після виходу)
+
         self.client.logout()
         resp = self.client.get("/login/?next=/places/")
         self.assertEqual(resp.context["next"], "/places/")
 
     def test_public_pages_work_in_ukrainian(self):
-        self.client.get("/lang/")  # en → uk
+        self.client.get("/lang/")
         resp = self.client.get("/")
         self.assertContains(resp, "Рекомендовані місця")
         resp = self.client.get("/pages/terms/")
@@ -411,7 +411,7 @@ class PublicSiteTests(TestCase):
         self.assertEqual(r.title, "Sky Loft")
         self.assertEqual(r.location, "Odesa, Ukraine")
         self.assertEqual(r.capacity, 4)
-        # картка без назві показує «Room X»
+
         r2 = Room.objects.create(number="405", room_type="Single", price=Decimal("40"))
         self.assertEqual(r2.display_title, "Room 405")
 
@@ -458,20 +458,20 @@ class ServiceExtrasTests(TestCase):
         self.assertEqual([s.name for s in room.services.all()], ["Spa"])
 
     def test_reservation_detail_access(self):
-        # власник бронювання
+
         self.client.login(username="ivan", password="secret123")
         resp = self.client.get(f"/reservations/{self.res.pk}/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context["res"], self.res)
         self.client.logout()
-        # сторонній користувач потрапляє у профіль
+
         User.objects.create_user("other", "other@test.com", "secret123")
         self.client.login(username="other", password="secret123")
         resp = self.client.get(f"/reservations/{self.res.pk}/")
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(resp.url.endswith("/profile/"))
         self.client.logout()
-        # адміністратор бачить будь-яке бронювання
+
         self.client.login(username="boss", password="pass1234")
         self.assertEqual(self.client.get(f"/reservations/{self.res.pk}/").status_code, 200)
 
@@ -487,7 +487,7 @@ class ServiceExtrasTests(TestCase):
         self.assertEqual(order.quantity, 2)
         self.assertEqual(order.total, Decimal("100"))
         self.assertFalse(order.paid)
-        # рахунок до сплати перед виселенням
+
         self.res.refresh_from_db()
         self.assertEqual(self.res.extras_due, Decimal("100"))
         self.assertEqual(self.res.extras_total, Decimal("100"))
@@ -505,13 +505,13 @@ class ServiceExtrasTests(TestCase):
             service_name="Spa", service_price=Decimal("50"), quantity=1,
         )
         self.client.login(username="boss", password="pass1234")
-        # несплачені послуги блокують виселення
+
         self.client.post("/reservations/", {
             "action": "status", "reservation_id": self.res.pk, "status": "Checked-Out",
         })
         self.res.refresh_from_db()
         self.assertEqual(self.res.status, "Pending")
-        # оплатили — виселення проходить
+
         self.client.post(f"/reservations/{self.res.pk}/", {"action": "pay"})
         self.client.post("/reservations/", {
             "action": "status", "reservation_id": self.res.pk, "status": "Checked-Out",
@@ -530,7 +530,7 @@ class PlaceDetailTests(TestCase):
             rating=Decimal("4.9"),
         )
         guest = Guest.objects.create(name="Busy Guest", phone="+38000", email="busy@b.com")
-        # 501 зайнятий 10–13.12.2026
+
         Reservation.objects.create(
             guest=guest, room=self.room,
             check_in=date(2026, 12, 10), check_out=date(2026, 12, 13),
@@ -541,8 +541,8 @@ class PlaceDetailTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, "Sky Loft")
         self.assertContains(resp, "Check availability")
-        self.assertContains(resp, "per night")  # без дат — підсумок «за ніч»
-        # без дат кнопка веде на форму бронювання з префілом
+        self.assertContains(resp, "per night")
+
         self.assertContains(resp, 'href="/reservations/?room=501"')
 
     def test_unknown_room_is_404(self):
@@ -560,8 +560,8 @@ class PlaceDetailTests(TestCase):
         self.assertEqual(resp.context["total"], Decimal("504"))
         self.assertContains(resp, "× 3 NIGHTS")
         self.assertContains(resp, "$504.00")
-        self.assertContains(resp, "· $504")  # текст кнопки
-        self.assertContains(resp, 'value="2026-12-01"')  # форма зберігає дати
+        self.assertContains(resp, "· $504")
+        self.assertContains(resp, 'value="2026-12-01"')
 
     def test_busy_dates_hide_booking_button(self):
         resp = self.client.get("/places/501/", {
@@ -585,7 +585,7 @@ class PlaceDetailTests(TestCase):
         self.assertContains(resp, 'href="/places/501/"')
 
     def test_guests_input_on_place_page_limited_by_room_capacity(self):
-        # місткість саме цього номера (Suite у фікстурі — 3), не глобальний максимум
+
         resp = self.client.get("/places/501/")
         self.assertContains(resp, 'name="guests" min="1" max="3"')
         resp = self.client.get("/places/501/", {"guests": "4"})
@@ -708,7 +708,7 @@ class RoomCapacityTests(TestCase):
         with self.assertRaises(ValidationError):
             res.full_clean()
         res.guests = 1
-        res.full_clean()  # 1 гість у одномісному — ок
+        res.full_clean()
 
     def test_public_search_caps_guests_at_eight(self):
         resp = self.client.get("/", {"guests": "9"})
@@ -744,14 +744,14 @@ class AdjacentBookingTests(TestCase):
         })
 
     def test_adjacent_booking_is_allowed(self):
-        # 10–15 листопада зайнято, з 15-го — вільно
+
         self._book("2026-11-10", "2026-11-15", "a1@test.com")
         self._book("2026-11-15", "2026-11-20", "a2@test.com")
         self.assertEqual(Reservation.objects.filter(room=self.room).count(), 2)
 
     def test_overlapping_booking_is_rejected(self):
         self._book("2026-11-10", "2026-11-15", "b1@test.com")
-        self._book("2026-11-12", "2026-11-14", "b2@test.com")  # накладається
+        self._book("2026-11-12", "2026-11-14", "b2@test.com")
         self.assertEqual(Reservation.objects.filter(room=self.room).count(), 1)
 
     def test_model_clean_blocks_overlap(self):
@@ -767,7 +767,7 @@ class AdjacentBookingTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             res.full_clean()
-        # сусідні дати (заїзд у день виїзду) — проходять
+
         res.check_in = date(2026, 11, 15)
         res.full_clean()
 
@@ -786,7 +786,7 @@ class CurrencyLocalizationTests(TestCase):
         from .currency import money_str
         self.assertEqual(money_str("504", "en", 2), "$504.00")
         self.assertEqual(money_str("504", "en", 0), "$504")
-        self.assertEqual(money_str("100", "uk", 0), "₴4,478")  # 100 × 44.78
+        self.assertEqual(money_str("100", "uk", 0), "₴4,478")
         self.assertEqual(money_str("150", "uk", 2), "₴6,717.00")
         self.assertEqual(money_str(None, "en", 2), "$0.00")
         self.assertEqual(money_str("bad", "en", 2), "$0.00")
@@ -796,28 +796,28 @@ class CurrencyLocalizationTests(TestCase):
             "check_in": "2027-01-10", "check_out": "2027-01-13",
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "$150.00")   # ціна за ніч
-        self.assertContains(resp, "$450.00")   # 3 ночі
-        self.assertContains(resp, "$504.00")   # + 12% збору
+        self.assertContains(resp, "$150.00")
+        self.assertContains(resp, "$450.00")
+        self.assertContains(resp, "$504.00")
         self.assertNotContains(resp, "₴")
 
     def test_ukrainian_page_shows_hryvnias(self):
-        self.client.get("/lang/")  # en → uk
+        self.client.get("/lang/")
         resp = self.client.get("/places/801/", {
             "check_in": "2027-01-10", "check_out": "2027-01-13",
         })
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "₴6,717.00")    # 150 × 44.78
-        self.assertContains(resp, "₴20,151.00")   # 450 × 44.78
-        self.assertContains(resp, "₴22,569.12")   # 504 × 44.78
+        self.assertContains(resp, "₴6,717.00")
+        self.assertContains(resp, "₴20,151.00")
+        self.assertContains(resp, "₴22,569.12")
         self.assertNotContains(resp, "$150.00")
 
     def test_ukrainian_catalog_and_card_prices(self):
         self.client.get("/lang/")
         resp = self.client.get("/places/")
-        self.assertContains(resp, "₴6,717.00")   # картка номера
+        self.assertContains(resp, "₴6,717.00")
         resp = self.client.get("/")
-        self.assertContains(resp, "₴6,717.00")   # рекомендовані на головній
+        self.assertContains(resp, "₴6,717.00")
 
 
 class CalendarWiringTests(TestCase):
@@ -846,7 +846,7 @@ class CalendarWiringTests(TestCase):
         self.client.login(username="caluser", password="secret123")
         resp = self.client.get("/reservations/")
         self.assertContains(resp, 'class="js-cal"')
-        self.assertContains(resp, 'class="js-cal" required')  # обов'язковість переїжджає на кнопку
+        self.assertContains(resp, 'class="js-cal" required')
 
 
 class DayStayTests(TestCase):
@@ -879,12 +879,12 @@ class DayStayTests(TestCase):
             r.save()
         return r
 
-    # ---------- модель ----------
+
     def test_day_stay_is_one_day_amount(self):
         r = self._day(date(2026, 11, 5))
         r.full_clean()
-        self.assertEqual(r.nights, 0)          # ночівлі немає
-        self.assertEqual(r.days, 1)            # рахується 1 день
+        self.assertEqual(r.nights, 0)
+        self.assertEqual(r.days, 1)
         self.assertEqual(r.amount, Decimal("120"))
         self.assertEqual(r.check_in_time, "07:00")
         self.assertEqual(r.check_out_time, "23:59")
@@ -906,10 +906,10 @@ class DayStayTests(TestCase):
         with self.assertRaises(ValidationError):
             r.full_clean()
 
-    # ---------- накладання: день ↔ ніч ----------
+
     def test_day_conflicts_with_night_on_edges(self):
-        # нічліг 10→15: день 10 (гість нічлігу заїжджає ввечері) і 15 (виїзд уранці)
-        # теж зайняті — день триває 07:00–23:59
+
+
         Reservation.objects.create(
             guest=self.guest, room=self.room,
             check_in=date(2026, 11, 10), check_out=date(2026, 11, 15),
@@ -923,56 +923,56 @@ class DayStayTests(TestCase):
             guest=self.guest, room=self.room,
             check_in=date(2026, 11, 10), check_out=date(2026, 11, 15),
         )
-        for d in (9, 16):  # 9-го гість нічлігу ще не заїхав, 16-го уже поїхав
+        for d in (9, 16):
             self._day(date(2026, 11, d)).full_clean()
 
     def test_night_conflicts_with_day_inside_interval(self):
         self._day(date(2026, 11, 12), save=True)
-        for ci, co in ((11, 13), (12, 14), (10, 12)):  # нічліги, що накривають 12-те
+        for ci, co in ((11, 13), (12, 14), (10, 12)):
             r = Reservation(
                 guest=self.guest, room=self.room,
                 check_in=date(2026, 11, ci), check_out=date(2026, 11, co),
             )
             with self.assertRaises(ValidationError, msg=f"{ci}→{co} мусить конфліктувати"):
                 r.full_clean()
-        # сусідні нічліги без 12-го — можна (заїзд у день виїзду дозволений)
+
         for ci, co in ((8, 11), (13, 15)):
             Reservation(
                 guest=self.guest, room=self.room,
                 check_in=date(2026, 11, ci), check_out=date(2026, 11, co),
             ).full_clean()
 
-    # ---------- накладання: день ↔ день ----------
+
     def test_day_vs_day_same_date_conflicts(self):
         self._day(date(2026, 11, 5), save=True)
         with self.assertRaises(ValidationError):
             self._day(date(2026, 11, 5)).full_clean()
-        self._day(date(2026, 11, 6)).full_clean()  # інший день — вільно
+        self._day(date(2026, 11, 6)).full_clean()
 
-    # ---------- публічний пошук ----------
+
     def test_public_search_excludes_day_booking(self):
         self._day(date(2026, 11, 12), save=True)
-        # день 12-го блокує нічліги, що його накривають (включно з межами)
+
         for ci, co in (("2026-11-10", "2026-11-13"), ("2026-11-12", "2026-11-14"),
                        ("2026-11-10", "2026-11-12")):
             rooms = search_rooms(check_in=date.fromisoformat(ci), check_out=date.fromisoformat(co))
             self.assertFalse(rooms.filter(pk=self.room.pk).exists(), f"{ci}→{co}")
-        # інтервали без 12-го — вільні
+
         for ci, co in (("2026-11-08", "2026-11-11"), ("2026-11-13", "2026-11-15")):
             rooms = search_rooms(check_in=date.fromisoformat(ci), check_out=date.fromisoformat(co))
             self.assertTrue(rooms.filter(pk=self.room.pk).exists(), f"{ci}→{co}")
 
     def test_room_is_free_day_mode(self):
         self._day(date(2026, 11, 12), save=True)
-        # нічний режим: перетини як і раніше
+
         self.assertFalse(room_is_free(self.room, date(2026, 11, 11), date(2026, 11, 13)))
         self.assertTrue(room_is_free(self.room, date(2026, 11, 8), date(2026, 11, 11)))
-        # day-режим: достатньо лише однієї дати
+
         self.assertFalse(room_is_free(self.room, date(2026, 11, 12), None, stay_type="Day"))
         self.assertTrue(room_is_free(self.room, date(2026, 11, 11), None, stay_type="Day"))
         self.assertTrue(room_is_free(self.room, date(2026, 11, 13), None, stay_type="Day"))
 
-    # ---------- форми / view ----------
+
     def test_form_shows_stay_type_select(self):
         resp = self.client.get("/reservations/")
         self.assertContains(resp, 'name="stay_type"')
@@ -990,11 +990,11 @@ class DayStayTests(TestCase):
         res = Reservation.objects.get()
         self.assertEqual(res.stay_type, "Day")
         self.assertEqual(res.check_in, date(2026, 11, 5))
-        self.assertEqual(res.check_out, date(2026, 11, 5))  # виїзд = заїзду
+        self.assertEqual(res.check_out, date(2026, 11, 5))
         self.assertEqual(res.amount, Decimal("120"))
 
     def test_day_booking_without_checkout_date(self):
-        # у day-режимі поле виїзду можна лишити порожнім — сервер сам поставить дату
+
         self.client.post("/reservations/", {
             "action": "create", "guest_name": "Oleh", "country_code": "+380",
             "phone": "501112233", "email": "oleh@test.com", "room_number": "801",
@@ -1032,13 +1032,13 @@ class DayStayTests(TestCase):
         self.assertContains(resp, "Day stay")
         self.assertContains(resp, "07:00")
         self.assertContains(resp, "23:59")
-        self.assertContains(resp, "× 1 DAY")  # рахунок: 1 день, а не 0 ночей
+        self.assertContains(resp, "× 1 DAY")
 
     def test_reservations_list_shows_day_marker(self):
         self._day(date(2026, 11, 5), save=True, user=self.user)
         resp = self.client.get("/reservations/")
         self.assertContains(resp, "07:00–23:59")
-        self.assertContains(resp, ">DAY<")  # пігулка DAY замість діапазону дат
+        self.assertContains(resp, ">DAY<")
 
     def test_prefill_stay_day_selects_day_option(self):
         resp = self.client.get("/reservations/?stay=day")
@@ -1046,7 +1046,7 @@ class DayStayTests(TestCase):
 
     def test_ukrainian_day_use_texts(self):
         self._day(date(2026, 11, 5), save=True, user=self.user)
-        self.client.get("/lang/")  # en → uk
+        self.client.get("/lang/")
         resp = self.client.get("/reservations/")
         self.assertContains(resp, "Денне бронювання (07:00–23:59)")
         self.assertContains(resp, "Нічне бронювання")
@@ -1076,7 +1076,7 @@ class FavoritesReviewsTests(TestCase):
             check_in=check_in, check_out=check_out, status=status,
         )
 
-    # ---------- обране ----------
+
 
     def test_favorite_toggle_requires_login(self):
         resp = self.client.post("/favorites/toggle/401/", follow=False)
@@ -1090,7 +1090,7 @@ class FavoritesReviewsTests(TestCase):
         fav = RoomFavorite.objects.get()
         self.assertEqual(fav.user, self.user)
         self.assertEqual(fav.room, self.room)
-        # другий клік — прибрати з обраного (toggle)
+
         self.client.post("/favorites/toggle/401/", {"next": "/"})
         self.assertEqual(RoomFavorite.objects.count(), 0)
 
@@ -1111,12 +1111,12 @@ class FavoritesReviewsTests(TestCase):
         self.client.login(username="oleh", password="secret123")
         self.client.post("/favorites/toggle/401/")
         resp = self.client.get("/")
-        # зірочка «в обраному» на картці 401 + лічильник у шапці
+
         self.assertContains(resp, "fav-star on")
         self.assertContains(resp, 'class="fav-count"')
         self.assertContains(resp, "Remove from favorites")
 
-    # ---------- відгуки ----------
+
 
     def test_review_requires_checked_out_reservation(self):
         self.client.login(username="oleh", password="secret123")
@@ -1150,7 +1150,7 @@ class FavoritesReviewsTests(TestCase):
         review = Review.objects.get()
         self.assertEqual(review.author, self.user)
         self.assertEqual(review.room, self.room)
-        # середня оцінка перетікає в Room.rating (живі зірочки)
+
         self.room.refresh_from_db()
         self.assertEqual(self.room.rating, Decimal("5.0"))
 
@@ -1181,13 +1181,13 @@ class FavoritesReviewsTests(TestCase):
         Review.objects.create(reservation=r2, room=self.room, author=self.user, rating=3, text="B")
         self.room.refresh_from_db()
         self.assertEqual(self.room.rating, Decimal("4.0"))
-        v1.delete()  # так само працює видалення в /admin/
+        v1.delete()
         self.room.refresh_from_db()
         self.assertEqual(self.room.rating, Decimal("3.0"))
 
     def test_place_page_shows_review_and_eligible_form(self):
         res = self._reservation()
-        # форма відгуку показується лише після виселення
+
         self.client.login(username="oleh", password="secret123")
         resp = self.client.get("/places/401/")
         self.assertContains(resp, "Publish review")
@@ -1197,14 +1197,14 @@ class FavoritesReviewsTests(TestCase):
         })
         resp = self.client.get("/places/401/")
         self.assertContains(resp, "Cozy and clean")
-        self.assertNotContains(resp, "Publish review")  # вже відгукнувся
+        self.assertNotContains(resp, "Publish review")
 
-    # ---------- дрібні UX-фікси: дати з пошуку + гості у формі ----------
+
 
     def test_catalog_card_links_carry_dates(self):
         resp = self.client.get("/places/", {"check_in": "2026-10-01", "check_out": "2026-10-03"})
         self.assertContains(resp, "/places/401/?check_in=2026-10-01&amp;check_out=2026-10-03")
-        # без дат у пошуку — чистий лінк без зайвого «?»
+
         resp = self.client.get("/places/")
         self.assertContains(resp, 'href="/places/401/"')
 
@@ -1214,9 +1214,9 @@ class FavoritesReviewsTests(TestCase):
         })
         self.assertEqual(resp.context["search"]["check_in"], "2026-10-01")
         self.assertEqual(resp.context["search"]["guests"], "2")
-        self.assertContains(resp, "&amp;guests=2")  # кнопка Book веде з гостями
-        self.assertTrue(resp.context["fits"])       # 2 гостей у Double вміщує
-        # однак для 5 гостей кнопка ховається
+        self.assertContains(resp, "&amp;guests=2")
+        self.assertTrue(resp.context["fits"])
+
         resp = self.client.get("/places/401/", {
             "check_in": "2026-10-01", "check_out": "2026-10-03", "guests": "5",
         })
@@ -1261,7 +1261,7 @@ class ProfileAvatarTests(TestCase):
         }, follow=True)
 
     def test_profile_created_for_new_user(self):
-        # сигнал post_save створює профіль при реєстрації
+
         self.assertTrue(Profile.objects.filter(user=self.user).exists())
 
     def test_upload_avatar_and_show_everywhere(self):
@@ -1269,7 +1269,7 @@ class ProfileAvatarTests(TestCase):
         self.assertContains(resp, "Profile photo updated")
         profile = Profile.objects.get(user=self.user)
         self.assertTrue(profile.avatar.name.startswith("avatars/"))
-        # фото видно на сторінці профілю та в шапці сайту
+
         resp = self.client.get("/profile/")
         self.assertContains(resp, "/media/avatars/")
         resp = self.client.get("/")
@@ -1283,7 +1283,7 @@ class ProfileAvatarTests(TestCase):
         self._upload(name="second.gif")
         profile = Profile.objects.get(user=self.user)
         self.assertNotEqual(profile.avatar.name, old_name)
-        self.assertFalse(default_storage.exists(old_name))  # старий файл прибрано
+        self.assertFalse(default_storage.exists(old_name))
 
     def test_reject_non_image(self):
         resp = self._upload(name="me.txt", content=b"hello", ctype="text/plain")
@@ -1292,7 +1292,7 @@ class ProfileAvatarTests(TestCase):
         self.assertFalse(profile.avatar.name)
 
     def test_reject_too_large(self):
-        big = TEST_GIF + b"\x00" * (2 * 1024 * 1024)  # більше 2 МБ
+        big = TEST_GIF + b"\x00" * (2 * 1024 * 1024)
         resp = self._upload(name="big.gif", content=big)
         self.assertContains(resp, "Photo must be under 2 MB")
         profile = Profile.objects.get(user=self.user)
@@ -1304,7 +1304,7 @@ class ProfileAvatarTests(TestCase):
         self.assertContains(resp, "Profile photo removed")
         profile = Profile.objects.get(user=self.user)
         self.assertFalse(profile.avatar.name)
-        # друге видалення без фото — ввічлива помилка
+
         resp = self.client.post("/profile/", {"action": "avatar_remove"}, follow=True)
         self.assertContains(resp, "You have no profile photo")
 
@@ -1331,9 +1331,9 @@ class MobileVersionTests(TestCase):
         for name in ("hotel/landing.css", "hotel/style.css"):
             with open(finders.find(name), encoding="utf-8") as fh:
                 text += fh.read()
-        self.assertIn("@media (max-width: 560px)", text)  # дрібні екрани публічної частини
-        self.assertIn("@media(max-width:640px)", text)    # форми в стовпчик, KPI
-        self.assertIn("overflow-x:auto", text)            # широкі таблиці гортаються вбік
+        self.assertIn("@media (max-width: 560px)", text)
+        self.assertIn("@media(max-width:640px)", text)
+        self.assertIn("overflow-x:auto", text)
 
     def test_static_links_carry_cache_version(self):
         from django.contrib.staticfiles.storage import staticfiles_storage
@@ -1344,12 +1344,12 @@ class MobileVersionTests(TestCase):
         self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=5")
 
     def test_burger_menu_markup(self):
-        # у шапці — кнопка-бургер (aria) і nav#p-nav як шухлядне меню
+
         resp = self.client.get("/")
         self.assertContains(resp, 'class="p-burger"')
         self.assertContains(resp, 'aria-expanded="false"')
         self.assertContains(resp, 'id="p-nav"')
-        # локалізація aria-label: за замовчуванням EN «Menu»
+
         self.assertContains(resp, 'aria-label="Menu"')
 
     def test_burger_wired_in_js_and_css(self):
@@ -1358,12 +1358,12 @@ class MobileVersionTests(TestCase):
             js = fh.read()
         with open(finders.find("hotel/landing.css"), encoding="utf-8") as fh:
             css = fh.read()
-        self.assertIn("initBurger", js)             # логіка відкриття/закриття
-        self.assertIn("burger-ready", js + css)     # клас, що вмикає шухляду
-        self.assertIn("translateX(-105%)", css)     # меню ховається за екран
-        self.assertIn(".nav-overlay", css)          # півтемний оверлей згори
-        # шапка — sticky+z-index (стекінг-контекст): без підняття над оверлеєм
-        # шухляда виявляється під сірою "завісою" і тапи не потрапляють у меню
+        self.assertIn("initBurger", js)
+        self.assertIn("burger-ready", js + css)
+        self.assertIn("translateX(-105%)", css)
+        self.assertIn(".nav-overlay", css)
+
+
         self.assertIn("burger-ready .p-topbar", css)
         self.assertIn("burger-ready .p-burger", css)
 
@@ -1423,7 +1423,7 @@ class AssignRoomPhotosCommandTests(TestCase):
         self._run()
         photos = [room.photo.name for room in Room.objects.order_by("number")]
         self.assertEqual(len(photos), 3)
-        self.assertEqual(len(set(photos)), 3)          # жодного повтору
+        self.assertEqual(len(set(photos)), 3)
         self.assertTrue(all(p.startswith("rooms/") for p in photos))
 
     def test_dry_run_does_not_change_database(self):

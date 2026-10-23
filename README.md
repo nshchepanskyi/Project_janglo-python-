@@ -1,7 +1,7 @@
 # GrandStay Hotel — Django-версія (порт з Flet)
 
 Веб-сайт управління готелем: номери, бронювання, гості, послуги, дашборд.
-**База даних:** PostgreSQL 17 (psycopg2-binary 2.9.10).
+**База даних:** PostgreSQL (Render PostgreSQL; локально SQLite).
 
 **Фаза 1 (нове):** публічний сайт — головна з пошуком, каталог місць
 з перевіркою вільності дат, картки з ціною/рейтингом/бейджем, статичні
@@ -204,83 +204,45 @@ python manage.py runserver 0.0.0.0:8000
 
 Потім на телефоні: `http://<IP-ПК>:8000/` (IP — через `ipconfig` / `ifconfig`).
 
-## Деплой на Render + TiDB Cloud
+## Деплой на Render + PostgreSQL
 
-Проєкт підготовлено для хостингу:
-**Render** (Web Service, безкоштовний план) + **TiDB Cloud** (MySQL-сумісна база).
+Поточний сайт: **[grandstay-6kui.onrender.com](https://grandstay-6kui.onrender.com/)**.
+Застосунок працює як Render Web Service, дані зберігаються в Render PostgreSQL
+у регіоні Frankfurt. Налаштування Blueprint — у `render.yaml`.
 
-Що зроблено в коді:
+### Налаштування
 
-| Файл | Навіщо |
+1. Створіть PostgreSQL у Render і розмістіть її в тому самому регіоні, що й Web
+   Service. Для приватного з’єднання скопіюйте **Internal Database URL**.
+2. Додайте його до Web Service як секретну змінну `DATABASE_URL`. Не зберігайте
+   URL/пароль у Git і не публікуйте їх у скриншотах.
+3. Задайте `SECRET_KEY` (Render може згенерувати значення) та `DEBUG=False`.
+   Blueprint також налаштовує `DB_ENGINE=django.db.backends.postgresql`.
+4. За потреби задайте `DJANGO_SUPERUSER_USERNAME`, `DJANGO_SUPERUSER_EMAIL` і
+   `DJANGO_SUPERUSER_PASSWORD` для першого адміністратора. Після успішного
+   створення акаунта видаліть ці три секрети з Environment.
+5. Запуште зміни в GitHub і виконайте деплой. `build.sh` встановлює залежності,
+   збирає статику, запускає `migrate`, завантажує demo-дані лише в порожню базу
+   та створює адміністратора, якщо задані відповідні змінні.
+
+Якщо підключення до БД не працює, перевірте, що `DATABASE_URL` — повний Internal
+Database URL Render Postgres, і що база та вебсервіс розміщені у Frankfurt.
+Локально можна продовжувати використовувати SQLite; `DATABASE_URL` має пріоритет,
+коли заданий.
+
+### Скриншоти актуального сайту
+
+Знімки зроблено з розгорнутого сайту 2026-10-23:
+
+| Сторінка | Скриншот |
 |---|---|
-| `render.yaml` | Render Blueprint: сервіс, збірка, старт `gunicorn`, змінні середовища |
-| `build.sh` | `pip install` → `collectstatic` → `migrate` → `seed_if_empty` |
-| `requirements.txt` | додано `gunicorn`, `whitenoise`, `pymysql` (PyMySQL замість mysqlclient — без системних залежностей) |
-| `config/__init__.py` | PyMySQL підставляє себе під іменем `MySQLdb` для Django |
-| `config/settings.py` | `DEBUG`/`ALLOWED_HOSTS`/CSRF зі змінних, WhiteNoise-статика, TLS-параметри для TiDB |
-| `config/urls.py` | медіа-фото віддаються і при `DEBUG=False` (допоміжний `static()` на проді не працює) |
-| `hotel/fixtures/hotel_seed.json` | демонстраційний каталог: послуги й номери (без персональних даних користувачів) |
-| `hotel/management/commands/seed_if_empty.py` | завантажує фікстуру **лише якщо база порожня** — рердеплої безпечні |
-| `hotel/management/commands/bootstrap_admin.py` | створює адміністратора з тимчасових змінних середовища (якщо задано) |
+| [Головна](https://grandstay-6kui.onrender.com/) | [`live-home.png`](data_text/screenshots/live-home.png) |
+| [Каталог](https://grandstay-6kui.onrender.com/places/) | [`live-places.png`](data_text/screenshots/live-places.png) |
+| [Номер 101](https://grandstay-6kui.onrender.com/places/101/) | [`live-room.png`](data_text/screenshots/live-room.png) |
 
-### 1. TiDB Cloud
-
-1. Створіть кластер (Free/Serverless підійде) і базу даних.
-2. У **Connect** → **Public Endpoint** скопіюйте дані: `host`, `port` (зазвичай **4000**),
-   username, password, database name.
-3. Пароль і хост потрібні на кроці 3 — вони НЕ зберігаються в репозиторії.
-
-### 2. Запуште зміни в GitHub
-
-```bash
-git add -A
-git status          # мають бути: render.yaml, build.sh, media/, фікстура, зміни коду
-git commit -m "Deploy: Render + TiDB Cloud"
-git push
-```
-
-> Фото `media/` (≈31 МБ) тепер **додаються в Git** — інакше на Render будуть 404,
-> бо безкоштовний план не має постійного диска. Нові завантаження через адмінку
-> після рестарту сервісу зникатимуть — для них потрібне окреме сховище (S3 тощо).
-
-### 3. Render Blueprint
-
-1. [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint** → підключіть репозиторій.
-2. Render знайде `render.yaml` і запропонує сервіс `grandstay`.
-3. Перед деплоєм заповніть змінні з позначкою `sync: false`
-   (**Environment** в налаштуваннях сервісу):
-   `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — дані з TiDB Cloud (крок 1).
-4. Під час створення Blueprint Render запросить `DJANGO_SUPERUSER_USERNAME`,
-   `DJANGO_SUPERUSER_EMAIL` і `DJANGO_SUPERUSER_PASSWORD`. Вкажіть їх, якщо потрібен
-   адмін-акаунт; використайте унікальний пароль. Build створить адміністратора лише
-   якщо такого username ще немає; пароль не виводиться в логах. Після успішного
-   першого deploy видаліть ці три змінні з Render Environment і збережіть пароль
-   у менеджері паролів.
-5. **Deploy**. Логи збірки: `collectstatic` → `migrate` → `seed_if_empty`
-   («База вже містить номери — сід пропущено» при повторних деплоях).
-
-Якщо збірка впала на `migrate` — значить дані TiDB Cloud заповнені не так
-(перевірте хост/пароль/порт 4000). Після виправлення натисніть
-**Manual Deploy → Deploy latest commit**.
-
-### 4. Перевірка
-
-- Головна: `https://<ваш-домен>.onrender.com/`
-- Адмінка: `/admin/` і `/dashboard/` (створіть адміністратора змінними з кроку 4).
-- Реєстрація нового користувача: за замовчуванням листи йдуть у **консоль**,
-  тобто 6-значний код верифікації видно в **логах Render** (Logs сервісу).
-  Щоб справжню пошту — заповніть `EMAIL_*` змінні (див. `.env.example`).
-
-> Фікстура не копіює користувачів, бронювання чи інші персональні дані з локальної БД.
-> На чистій TiDB буде лише демонстраційний каталог номерів/послуг; користувачів
-> можна зареєструвати на сайті, адміністратора — створити окремо.
-
-### Локальні особливості
-
-- Локально все працює як раніше: SQLite, `DEBUG=True` за замовчуванням.
-- Для запуску локально з оновленим коду: `pip install -r requirements.txt`
-  (потрібен `whitenoise` — інакше `{% static %}` не знайде бекенд).
-- Параметри TiDB/Prod у `.env` не потрібні — вони задаються в Render.
+Файли у `media/` з репозиторію доступні після деплою, але нові завантаження
+користувачами потребують постійного файлового сховища (наприклад S3): локальна
+файлова система Render не повинна використовуватися як довготривале сховище.
 
 ## Локалізація та валюта
 

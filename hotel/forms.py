@@ -17,7 +17,7 @@ from .models import (
 )
 
 
-# ---------- власний валідатор (В5.3) ----------
+
 
 def validate_future_date(value):
     """Дата повинна бути сьогодні або пізніше."""
@@ -34,7 +34,7 @@ def validate_phone(value):
         raise ValidationError("Номер телефону занадто короткий (мінімум 7 символів).")
 
 
-# ---------- ModelForm для гостя (В5.1) ----------
+
 
 class GuestForm(ModelForm):
     """Форма гостя: ім'я, телефон, email. Без __all__."""
@@ -63,7 +63,7 @@ class GuestForm(ModelForm):
         return name
 
 
-# ---------- ModelForm для бронювання (В5.1) ----------
+
 
 class ReservationForm(ModelForm):
     """
@@ -115,7 +115,7 @@ class ReservationForm(ModelForm):
         return cleaned
 
 
-# ---------- ModelForm для відгуку (В5.1) ----------
+
 
 class ReviewForm(ModelForm):
     """Форма відгуку: оцінка 1–5 + текст. Без reservation, room, author."""
@@ -142,7 +142,7 @@ class ReviewForm(ModelForm):
         return text
 
 
-# ---------- Форма пошуку — не пов'язана з моделлю (В5.2) ----------
+
 
 class RoomSearchForm(Form):
     """Пошук номерів: локація, дати, кількість гостей, тип перебування."""
@@ -190,7 +190,7 @@ class RoomSearchForm(Form):
         return cleaned
 
 
-# ---------- Форма рекомендації номера електронною поштою ----------
+
 
 class ShareRoomForm(Form):
     """Дані відправника й адресата для рекомендації сторінки номера."""
@@ -205,7 +205,7 @@ class ShareRoomForm(Form):
     )
 
 
-# ---------- Форма для номера кімнати (адмін) ----------
+
 
 class RoomForm(ModelForm):
     """Форма додавання/редагування номера для адміністратора."""

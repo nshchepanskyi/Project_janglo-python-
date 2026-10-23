@@ -1,11 +1,4 @@
-/* GrandStay — красивий діапазонний календар для полів дат
-   (Check in / Check out) замість нативного браузерного пікера.
 
-   Покращує <input type="date" class="js-cal">: перший клік — заїзд,
-   другий — виїзд, між датами підсвічується діапазон ночей.
-   Без JS поле залишається нативним (деградація без втрат).
-   Мова береться з <html lang="..."> (en → USD-стиль, uk → українські
-   назви місяців/днів і правила множини для «ночей»). */
 (function () {
   "use strict";
 
@@ -61,7 +54,7 @@
     '<rect x="3" y="5" width="18" height="16" rx="3"></rect>' +
     '<path d="M8 3v4M16 3v4M3 10h18"></path></svg>';
 
-  /* ---------- дати ---------- */
+
   var TODAY = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
   function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -72,7 +65,7 @@
   }
   function ms(d) { return d.getTime(); }
 
-  /* ---------- глобальний стан: відкритий календар ---------- */
+
   var openPop = null;
   var openTrigger = null;
 
@@ -82,7 +75,7 @@
     openTrigger = null;
   }
 
-  /* ---------- один календар на форму ---------- */
+
   function initForm(form) {
     var inputs = Array.prototype.slice.call(form.querySelectorAll("input[type=date].js-cal"));
     if (!inputs.length) return;
@@ -98,10 +91,7 @@
     pop.hidden = true;
     pop.setAttribute("role", "dialog");
     pop.setAttribute("aria-label", STR.choose);
-    /* Попап живе в <body>, а не в формі: картка отримує transform на
-       :hover (translateY), через що стає stacking context — і тоді
-       z-index випадайки «замикався» в межах картки, а сусідня картка
-       «Список бронювань» (пізніший sibling) малювала поверх календаря. */
+
     document.body.appendChild(pop);
 
     var triggers = inputs.map(function (inp) {
@@ -111,7 +101,6 @@
       btn.innerHTML = '<span class="cal-text"></span><span class="cal-ico">' + ICON + "</span>";
       btn.setAttribute("aria-haspopup", "dialog");
       inp.insertAdjacentElement("afterend", btn);
-      // обов'язковість переїжджає на кнопку (невидимий input не блокує сабміт)
       if (inp.required) {
         inp.setAttribute("data-required", "1");
         inp.required = false;
@@ -155,7 +144,6 @@
     function shift(delta) {
       var m = st.vm + delta, y = st.vy;
       if (m < 0) { m = 11; y--; } else if (m > 11) { m = 0; y++; }
-      // не заглядаємо в минулі місяці
       if (y < TODAY.getFullYear() || (y === TODAY.getFullYear() && m < TODAY.getMonth())) return;
       st.vy = y; st.vm = m;
       render();
@@ -165,7 +153,6 @@
       if (d < TODAY) return;
       if (!endInput) { st.s = d; st.e = null; commit(); closeAll(); return; }
       if (!st.s || st.e || d <= st.s) {
-        // новий вибір: перший клік завжди «заїзд»
         st.s = d;
         st.e = null;
         commit();
@@ -237,9 +224,7 @@
       if (clear) clear.disabled = !s && !e;
     }
 
-    /* fixed + координати вікна: попап поза всіма картками/контейнерами,
-       його ніщо не обрізає і не перекриває. На мобільному лишаємо
-       нижній шит із медіа-запиту (прибираємо інлайн-координати). */
+
     function position(btn) {
       if (!btn) return;
       if (window.innerWidth <= 560) { pop.style.top = ""; pop.style.left = ""; return; }
@@ -266,7 +251,7 @@
       openTrigger = btn;
     }
 
-    /* події всередині календаря */
+
     pop.addEventListener("click", function (ev) {
       var target = ev.target;
       var nav = target.closest && target.closest("[data-nav]");
@@ -279,9 +264,6 @@
           commit();
           render();
         } else {
-          // «Сьогодні»: обираємо сьогоднішню дату (як нативний пікер),
-          // і стрибаємо на поточний місяць, щоб вибір було видно.
-          // pick() сам вирішує: це заїзд чи виїзд (див. гілки вище).
           st.vy = TODAY.getFullYear();
           st.vm = TODAY.getMonth();
           pick(new Date(TODAY.getTime()));
@@ -307,7 +289,7 @@
       if (st.hover) { st.hover = null; paint(); }
     });
 
-    /* fixed-випадайку треба «приклеювати» до кнопки і при скролі */
+
     window.addEventListener("resize", function () {
       if (openPop === pop && !pop.hidden) position(openTrigger);
     });
@@ -315,7 +297,7 @@
       if (openPop === pop && !pop.hidden) position(openTrigger);
     }, true);
 
-    /* обов'язкові дати: підсвітимо кнопку, якщо користувач не обрав */
+
     form.addEventListener("submit", function (ev) {
       inputs.forEach(function (inp, i) {
         if (inp.getAttribute("data-required") && !inp.value) {
@@ -334,9 +316,7 @@
     html.classList.add("cal-ready");
   }
 
-  /* закриття: клік поза календарем / Esc.
-     Слухаємо capture-фазу: клік по дню фіксується ДО того, як render()
-     перебудовує innerHTML і відʼєднує цільову кнопку. */
+
   document.addEventListener("click", function (ev) {
     if (!openPop) return;
     if (openPop.contains(ev.target) || (openTrigger && openTrigger.contains(ev.target))) return;

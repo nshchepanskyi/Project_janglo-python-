@@ -22,7 +22,7 @@ from .models import Guest, Reservation, Room, STAY_DAY
 from .views import is_admin, STATIC_PAGES
 
 
-# ---------- допоміжний Mixin: власник або адмін ----------
+
 
 class OwnerOrAdminMixin:
     """
@@ -37,9 +37,9 @@ class OwnerOrAdminMixin:
         return obj
 
 
-# ============================================================
-# Бронювання: повний CRUD на Generic Views
-# ============================================================
+
+
+
 
 class ReservationListView(LoginRequiredMixin, ListView):
     """
@@ -49,7 +49,7 @@ class ReservationListView(LoginRequiredMixin, ListView):
     model = Reservation
     template_name = "hotel/booking_list.html"
     context_object_name = "reservations"
-    paginate_by = 10  # В6.3: пагінація
+    paginate_by = 10
 
     def get_queryset(self):
         qs = super().get_queryset().select_related("guest", "room")
@@ -95,7 +95,7 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        # Звичайний користувач бачить лише доступні для нього номери
+
         if not is_admin(self.request.user):
             form.fields["room"].queryset = Room.objects.filter(
                 status__in=["Available", "Occupied"]
@@ -103,25 +103,25 @@ class ReservationCreateView(LoginRequiredMixin, CreateView):
         return form
 
     def form_valid(self, form):
-        # Отримуємо або створюємо гостя за email користувача (В7.2)
-        reservation = form.save(commit=False)
-        reservation.user = self.request.user  # власник — у form_valid, не у формі
 
-        # Автоматично створюємо запис гостя з даних поточного користувача
+        reservation = form.save(commit=False)
+        reservation.user = self.request.user
+
+
         guest, _ = Guest.objects.get_or_create(
             email=self.request.user.email,
             defaults={"name": self.request.user.username},
         )
         reservation.guest = guest
 
-        # Для денного бронювання check_out = check_in
+
         if reservation.stay_type == STAY_DAY:
             reservation.check_out = reservation.check_in
 
         try:
             reservation.full_clean()
             reservation.save()
-            # Оновлюємо статус номера
+
             reservation.room.status = "Occupied"
             reservation.room.save(update_fields=["status"])
             messages.success(self.request, "Бронювання створено успішно.")
@@ -187,9 +187,9 @@ class ReservationDeleteView(LoginRequiredMixin, OwnerOrAdminMixin, DeleteView):
         return ctx
 
 
-# ============================================================
-# Номери: ListView + DetailView (В6.1)
-# ============================================================
+
+
+
 
 class RoomListView(ListView):
     """Каталог номерів з пагінацією. (В6.1, В6.3)"""

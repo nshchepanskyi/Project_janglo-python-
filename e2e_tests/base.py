@@ -20,15 +20,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
-# 1×1 GIF — фото номера для E2E «Add Room»
+
 TEST_GIF = (
     b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff"
     b"!\xf9\x04\x01\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
     b"\x00\x02\x02D\x01\x00;"
 )
 
-# Анімації появи (fadeUp) роблять елементи «невидимими» для Selenium
-# одразу після переходу, тож вимикаємо їх у вкладці — тест стає детермінованим.
+
+
 DISABLE_ANIMATIONS_JS = """
 (() => {
   const css = '*,*::before,*::after{animation:none !important;transition:none !important}';
@@ -64,8 +64,8 @@ class SeleniumLiveTestCase(LiveServerTestCase):
 
     TIMEOUT = 15
 
-    # Живий сервер віддає CSS/JS через staticfiles-finders (без collectstatic),
-    # тож E2E перевіряє саме той фронтенд, який бачить користувач.
+
+
     static_handler = StaticFilesHandler
 
     @classmethod
@@ -89,7 +89,7 @@ class SeleniumLiveTestCase(LiveServerTestCase):
                 service=Service(executable_path=driver_path), options=options,
             )
         else:
-            # Selenium Manager сам знаходить/качає відповідний chromedriver
+
             cls.driver = webdriver.Chrome(options=options)
 
         cls.driver.implicitly_wait(2)
@@ -97,13 +97,13 @@ class SeleniumLiveTestCase(LiveServerTestCase):
         cls.driver.execute_cdp_cmd(
             "Page.addScriptToEvaluateOnNewDocument", {"source": DISABLE_ANIMATIONS_JS},
         )
-        # app.js «докручує» KPI-лічильники від нуля (requestAnimationFrame),
-        # тож без reduced-motion тест читав би 0 замість підсумку.
+
+
         cls.driver.execute_cdp_cmd("Emulation.setEmulatedMedia", {
             "features": [{"name": "prefers-reduced-motion", "value": "reduce"}],
         })
 
-        # Тимчасовий файл-фото для форми «Add Room»
+
         cls.photo_path = os.path.join(tempfile.gettempdir(), "grandstay_e2e_room.gif")
         with open(cls.photo_path, "wb") as fh:
             fh.write(TEST_GIF)
@@ -119,7 +119,7 @@ class SeleniumLiveTestCase(LiveServerTestCase):
 
     def setUp(self):
         super().setUp()
-        # кожен тест стартує з чистою сесією браузера
+
         self.driver.delete_all_cookies()
         self.driver.get("about:blank")
 
@@ -158,7 +158,7 @@ class SeleniumLiveTestCase(LiveServerTestCase):
             return
         print(f"\n[E2E] Скріншот падіння: {path}")
 
-    # ---------- службові помічники ----------
+
 
     @staticmethod
     def headless():
@@ -261,7 +261,7 @@ class SeleniumLiveTestCase(LiveServerTestCase):
         self.fill("password", password)
         self.click((By.CSS_SELECTOR, "form button[type=submit]"))
 
-    # ---------- дрібні фіксури ----------
+
 
     @staticmethod
     def future_dates(nights=3, offset=14):

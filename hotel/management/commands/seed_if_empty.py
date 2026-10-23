@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand
 
 from hotel.models import Room
 
-# hotel/management/commands/seed_if_empty.py → <app>/fixtures/hotel_seed.json
+
 FIXTURE_PATH = Path(__file__).resolve().parents[2] / 'fixtures' / 'hotel_seed.json'
 
 

@@ -32,7 +32,7 @@ th{text-align:left;color:var(--muted);font-size:11px;letter-spacing:.6px;text-tr
 td{padding:10px 8px;border-bottom:1px solid var(--border)}
 .pill{background:var(--accent-bg);color:var(--accent);padding:2px 10px;border-radius:8px}
 .badge{background:var(--accent-bg);color:var(--accent);padding:3px 10px;border-radius:20px;font-size:12px}
-/* кольорові пігулки статусів */
+
 .st-pending,.st-in-progress,.st-cleaning{background:#fef3c7;color:#92400e}
 .st-checked-in,.st-available,.st-completed{background:#dcfce7;color:#166534}
 .st-checked-out,.st-cancelled{background:#e2e8f0;color:#475569}
@@ -53,9 +53,7 @@ a.btn:hover{filter:brightness(1.08)}
 .auth-actions{display:flex;gap:10px;justify-content:center;margin-top:16px}
 .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-/* Денне бронювання (day use): обгортка поля виїзду + добір «Night/Day».
-   display:contents не додає зайвий елемент сітки; .day-mode ставить app.js,
-   коли обрано Day — тоді виїзд приховується (він дорівнює заїзду). */
+
 .form-grid .night-only{display:contents}
 .form-grid.day-mode .night-only{display:none}
 input,select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
@@ -85,7 +83,7 @@ h3{margin:20px 0 8px;font-size:15px}
 .auth-card h1{font-size:21px;text-align:center;color:var(--accent);margin:0 0 18px;letter-spacing:-.2px}
 .auth-card form{display:flex;flex-direction:column;gap:10px}
 .messages{margin-bottom:12px}.msg{padding:11px 14px;border-radius:10px;margin-bottom:8px}.msg.error{background:#fee2e2;color:#991b1b}.msg.success{background:#dcfce7;color:#166534}
-/* ---------- телефонна версія (адаптив адмін- і публічних сторінок) ---------- */
+
 @media(max-width:900px){
   .kpi-row,.kpi-row.two{grid-template-columns:repeat(2,1fr)}
   .grid-2{grid-template-columns:1fr}
@@ -98,7 +96,7 @@ h3{margin:20px 0 8px;font-size:15px}
   .kpi-row,.kpi-row.two{grid-template-columns:repeat(2,1fr);gap:10px}
   .kpi-value{font-size:24px}
   .kpi.mini .kpi-value{font-size:20px}
-  /* широкі таблиці (списки бронювань/номерів/гостей) — горизонтальний скрол */
+
   .content table{display:block;overflow-x:auto;white-space:nowrap;max-width:100%}
   .form-grid{grid-template-columns:1fr}
   .svc-pick{grid-template-columns:1fr}
@@ -108,9 +106,9 @@ h3{margin:20px 0 8px;font-size:15px}
   .form-row{gap:8px}
 }
 
-/* ---------- animations: живий, але ненав'язливий інтерфейс ---------- */
 
-/* м'яка зміна кольорів при перемиканні теми */
+
+
 body,.card,.navbar,.topbar,.btn,input,select,.msg,.room,.svc-item,th,td,.pill,.badge,.kpi,.kpi.mini,.auth-card{
   transition:background-color .35s ease,color .35s ease,border-color .35s ease
 }
@@ -121,7 +119,7 @@ body,.card,.navbar,.topbar,.btn,input,select,.msg,.room,.svc-item,th,td,.pill,.b
 @keyframes slideIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
 @keyframes popIn{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
 
-/* з'явлення контенту */
+
 .content > h1{animation:fadeUp .4s ease backwards}
 .content > .card{animation:fadeUp .45s cubic-bezier(.22,.61,.36,1) backwards}
 .content > .card:nth-of-type(1){animation-delay:.04s}
@@ -136,11 +134,11 @@ body,.card,.navbar,.topbar,.btn,input,select,.msg,.room,.svc-item,th,td,.pill,.b
 .kpi-row .kpi:nth-child(6){animation-delay:.3s}
 .auth-card{animation:popIn .45s cubic-bezier(.22,.61,.36,1) backwards}
 
-/* картки: підйом при наведенні */
+
 .card{transition:transform .25s ease,box-shadow .25s ease,background-color .35s ease,border-color .35s ease}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
 
-/* кнопки */
+
 .btn{transition:transform .15s ease,box-shadow .2s ease,filter .2s ease,background-color .35s ease,color .35s ease,border-color .35s ease}
 .btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,118,110,.22);filter:brightness(1.05)}
 .btn:active{transform:translateY(0) scale(.97);box-shadow:none}
@@ -148,41 +146,40 @@ body,.card,.navbar,.topbar,.btn,input,select,.msg,.room,.svc-item,th,td,.pill,.b
 [data-theme="dark"] .btn.primary{color:#04211e}
 [data-theme="dark"] .btn.danger{color:#fff}
 
-/* пункти меню: акцентна смужка зліва + зсув */
+
 .navbar nav a{position:relative;overflow:hidden;transition:background-color .2s ease,color .2s ease,transform .2s ease}
 .navbar nav a::after{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:0 3px 3px 0;background:var(--accent);transform:scaleY(0);transform-origin:center;transition:transform .25s cubic-bezier(.22,.61,.36,1)}
 .navbar nav a:hover{transform:translateX(3px)}
 .navbar nav a:hover::after,.navbar nav a.active::after{transform:scaleY(1)}
 
-/* повідомлення виїжджають зліва */
+
 .msg{animation:slideIn .35s cubic-bezier(.22,.61,.36,1) backwards}
 .messages .msg:nth-child(2){animation-delay:.07s}
 .messages .msg:nth-child(3){animation-delay:.14s}
 
-/* таблиці: підсвітка рядка */
+
 tbody tr{transition:background-color .18s ease}
 tbody tr:hover{background:var(--accent-bg)}
 tbody tr:hover td{border-bottom-color:transparent}
 
-/* поля форм: фокус з ореолом */
+
 input,select{transition:border-color .2s ease,box-shadow .2s ease,background-color .35s ease}
 input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
 
-/* плитки номерів */
+
 .room{transition:transform .2s ease,box-shadow .2s ease}
 .room:hover{transform:translateY(-3px) scale(1.04);box-shadow:var(--shadow)}
 
-/* прогрес-смуги дохід / послуг */
+
 .bar div{transition:width .9s cubic-bezier(.22,.61,.36,1)}
 
-/* компоненти послуг і пункти дій */
+
 .svc-item{transition:border-color .2s ease,transform .2s ease,box-shadow .2s ease}
 .svc-item:hover{border-color:var(--accent);transform:translateX(3px)}
 
-/* ---------- фото та послуги номерів (каталог у БД) ---------- */
+
 .hint{font-size:13px;color:var(--muted);margin:6px 0 10px}
-/* Поле фото: нативний file input у стилі сайту (працює без JS,
-   показує ім'я обраного файлу) */
+
 input[type="file"]{padding:6px 8px;font-size:13px;color:var(--muted);background:var(--surface)}
 input[type="file"]::file-selector-button{
   font:inherit;font-size:13px;font-weight:600;margin-right:10px;
@@ -205,12 +202,12 @@ input[type="file"]::file-selector-button:active{transform:scale(.97)}
 .inline .btn{transition:transform .15s ease,box-shadow .2s ease,opacity .2s ease}
 .inline:hover .btn{opacity:1}
 
-/* для користувачів, що просять менше руху */
+
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;transition-duration:.001ms!important}
 }
 
-/* ---------- фото профілю (Profile.avatar) ---------- */
+
 .profile-avatar{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}
 .pa-actions{display:flex;flex-direction:column;gap:8px;flex:1;min-width:220px}
 .avatar-form{display:flex;gap:8px;align-items:center;flex-wrap:wrap}

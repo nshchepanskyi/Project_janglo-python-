@@ -1,5 +1,4 @@
-/* GrandStay — публічна частина сайту (Фаза 1): hero, пошук, картки, футер.
-   Залежить від style.css (базові btn/input/msg) і додає «зелений» бренд-стиль. */
+
 
 .public {
   --l-bg: #f6f8f7;
@@ -39,7 +38,7 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--l-brand) 22%, transparent);
 }
 
-/* ---------- шапка ---------- */
+
 .p-topbar {
   position: sticky;
   top: 0;
@@ -100,10 +99,10 @@
 }
 .p-user:hover { border-color: var(--l-brand); text-decoration: none }
 .p-user .avatar { width: 26px; height: 26px; font-size: 12px }
-/* фото профілю в шапці (Profile.avatar); якщо його немає — літера вище */
+
 .avatar-img { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; display: block }
 
-/* ---------- основний блок ---------- */
+
 .p-main {
   flex: 1;
   width: 100%;
@@ -111,15 +110,14 @@
   margin: 0 auto;
   padding: 0 24px 40px;
 }
-/* адмін-сторінки успадковують той самий контейнер (.content) — дає верхній відступ
-   та зберігає анімації .content > .card зі style.css */
+
 .p-main.content { padding: 28px 24px 44px; }
 .p-messages { margin-top: 16px; }
 
 @keyframes l-fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes l-zoom { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
 
-/* ---------- hero + пошук ---------- */
+
 .hero {
   text-align: center;
   padding: 56px 0 8px;
@@ -167,7 +165,7 @@
 }
 .sp-btn { height: 41px; font-weight: 600; }
 
-/* ---------- секції ---------- */
+
 .section { margin-top: 40px }
 .section-head {
   display: flex;
@@ -193,7 +191,7 @@
 .chip:nth-child(2) { animation-delay: .06s }
 .chip:nth-child(3) { animation-delay: .12s }
 
-/* ---------- картки місць ---------- */
+
 .place-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
@@ -285,7 +283,7 @@
   animation: l-fadeUp .4s ease backwards;
 }
 
-/* ---------- CTA ---------- */
+
 .cta {
   margin-top: 46px;
   display: flex;
@@ -309,7 +307,7 @@
 }
 .cta .btn.primary:hover { transform: translateY(-2px) }
 
-/* ---------- сторінки-документи ---------- */
+
 .p-doc {
   max-width: 720px;
   margin: 0 auto;
@@ -330,7 +328,7 @@
 .p-page-head h1 { margin: 0 0 8px; font-size: clamp(26px, 3.6vw, 38px) }
 .p-page-head .hero-sub { margin-bottom: 20px; text-align: left }
 
-/* ---------- футер ---------- */
+
 .p-footer {
   border-top: 1px solid var(--l-border);
   background: var(--l-surface);
@@ -356,7 +354,7 @@
   font-size: 13px;
 }
 
-/* ---------- адаптив ---------- */
+
 @media (max-width: 900px) {
   .p-topbar { flex-wrap: wrap; padding: 10px 16px; gap: 10px }
   .p-nav { order: 3; width: 100% }
@@ -370,7 +368,7 @@
   .place-grid { grid-template-columns: 1fr }
 }
 
-/* ---------- Фаза 2: сторінка місця (деталі + чек) ---------- */
+
 .crumbs {
   font-size: 13px;
   color: var(--l-muted);
@@ -472,7 +470,7 @@
 }
 .pd-hint { margin-top: 10px; text-align: center }
 
-/* картки, що ведуть на сторінку місця */
+
 .place-card .place-link {
   display: block;
   color: inherit;
@@ -486,7 +484,7 @@
   .pd-title { font-size: 23px }
 }
 
-/* ---------- �������� �������� (cal.js) ---------- */
+
 .cal-host { position: relative; }
 .cal-ready input.js-cal { display: none; }
 
@@ -660,7 +658,7 @@
   .cal-pop, .cal-day.is-sel-start, .cal-day.is-sel-end { animation: none; }
 }
 
-/* ---------- Фаза 3: обране (зірочка) + відгуки ---------- */
+
 .place-card { position: relative; }
 
 .fav-form { position: absolute; top: 10px; right: 10px; z-index: 5; margin: 0; }
@@ -703,13 +701,13 @@
 .review-form form { display: grid; gap: 10px; max-width: 480px; }
 .review-form textarea { resize: vertical; }
 
-/* ---------- телефонна версія: дрібні екрани (≤560px) ---------- */
+
 @media (max-width: 560px) {
   .p-main.content { padding: 18px 14px 34px }
   .p-topbar { gap: 8px; padding: 8px 12px }
   .p-nav a { padding: 7px 10px; font-size: 13px }
   .p-actions { gap: 6px }
-  /* на телефоні у шапці лишається лише фото/літера без імені */
+
   .p-user { padding: 3px; border: none; background: transparent }
   .p-user .p-user-name { display: none }
 
@@ -736,10 +734,7 @@
   .review-form form { max-width: 100% }
 }
 
-/* ---------- бургер-меню (телефон): висувна шухляда зліва ----------
-   Без JS нічого не ховається: кнопки немає, меню лишається у шапці
-   (див. нижче ≤560px — pills). З JS app.js ставить html.burger-ready,
-   і nav перетворюється на фіксовану шухляду за екраном. */
+
 .p-burger {
   display: none;
   flex-direction: column;
@@ -762,7 +757,7 @@
   background: var(--l-text);
   transition: transform .2s, opacity .2s;
 }
-/* анімація «гамбургер → хрестик» */
+
 .p-burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg) }
 .p-burger[aria-expanded="true"] span:nth-child(2) { opacity: 0 }
 .p-burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg) }
@@ -777,16 +772,14 @@
   transition: opacity .25s;
 }
 .nav-overlay.show { opacity: 1; pointer-events: auto }
-/* під відкритим меню сторінка за шухлядою не скролиться */
+
 html.nav-locked { overflow: hidden }
 
 @media (max-width: 900px) {
-  /* Шапка — sticky з z-index, тобто вона створює стекінг-контекст: шухляда
-     (дитина шапки) має бути над оверлеєм, тому піднімаємо саму шапку. */
+
   html.burger-ready .p-topbar { z-index: 60 }
   html.burger-ready .p-burger { display: flex }
-  /* коли меню ВІДКРИТЕ — кнопка ✕ фіксується ПОВЕРХ шухляди
-     (у закритому стані вона у потоці шапки, поруч із брендом) */
+
   html.burger-ready.nav-locked .p-burger {
     position: fixed;
     top: 10px;
@@ -804,7 +797,7 @@ html.nav-locked { overflow: hidden }
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
-    padding: 56px 12px 14px;  /* місце під кнопку ✕ зверху */
+    padding: 56px 12px 14px;
     background: var(--l-surface);
     border-right: 1px solid var(--l-border);
     overflow-y: auto;

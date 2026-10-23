@@ -52,7 +52,7 @@ from .models import (
 )
 from .forms import ShareRoomForm
 
-# Ліміт розміру фото профілю (2 МБ)
+
 MAX_AVATAR_BYTES = 2 * 1024 * 1024
 REGISTRATION_CODE_LENGTH = 6
 REGISTRATION_CODE_TTL_SECONDS = 10 * 60
@@ -80,7 +80,7 @@ def _msg(request, key, **kwargs):
         l10n.CURRENT_LANG = prev
 
 
-# ---------- roles: admin (staff) vs regular user ----------
+
 
 def is_admin(user):
     """Адміністратор = персонал/суперкористувач (керує всім функціоналом)."""
@@ -103,7 +103,7 @@ def admin_required(view_func):
     return login_required(wrapper)
 
 
-# ---------- auth (port of auth.py: validate_* + register_user + login_user) ----------
+
 
 def _validate_username(username):
     return isinstance(username, str) and len(username.strip()) >= 3
@@ -255,7 +255,7 @@ def login_view(request):
         password = request.POST.get("password", "")
         user = authenticate(request, username=login_input, password=password)
         if user is None:
-            # allow login by email (port of login_user which accepts username OR email)
+
             try:
                 u = User.objects.get(email=login_input)
                 user = authenticate(request, username=u.username, password=password)
@@ -265,7 +265,7 @@ def login_view(request):
             messages.error(request, "Invalid credentials")
         else:
             login(request, user)
-            # Повернення на сторінку, звідки користувача перенаправили на вхід
+
             nxt = request.POST.get("next") or request.GET.get("next") or ""
             if nxt.startswith("/") and not nxt.startswith("//"):
                 return redirect(nxt)
@@ -289,9 +289,9 @@ def toggle_theme(request):
     return redirect(request.META.get("HTTP_REFERER") or home_redirect(request.user))
 
 
-# ---------- публічний сайт (Фаза 1: головна, каталог, пошук) ----------
 
-# Тексти статичних сторінок футера (ключ = англ. текст, UK — у l10n)
+
+
 STATIC_PAGES = {
     "terms": {
         "title": "Terms of Service",
@@ -342,7 +342,7 @@ def _parse_search(location, check_in, check_out, guests):
     n_guests = None
     if guests:
         try:
-            # не більше за глобальний максимум (Suite → 8 гостей)
+
             n_guests = min(max(int(guests), 1), MAX_GUESTS)
         except ValueError:
             return location, None, None, None, "Invalid guests count"
@@ -383,7 +383,7 @@ def _search_context(location, d_in, d_out, guests, raw):
         "raw": raw,
         "d_in": d_in,
         "d_out": d_out,
-        # ліміт поля Guests на публічних формах (MAX_GUESTS = 8)
+
         "max_guests": MAX_GUESTS,
     }
 
@@ -481,7 +481,7 @@ def place_detail_view(request, number):
     if error:
         messages.error(request, error)
 
-    _annotate_cards([room], d_in, d_out)  # room.free + бейдж
+    _annotate_cards([room], d_in, d_out)
     _fav_annotate(request, [room])
     nights = (d_out - d_in).days if d_in and d_out else 0
     subtotal = room.price * nights if nights else Decimal("0")
@@ -490,7 +490,7 @@ def place_detail_view(request, number):
     fits = not guests or guests <= room.capacity
     can_book = room.free and fits
 
-    # Схожі номери: спершу те саме місто, якщо порожньо — будь-які інші
+
     city = room.location.split(",")[0].strip()
     others = list(
         search_rooms(city, d_in, d_out, guests).exclude(pk=room.pk)
@@ -504,8 +504,8 @@ def place_detail_view(request, number):
     _annotate_cards(others, d_in, d_out)
     _fav_annotate(request, others)
 
-    # Відгуки (Фаза 3): публікуються тут; форму показуємо лише тому, хто вже
-    # виселився з цього номера і ще не залишив відгук (чесна схема).
+
+
     reviews = list(room.reviews.select_related("author")[:30])
     reviewable = []
     if request.user.is_authenticated:
@@ -603,7 +603,7 @@ def favorite_toggle_view(request, number):
         else:
             RoomFavorite.objects.create(user=request.user, room=room)
             messages.success(request, "Added to favorites")
-    # Повернення на сторінку, де була зірочка (приховане поле next у шаблоні)
+
     nxt = request.POST.get("next", "")
     if nxt.startswith("/") and not nxt.startswith("//"):
         return redirect(nxt)
@@ -619,7 +619,7 @@ def page_view(request, slug):
     return render(request, "hotel/page.html", {"page": page, "slug": slug, "pages": STATIC_PAGES})
 
 
-# ---------- dashboard (port of views/dashboard.py) ----------
+
 
 @admin_required
 def dashboard_view(request):
@@ -646,7 +646,7 @@ def dashboard_view(request):
     })
 
 
-# ---------- rooms (port of views/rooms.py) ----------
+
 
 @admin_required
 def rooms_view(request):
@@ -662,7 +662,7 @@ def rooms_view(request):
             except ValueError:
                 messages.error(request, "Invalid price")
                 return redirect("hotel:rooms")
-            # Перевірка місткості за типом: Single → 1, Double → 2, Suite → до 8
+
             raw_capacity = request.POST.get("capacity", "").strip()
             if raw_capacity:
                 try:
@@ -671,14 +671,14 @@ def rooms_view(request):
                     messages.error(request, "Invalid capacity")
                     return redirect("hotel:rooms")
             else:
-                # порожнє поле → значення, що точно влізає в ліміт типу
+
                 capacity = min(2, ROOM_CAPACITY_LIMITS.get(room_type, 2))
             capacity_err = capacity_error(room_type, capacity)
             if capacity_err:
                 messages.error(request, capacity_err)
                 return redirect("hotel:rooms")
             photo = request.FILES.get("photo")
-            # Галочки «що є в цьому номері» — id з каталогу послуг (hotel_service)
+
             service_ids = [s for s in request.POST.getlist("services") if s.isdigit()]
             if not number:
                 messages.error(request, "Enter a room number")
@@ -721,7 +721,7 @@ def rooms_view(request):
     })
 
 
-# ---------- reservations (port of views/reservations.py) ----------
+
 
 COUNTRY_CODES = ["+380", "+1", "+44", "+49", "+33", "+48", "+39", "+34", "+90", "+81", "+86", "+91"]
 
@@ -738,26 +738,26 @@ def reservations_view(request):
     if request.method == "POST":
         action = request.POST.get("action", "create")
         if action == "status":
-            # Змінювати статуси (заселення/виселення) може лише адміністратор
+
             if not admin:
                 messages.error(request, "Access restricted to administrators")
                 return redirect("hotel:reservations")
             res = get_object_or_404(Reservation, pk=request.POST.get("reservation_id"))
             new_status = request.POST.get("status", res.status)
-            # Виселення можливе лише після оплати додаткових послуг,
-            # як у реальному готелі: рахунок закривають перед виїздом.
+
+
             if new_status == "Checked-Out" and res.extras_due > 0:
                 messages.error(request, "Pay the extras before checkout")
                 return redirect("hotel:reservation_detail", pk=res.pk)
             res.status = new_status
             res.save()
-            # keep room status in sync (port of create_reservation side-effect)
+
             if new_status == "Checked-In":
                 res.room.status = "Occupied"
                 res.room.save()
             elif new_status == "Checked-Out":
-                # Номер лишається Occupied, якщо є інші активні бронювання
-                # (наприклад, сусідні дати вже забронювані)
+
+
                 still_booked = res.room.reservations.filter(
                     status__in=ACTIVE_STATUSES,
                 ).exists()
@@ -765,7 +765,7 @@ def reservations_view(request):
                 res.room.save()
             messages.success(request, _msg(request, "Reservation {pk} updated", pk=res.pk))
             return redirect("hotel:reservations")
-        # create
+
         name = request.POST.get("guest_name", "").strip()
         code = request.POST.get("country_code", "+380")
         phone = request.POST.get("phone", "").strip()
@@ -773,16 +773,16 @@ def reservations_view(request):
         room_number = request.POST.get("room_number", "")
         check_in = request.POST.get("check_in", "")
         check_out = request.POST.get("check_out", "")
-        # Тип перебування: Day — номер лише на день (07:00 → 23:59).
-        # Для дня сервер сам ставить виїзд = заїзду (поле виїзду ігнорується),
-        # тому нормалізуємо ДО ланцюга перевірок — далі день іде шляхом
-        # звичайного створення, минаючи лише перевірку «виїзд пізніше заїзду».
+
+
+
+
         stay_type = request.POST.get("stay_type", STAY_NIGHT)
         if stay_type not in (STAY_NIGHT, STAY_DAY):
             stay_type = STAY_NIGHT
         if stay_type == STAY_DAY and check_in:
             check_out = check_in
-        # Кількість гостей (Фаза 3): ліміт місткості перевіряє Reservation.clean()
+
         try:
             guests = int(request.POST.get("guests", "1") or 1)
         except ValueError:
@@ -802,9 +802,9 @@ def reservations_view(request):
         elif stay_type != STAY_DAY and check_out <= check_in:
             messages.error(request, "Check out must be later")
         else:
-            # Номер можна бронювати і в статусі Occupied: чи вільні дати,
-            # вирішує перевірка накладання у Reservation.clean()
-            # (заїзд у день виїзду попереднього гостя дозволений).
+
+
+
             room = Room.objects.filter(number=room_number) \
                 .exclude(status__in=["Cleaning", "Maintenance"]).first()
             if not room:
@@ -827,24 +827,24 @@ def reservations_view(request):
             return redirect("hotel:reservations")
     reservations = Reservation.objects.select_related("guest", "room").all()
     if not admin:
-        # Звичайний користувач бачить лише власні бронювання
+
         reservations = reservations.filter(user=request.user)
-    # Префіл із публічного каталогу: /reservations/?room=101&check_in=...&check_out=...
+
     prefill_room = request.GET.get("room", "").strip()
     prefill_in = request.GET.get("check_in", "").strip()
     prefill_out = request.GET.get("check_out", "").strip()
-    # ?stay=day — одразу добірати денне бронювання (07:00 → 23:59)
+
     prefill_stay = request.GET.get("stay", "").strip().capitalize()
     if prefill_stay not in ("Night", "Day"):
         prefill_stay = STAY_NIGHT
-    # Кількість гостей для префілу (?guests= із картки чи сторінки місця)
+
     try:
         prefill_guests = int(request.GET.get("guests", "1") or 1)
     except ValueError:
         prefill_guests = 1
     prefill_guests = min(max(prefill_guests, 1), MAX_GUESTS)
-    # Occupied теж показуємо: номер може бути вільним на обрані дати
-    # (наприклад, заїзд одразу після виїзду попереднього гостя)
+
+
     bookable = Q(status__in=["Available", "Occupied"])
     available_rooms = Room.objects.filter(bookable)
     if prefill_room:
@@ -865,7 +865,7 @@ def reservations_view(request):
     })
 
 
-# ---------- guests (port of views/guests.py) ----------
+
 
 @admin_required
 def guests_view(request):
@@ -876,7 +876,7 @@ def guests_view(request):
     return render(request, "hotel/guests.html", {"guests": guests, "q": q})
 
 
-# ---------- деталі бронювання + додаткові послуги ----------
+
 
 @login_required
 def reservation_detail_view(request, pk):
@@ -953,7 +953,7 @@ def reservation_detail_view(request, pk):
     return render(request, "hotel/reservation.html", context)
 
 
-# ---------- profile (new page for the user's own info) ----------
+
 
 def _update_avatar(request, user):
     """Завантаження/видалення фото профілю (дії з /profile/).
@@ -973,7 +973,7 @@ def _update_avatar(request, user):
         else:
             messages.error(request, "You have no profile photo")
         return redirect("hotel:profile")
-    # action == "avatar": завантаження нового фото
+
     avatar = request.FILES.get("avatar")
     if avatar is None:
         messages.error(request, "Choose a photo")
@@ -983,7 +983,7 @@ def _update_avatar(request, user):
         prev_name = profile.avatar.name if profile.avatar else ""
         profile.avatar = avatar
         try:
-            profile.full_clean()  # Profile.clean() перевіряє Pillow: це зображення
+            profile.full_clean()
         except ValidationError as e:
             messages.error(request, _validation_message(e) or "The file must be an image")
         else:
@@ -1024,7 +1024,7 @@ def profile_view(request):
 
     admin = is_admin(user)
     if admin:
-        # Адміністратор: загальна статистика готелю + всі бронювання
+
         stats = {
             "guests": Guest.objects.count(),
             "reservations": Reservation.objects.count(),
@@ -1036,7 +1036,7 @@ def profile_view(request):
         }
         recent = list(Reservation.objects.select_related("guest", "room").all()[:5])
     else:
-        # Звичайний користувач: лише його власні дані
+
         mine = list(Reservation.objects.filter(user=user).select_related("guest", "room"))
         my_guests = Guest.objects.filter(reservations__user=user).distinct()
         stats = {

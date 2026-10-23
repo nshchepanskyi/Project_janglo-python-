@@ -26,7 +26,7 @@ class AdminRoomManagementTests(SeleniumLiveTestCase):
         self.admin.is_superuser = True
         self.admin.save()
 
-        # «Spa» вже є в каталозі (сіяється міграцією 0004) — беремо наявну
+
         self.spa, _ = Service.objects.get_or_create(
             name="Spa", defaults={"price": Decimal("50")},
         )
@@ -38,18 +38,18 @@ class AdminRoomManagementTests(SeleniumLiveTestCase):
     def test_admin_adds_room_and_it_appears_in_public_catalog(self):
         d = self.driver
 
-        # --- 1. Вхід адміністратора → дашборд ---
+
         self.login("e2e_admin", "admin12345")
         self.wait_for_url("/dashboard/")
         self.wait_for_body("Room Status")
         self.assertEqual(len(d.find_elements(By.CSS_SELECTOR, ".kpi-row .kpi")), 4)
 
-        # --- 2. Переходимо в «Rooms» через меню шапки ---
+
         self.click((By.CSS_SELECTOR, '.p-nav a[href="/rooms/"]'))
         self.wait_for_url("/rooms/")
         self.wait_for_body("Add Room")
 
-        # --- 3. Заповнюємо форму «Add Room» ---
+
         self.fill("number", "777")
         self.fill("title", "Sky Loft")
         self.fill("location", "Kyiv, Ukraine")
@@ -57,15 +57,15 @@ class AdminRoomManagementTests(SeleniumLiveTestCase):
         self.fill("capacity", "4")
         self.fill("price", "99")
 
-        # фото номера
+
         self.element((By.NAME, "photo")).send_keys(self.photo_path)
 
-        # послуга «Spa» у цьому номері
+
         self.click((By.CSS_SELECTOR, f'input[name="services"][value="{self.spa.pk}"]'))
 
         self.click((By.CSS_SELECTOR, "form[enctype] button[type=submit]"))
 
-        # --- 4. Номер додано ---
+
         self.assertIn("Room 777 added", self.success_message())
         body = self.body_text()
         self.assertIn("777", body)
@@ -73,7 +73,7 @@ class AdminRoomManagementTests(SeleniumLiveTestCase):
         self.assertIn("Suite", body)
         self.assertIn("Spa", body)
 
-        # --- 5. Дані збережено в БД ---
+
         new_room = Room.objects.get(number="777")
         self.assertEqual(new_room.title, "Sky Loft")
         self.assertEqual(new_room.location, "Kyiv, Ukraine")
@@ -83,7 +83,7 @@ class AdminRoomManagementTests(SeleniumLiveTestCase):
         self.assertTrue(new_room.photo.name.startswith("rooms/"))
         self.assertEqual(list(new_room.services.all()), [self.spa])
 
-        # --- 6. Номер видно у публічному каталозі ---
+
         self.open("/places/?location=Kyiv")
         self.wait_for_body("Sky Loft")
         cards = d.find_elements(By.CSS_SELECTOR, ".place-card")

@@ -9,8 +9,8 @@ from django.views.static import serve as media_serve
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(('hotel.urls', 'hotel'), namespace='hotel')),
-    # Медіа (фото номерів). static() із django.conf.urls.static працює лише
-    # при DEBUG=True, а на Render DEBUG=False — тому маршрут завжди активний.
+
+
     re_path(
         r'^media/(?P<path>.*)$',
         media_serve,
