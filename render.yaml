@@ -5,6 +5,7 @@ services:
     name: grandstay
     runtime: python
     plan: free
+    region: frankfurt
     buildCommand: bash build.sh
     startCommand: gunicorn config.wsgi:application
     healthCheckPath: /
