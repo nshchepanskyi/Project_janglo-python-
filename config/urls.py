@@ -1,15 +1,22 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import FileResponse, Http404
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve as media_serve
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(('hotel.urls', 'hotel'), namespace='hotel')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Медіа (фото номерів). static() із django.conf.urls.static працює лише
+    # при DEBUG=True, а на Render DEBUG=False — тому маршрут завжди активний.
+    re_path(
+        r'^media/(?P<path>.*)$',
+        media_serve,
+        {'document_root': settings.MEDIA_ROOT},
+    ),
+]
 
 
 def favicon_view(request):

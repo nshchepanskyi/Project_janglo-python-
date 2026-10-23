@@ -204,6 +204,84 @@ python manage.py runserver 0.0.0.0:8000
 
 Потім на телефоні: `http://<IP-ПК>:8000/` (IP — через `ipconfig` / `ifconfig`).
 
+## Деплой на Render + TiDB Cloud
+
+Проєкт підготовлено для хостингу:
+**Render** (Web Service, безкоштовний план) + **TiDB Cloud** (MySQL-сумісна база).
+
+Що зроблено в коді:
+
+| Файл | Навіщо |
+|---|---|
+| `render.yaml` | Render Blueprint: сервіс, збірка, старт `gunicorn`, змінні середовища |
+| `build.sh` | `pip install` → `collectstatic` → `migrate` → `seed_if_empty` |
+| `requirements.txt` | додано `gunicorn`, `whitenoise`, `pymysql` (PyMySQL замість mysqlclient — без системних залежностей) |
+| `config/__init__.py` | PyMySQL підставляє себе під іменем `MySQLdb` для Django |
+| `config/settings.py` | `DEBUG`/`ALLOWED_HOSTS`/CSRF зі змінних, WhiteNoise-статика, TLS-параметри для TiDB |
+| `config/urls.py` | медіа-фото віддаються і при `DEBUG=False` (допоміжний `static()` на проді не працює) |
+| `hotel/fixtures/hotel_seed.json` | демонстраційний каталог: послуги й номери (без персональних даних користувачів) |
+| `hotel/management/commands/seed_if_empty.py` | завантажує фікстуру **лише якщо база порожня** — рердеплої безпечні |
+| `hotel/management/commands/bootstrap_admin.py` | створює адміністратора з тимчасових змінних середовища (якщо задано) |
+
+### 1. TiDB Cloud
+
+1. Створіть кластер (Free/Serverless підійде) і базу даних.
+2. У **Connect** → **Public Endpoint** скопіюйте дані: `host`, `port` (зазвичай **4000**),
+   username, password, database name.
+3. Пароль і хост потрібні на кроці 3 — вони НЕ зберігаються в репозиторії.
+
+### 2. Запуште зміни в GitHub
+
+```bash
+git add -A
+git status          # мають бути: render.yaml, build.sh, media/, фікстура, зміни коду
+git commit -m "Deploy: Render + TiDB Cloud"
+git push
+```
+
+> Фото `media/` (≈31 МБ) тепер **додаються в Git** — інакше на Render будуть 404,
+> бо безкоштовний план не має постійного диска. Нові завантаження через адмінку
+> після рестарту сервісу зникатимуть — для них потрібне окреме сховище (S3 тощо).
+
+### 3. Render Blueprint
+
+1. [dashboard.render.com](https://dashboard.render.com) → **New → Blueprint** → підключіть репозиторій.
+2. Render знайде `render.yaml` і запропонує сервіс `grandstay`.
+3. Перед деплоєм заповніть змінні з позначкою `sync: false`
+   (**Environment** в налаштуваннях сервісу):
+   `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` — дані з TiDB Cloud (крок 1).
+4. Під час створення Blueprint Render запросить `DJANGO_SUPERUSER_USERNAME`,
+   `DJANGO_SUPERUSER_EMAIL` і `DJANGO_SUPERUSER_PASSWORD`. Вкажіть їх, якщо потрібен
+   адмін-акаунт; використайте унікальний пароль. Build створить адміністратора лише
+   якщо такого username ще немає; пароль не виводиться в логах. Після успішного
+   першого deploy видаліть ці три змінні з Render Environment і збережіть пароль
+   у менеджері паролів.
+5. **Deploy**. Логи збірки: `collectstatic` → `migrate` → `seed_if_empty`
+   («База вже містить номери — сід пропущено» при повторних деплоях).
+
+Якщо збірка впала на `migrate` — значить дані TiDB Cloud заповнені не так
+(перевірте хост/пароль/порт 4000). Після виправлення натисніть
+**Manual Deploy → Deploy latest commit**.
+
+### 4. Перевірка
+
+- Головна: `https://<ваш-домен>.onrender.com/`
+- Адмінка: `/admin/` і `/dashboard/` (створіть адміністратора змінними з кроку 4).
+- Реєстрація нового користувача: за замовчуванням листи йдуть у **консоль**,
+  тобто 6-значний код верифікації видно в **логах Render** (Logs сервісу).
+  Щоб справжню пошту — заповніть `EMAIL_*` змінні (див. `.env.example`).
+
+> Фікстура не копіює користувачів, бронювання чи інші персональні дані з локальної БД.
+> На чистій TiDB буде лише демонстраційний каталог номерів/послуг; користувачів
+> можна зареєструвати на сайті, адміністратора — створити окремо.
+
+### Локальні особливості
+
+- Локально все працює як раніше: SQLite, `DEBUG=True` за замовчуванням.
+- Для запуску локально з оновленим коду: `pip install -r requirements.txt`
+  (потрібен `whitenoise` — інакше `{% static %}` не знайде бекенд).
+- Параметри TiDB/Prod у `.env` не потрібні — вони задаються в Render.
+
 ## Локалізація та валюта
 
 - **Мова** перемикається кнопкою **EN/UA** у шапці (`/lang/`, сесія `lang`).

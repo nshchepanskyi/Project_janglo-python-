@@ -3,5 +3,13 @@ psycopg2-binary==2.9.13
 python-dotenv==1.2.4
 Pillow==13.0.0
 
+# Прод-запуск на Render: Gunicorn замість runserver, WhiteNoise віддає статику
+gunicorn>=23.0.0
+whitenoise>=6.9,<7
+
+# TiDB Cloud приймає MySQL-клієнти. PyMySQL — чистий Python, без системних
+# залежностей (на Render немає mysqlclient-бібліотек через apt).
+pymysql>=1.1.0
+
 # E2E-тести через Selenium (e2e_tests/)
 selenium==4.51.0

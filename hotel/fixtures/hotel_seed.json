@@ -1,0 +1,1488 @@
+[
+{
+  "model": "hotel.service",
+  "pk": 1,
+  "fields": {
+    "name": "Breakfast",
+    "price": "10.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 2,
+  "fields": {
+    "name": "Laundry",
+    "price": "15.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 3,
+  "fields": {
+    "name": "Spa",
+    "price": "50.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 4,
+  "fields": {
+    "name": "Airport Transfer",
+    "price": "25.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 5,
+  "fields": {
+    "name": "Gym",
+    "price": "20.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 6,
+  "fields": {
+    "name": "Pool",
+    "price": "15.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 7,
+  "fields": {
+    "name": "Parking",
+    "price": "12.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 8,
+  "fields": {
+    "name": "Room Service",
+    "price": "8.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 9,
+  "fields": {
+    "name": "Mini Bar",
+    "price": "18.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 10,
+  "fields": {
+    "name": "Dry Cleaning",
+    "price": "22.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 11,
+  "fields": {
+    "name": "Conference Room",
+    "price": "100.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 12,
+  "fields": {
+    "name": "Movie Rental",
+    "price": "12.00"
+  }
+},
+{
+  "model": "hotel.service",
+  "pk": 13,
+  "fields": {
+    "name": "Bicycle Rental",
+    "price": "30.00"
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 1,
+  "fields": {
+    "number": "101",
+    "room_type": "Single",
+    "price": "50.00",
+    "status": "Occupied",
+    "title": "Cozy Single with City View",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_01.jpg",
+    "services": [
+      2,
+      12,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 2,
+  "fields": {
+    "number": "102",
+    "room_type": "Single",
+    "price": "50.00",
+    "status": "Available",
+    "title": "Bright Single Room",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_30.jpg",
+    "services": [
+      2,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 3,
+  "fields": {
+    "number": "201",
+    "room_type": "Double",
+    "price": "80.00",
+    "status": "Available",
+    "title": "Deluxe Double with Balcony",
+    "location": "Kyiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_26.jpg",
+    "services": [
+      1,
+      5,
+      2,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 4,
+  "fields": {
+    "number": "202",
+    "room_type": "Double",
+    "price": "80.00",
+    "status": "Available",
+    "title": "Comfort Double Room",
+    "location": "Kyiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_34.jpg",
+    "services": [
+      1,
+      5,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 5,
+  "fields": {
+    "number": "301",
+    "room_type": "Suite",
+    "price": "150.00",
+    "status": "Available",
+    "title": "GrandStay Suite",
+    "location": "Lviv, Ukraine",
+    "capacity": 3,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_41.jpg",
+    "services": [
+      4,
+      1,
+      7,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 6,
+  "fields": {
+    "number": "103",
+    "room_type": "Single",
+    "price": "50.00",
+    "status": "Available",
+    "title": "Cozy Single near Old Town",
+    "location": "Lviv, Ukraine",
+    "capacity": 1,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_25.jpg",
+    "services": [
+      1
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 7,
+  "fields": {
+    "number": "104",
+    "room_type": "Single",
+    "price": "75.00",
+    "status": "Occupied",
+    "title": "Compact Single with Desk",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_46.jpg",
+    "services": [
+      13,
+      1,
+      5,
+      9
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 8,
+  "fields": {
+    "number": "105",
+    "room_type": "Single",
+    "price": "50.00",
+    "status": "Available",
+    "title": "Quiet Single with Courtyard View",
+    "location": "Lviv, Ukraine",
+    "capacity": 1,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_24.jpg",
+    "services": [
+      9
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 9,
+  "fields": {
+    "number": "106",
+    "room_type": "Single",
+    "price": "65.00",
+    "status": "Available",
+    "title": "Modern Single Studio",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.3",
+    "photo": "rooms/unsplash_45.jpg",
+    "services": [
+      1,
+      2,
+      12,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 10,
+  "fields": {
+    "number": "107",
+    "room_type": "Single",
+    "price": "35.00",
+    "status": "Available",
+    "title": "Budget Single Room",
+    "location": "Dnipro, Ukraine",
+    "capacity": 1,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_53.jpg",
+    "services": [
+      13,
+      9,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 11,
+  "fields": {
+    "number": "108",
+    "room_type": "Single",
+    "price": "60.00",
+    "status": "Available",
+    "title": "Single with Garden View",
+    "location": "Chernivtsi, Ukraine",
+    "capacity": 1,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_22.jpg",
+    "services": [
+      9
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 12,
+  "fields": {
+    "number": "109",
+    "room_type": "Single",
+    "price": "55.00",
+    "status": "Available",
+    "title": "Minimalist Single Room",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.0",
+    "photo": "rooms/unsplash_23.jpg",
+    "services": [
+      13,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 13,
+  "fields": {
+    "number": "110",
+    "room_type": "Single",
+    "price": "55.00",
+    "status": "Cleaning",
+    "title": "Sunny Single by the Sea",
+    "location": "Odesa, Ukraine",
+    "capacity": 1,
+    "rating": "4.3",
+    "photo": "rooms/unsplash_50.jpg",
+    "services": [
+      13
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 14,
+  "fields": {
+    "number": "111",
+    "room_type": "Single",
+    "price": "75.00",
+    "status": "Available",
+    "title": "Business Single with Workspace",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_38.jpg",
+    "services": [
+      13
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 15,
+  "fields": {
+    "number": "112",
+    "room_type": "Single",
+    "price": "50.00",
+    "status": "Available",
+    "title": "Traveler's Single Room",
+    "location": "Uzhhorod, Ukraine",
+    "capacity": 1,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_29.jpg",
+    "services": [
+      13,
+      1,
+      9,
+      12
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 16,
+  "fields": {
+    "number": "113",
+    "room_type": "Single",
+    "price": "55.00",
+    "status": "Available",
+    "title": "Single with River View",
+    "location": "Dnipro, Ukraine",
+    "capacity": 1,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_36.jpg",
+    "services": [
+      1
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 17,
+  "fields": {
+    "number": "114",
+    "room_type": "Single",
+    "price": "65.00",
+    "status": "Available",
+    "title": "Smart Single Room",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_31.jpg",
+    "services": [
+      13
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 18,
+  "fields": {
+    "number": "115",
+    "room_type": "Single",
+    "price": "60.00",
+    "status": "Available",
+    "title": "Retro Single in Historic House",
+    "location": "Lviv, Ukraine",
+    "capacity": 1,
+    "rating": "4.3",
+    "photo": "rooms/unsplash_42.jpg",
+    "services": [
+      2,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 19,
+  "fields": {
+    "number": "116",
+    "room_type": "Single",
+    "price": "60.00",
+    "status": "Available",
+    "title": "Single near Central Park",
+    "location": "Vinnytsia, Ukraine",
+    "capacity": 1,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_52.jpg",
+    "services": [
+      13,
+      12,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 20,
+  "fields": {
+    "number": "117",
+    "room_type": "Single",
+    "price": "55.00",
+    "status": "Available",
+    "title": "Calm Single with Reading Corner",
+    "location": "Ivano-Frankivsk, Ukraine",
+    "capacity": 1,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_44.jpg",
+    "services": [
+      13,
+      1,
+      2,
+      12
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 21,
+  "fields": {
+    "number": "118",
+    "room_type": "Single",
+    "price": "80.00",
+    "status": "Maintenance",
+    "title": "Single with Mountain View",
+    "location": "Bukovel, Ukraine",
+    "capacity": 1,
+    "rating": "3.8",
+    "photo": "rooms/unsplash_62.jpg",
+    "services": [
+      13,
+      5
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 22,
+  "fields": {
+    "number": "119",
+    "room_type": "Single",
+    "price": "40.00",
+    "status": "Available",
+    "title": "Economy Single Room",
+    "location": "Zaporizhzhia, Ukraine",
+    "capacity": 1,
+    "rating": "4.3",
+    "photo": "rooms/unsplash_33.jpg",
+    "services": [
+      9,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 23,
+  "fields": {
+    "number": "120",
+    "room_type": "Single",
+    "price": "60.00",
+    "status": "Available",
+    "title": "Single Loft",
+    "location": "Odesa, Ukraine",
+    "capacity": 1,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_37.jpg",
+    "services": [
+      13,
+      9,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 24,
+  "fields": {
+    "number": "121",
+    "room_type": "Single",
+    "price": "75.00",
+    "status": "Available",
+    "title": "Urban Single Room",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.1",
+    "photo": "rooms/unsplash_27.jpg",
+    "services": [
+      5
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 25,
+  "fields": {
+    "number": "122",
+    "room_type": "Single",
+    "price": "60.00",
+    "status": "Available",
+    "title": "Single with Skyline View",
+    "location": "Dnipro, Ukraine",
+    "capacity": 1,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_39.jpg",
+    "services": [
+      1,
+      5,
+      2
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 26,
+  "fields": {
+    "number": "203",
+    "room_type": "Double",
+    "price": "100.00",
+    "status": "Available",
+    "title": "Double with Sea View",
+    "location": "Odesa, Ukraine",
+    "capacity": 2,
+    "rating": "4.1",
+    "photo": "rooms/unsplash_49.jpg",
+    "services": [
+      1,
+      5,
+      2,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 27,
+  "fields": {
+    "number": "204",
+    "room_type": "Double",
+    "price": "100.00",
+    "status": "Available",
+    "title": "Family Double near Park",
+    "location": "Kyiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_51.jpg",
+    "services": [
+      2,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 28,
+  "fields": {
+    "number": "205",
+    "room_type": "Double",
+    "price": "105.00",
+    "status": "Available",
+    "title": "Elegant Double with Balcony",
+    "location": "Lviv, Ukraine",
+    "capacity": 2,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_40.jpg",
+    "services": [
+      1,
+      2,
+      9,
+      7,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 29,
+  "fields": {
+    "number": "206",
+    "room_type": "Double",
+    "price": "85.00",
+    "status": "Available",
+    "title": "Double Twin Room",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.0",
+    "photo": "rooms/unsplash_43.jpg",
+    "services": [
+      4,
+      1,
+      10,
+      5,
+      12,
+      6
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 30,
+  "fields": {
+    "number": "207",
+    "room_type": "Double",
+    "price": "120.00",
+    "status": "Available",
+    "title": "Premium Double with River View",
+    "location": "Dnipro, Ukraine",
+    "capacity": 2,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_28.jpg",
+    "services": [
+      13,
+      10,
+      2,
+      9,
+      12,
+      6
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 31,
+  "fields": {
+    "number": "208",
+    "room_type": "Double",
+    "price": "105.00",
+    "status": "Available",
+    "title": "Cozy Double in Old Town",
+    "location": "Lviv, Ukraine",
+    "capacity": 2,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_06.jpg",
+    "services": [
+      13,
+      1,
+      12,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 32,
+  "fields": {
+    "number": "209",
+    "room_type": "Double",
+    "price": "95.00",
+    "status": "Available",
+    "title": "Double with Terrace",
+    "location": "Odesa, Ukraine",
+    "capacity": 1,
+    "rating": "4.1",
+    "photo": "rooms/unsplash_65.jpg",
+    "services": [
+      4,
+      10,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 33,
+  "fields": {
+    "number": "210",
+    "room_type": "Double",
+    "price": "100.00",
+    "status": "Available",
+    "title": "Mountain Double with Fireplace",
+    "location": "Bukovel, Ukraine",
+    "capacity": 2,
+    "rating": "4.3",
+    "photo": "rooms/unsplash_32.jpg",
+    "services": [
+      4,
+      5,
+      2,
+      12
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 34,
+  "fields": {
+    "number": "211",
+    "room_type": "Double",
+    "price": "110.00",
+    "status": "Available",
+    "title": "Business Double with Workspace",
+    "location": "Kyiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_11.jpg",
+    "services": [
+      1,
+      10,
+      5,
+      2
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 35,
+  "fields": {
+    "number": "212",
+    "room_type": "Double",
+    "price": "65.00",
+    "status": "Available",
+    "title": "Romantic Double Room",
+    "location": "Chernivtsi, Ukraine",
+    "capacity": 2,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_57.jpg",
+    "services": [
+      4,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 36,
+  "fields": {
+    "number": "213",
+    "room_type": "Double",
+    "price": "65.00",
+    "status": "Available",
+    "title": "Double with Garden Access",
+    "location": "Uzhhorod, Ukraine",
+    "capacity": 1,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_60.jpg",
+    "services": [
+      4,
+      5,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 37,
+  "fields": {
+    "number": "214",
+    "room_type": "Double",
+    "price": "95.00",
+    "status": "Cleaning",
+    "title": "Bright Double Studio",
+    "location": "Vinnytsia, Ukraine",
+    "capacity": 2,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_03.jpg",
+    "services": [
+      4,
+      13,
+      1,
+      9,
+      12,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 38,
+  "fields": {
+    "number": "215",
+    "room_type": "Double",
+    "price": "130.00",
+    "status": "Available",
+    "title": "Double with City Panorama",
+    "location": "Kyiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_59.jpg",
+    "services": [
+      9,
+      12,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 39,
+  "fields": {
+    "number": "216",
+    "room_type": "Double",
+    "price": "115.00",
+    "status": "Available",
+    "title": "Classic Double Room",
+    "location": "Zaporizhzhia, Ukraine",
+    "capacity": 2,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_05.jpg",
+    "services": [
+      5,
+      12,
+      7,
+      6
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 40,
+  "fields": {
+    "number": "217",
+    "room_type": "Double",
+    "price": "70.00",
+    "status": "Available",
+    "title": "Double near City Square",
+    "location": "Ivano-Frankivsk, Ukraine",
+    "capacity": 2,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_63.jpg",
+    "services": [
+      4,
+      1,
+      2,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 41,
+  "fields": {
+    "number": "218",
+    "room_type": "Double",
+    "price": "115.00",
+    "status": "Available",
+    "title": "Modern Double Loft",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_13.jpg",
+    "services": [
+      4,
+      12,
+      7,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 42,
+  "fields": {
+    "number": "219",
+    "room_type": "Double",
+    "price": "95.00",
+    "status": "Available",
+    "title": "Double with Harbor View",
+    "location": "Odesa, Ukraine",
+    "capacity": 2,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_12.jpg",
+    "services": [
+      1,
+      10,
+      2,
+      9,
+      6,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 43,
+  "fields": {
+    "number": "220",
+    "room_type": "Double",
+    "price": "90.00",
+    "status": "Available",
+    "title": "Designer Double Room",
+    "location": "Lviv, Ukraine",
+    "capacity": 2,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_47.jpg",
+    "services": [
+      2,
+      9
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 44,
+  "fields": {
+    "number": "221",
+    "room_type": "Double",
+    "price": "85.00",
+    "status": "Maintenance",
+    "title": "Double with Cathedral View",
+    "location": "Kyiv, Ukraine",
+    "capacity": 1,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_15.jpg",
+    "services": [
+      2,
+      12,
+      6,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 45,
+  "fields": {
+    "number": "222",
+    "room_type": "Double",
+    "price": "95.00",
+    "status": "Available",
+    "title": "Quiet Double Room",
+    "location": "Vinnytsia, Ukraine",
+    "capacity": 2,
+    "rating": "4.1",
+    "photo": "rooms/unsplash_10.jpg",
+    "services": [
+      4,
+      2,
+      9,
+      12
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 46,
+  "fields": {
+    "number": "223",
+    "room_type": "Double",
+    "price": "135.00",
+    "status": "Available",
+    "title": "Double with Ski Slope View",
+    "location": "Bukovel, Ukraine",
+    "capacity": 2,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_04.jpg",
+    "services": [
+      4,
+      13,
+      2,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 47,
+  "fields": {
+    "number": "224",
+    "room_type": "Double",
+    "price": "80.00",
+    "status": "Available",
+    "title": "Spacious Double Room",
+    "location": "Dnipro, Ukraine",
+    "capacity": 2,
+    "rating": "4.1",
+    "photo": "rooms/unsplash_61.jpg",
+    "services": [
+      4,
+      1,
+      10,
+      5,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 48,
+  "fields": {
+    "number": "225",
+    "room_type": "Double",
+    "price": "75.00",
+    "status": "Available",
+    "title": "Superior Double Room",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.5",
+    "photo": "rooms/unsplash_08.jpg",
+    "services": [
+      4,
+      7
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 49,
+  "fields": {
+    "number": "226",
+    "room_type": "Double",
+    "price": "95.00",
+    "status": "Available",
+    "title": "Double with Vineyard View",
+    "location": "Uzhhorod, Ukraine",
+    "capacity": 1,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_21.jpg",
+    "services": [
+      13,
+      10,
+      9,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 50,
+  "fields": {
+    "number": "302",
+    "room_type": "Suite",
+    "price": "295.00",
+    "status": "Available",
+    "title": "Presidential Suite",
+    "location": "Kyiv, Ukraine",
+    "capacity": 4,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_18.jpg",
+    "services": [
+      4,
+      13,
+      1,
+      9,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 51,
+  "fields": {
+    "number": "303",
+    "room_type": "Suite",
+    "price": "235.00",
+    "status": "Available",
+    "title": "Royal Suite with Panorama",
+    "location": "Lviv, Ukraine",
+    "capacity": 3,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_17.jpg",
+    "services": [
+      1,
+      11,
+      10,
+      5,
+      2,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 52,
+  "fields": {
+    "number": "304",
+    "room_type": "Suite",
+    "price": "315.00",
+    "status": "Available",
+    "title": "Family Suite with Two Bedrooms",
+    "location": "Kyiv, Ukraine",
+    "capacity": 5,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_58.jpg",
+    "services": [
+      1,
+      11,
+      2,
+      7,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 53,
+  "fields": {
+    "number": "305",
+    "room_type": "Suite",
+    "price": "240.00",
+    "status": "Cleaning",
+    "title": "Sea Breeze Suite",
+    "location": "Odesa, Ukraine",
+    "capacity": 3,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_48.jpg",
+    "services": [
+      13,
+      1,
+      5,
+      9,
+      12,
+      7,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 54,
+  "fields": {
+    "number": "306",
+    "room_type": "Suite",
+    "price": "195.00",
+    "status": "Available",
+    "title": "Executive Suite",
+    "location": "Kharkiv, Ukraine",
+    "capacity": 2,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_07.jpg",
+    "services": [
+      13,
+      1,
+      11,
+      12,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 55,
+  "fields": {
+    "number": "307",
+    "room_type": "Suite",
+    "price": "375.00",
+    "status": "Available",
+    "title": "Mountain Lodge Suite",
+    "location": "Bukovel, Ukraine",
+    "capacity": 6,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_64.jpg",
+    "services": [
+      1,
+      5,
+      2,
+      12,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 56,
+  "fields": {
+    "number": "308",
+    "room_type": "Suite",
+    "price": "205.00",
+    "status": "Available",
+    "title": "Honeymoon Suite",
+    "location": "Chernivtsi, Ukraine",
+    "capacity": 2,
+    "rating": "4.4",
+    "photo": "rooms/unsplash_20.jpg",
+    "services": [
+      4,
+      13,
+      1,
+      12,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 57,
+  "fields": {
+    "number": "309",
+    "room_type": "Suite",
+    "price": "340.00",
+    "status": "Available",
+    "title": "Grand Family Suite",
+    "location": "Dnipro, Ukraine",
+    "capacity": 6,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_02.jpg",
+    "services": [
+      1,
+      11,
+      10,
+      2,
+      9,
+      12,
+      7,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 58,
+  "fields": {
+    "number": "310",
+    "room_type": "Suite",
+    "price": "290.00",
+    "status": "Maintenance",
+    "title": "Penthouse Suite",
+    "location": "Kyiv, Ukraine",
+    "capacity": 4,
+    "rating": "5.0",
+    "photo": "rooms/unsplash_55.jpg",
+    "services": [
+      4,
+      1,
+      11,
+      5,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 59,
+  "fields": {
+    "number": "311",
+    "room_type": "Suite",
+    "price": "285.00",
+    "status": "Available",
+    "title": "Old Town Heritage Suite",
+    "location": "Lviv, Ukraine",
+    "capacity": 3,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_14.jpg",
+    "services": [
+      4,
+      1,
+      11,
+      5,
+      7,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 60,
+  "fields": {
+    "number": "312",
+    "room_type": "Suite",
+    "price": "275.00",
+    "status": "Available",
+    "title": "Business Suite with Meeting Room",
+    "location": "Kyiv, Ukraine",
+    "capacity": 3,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_56.jpg",
+    "services": [
+      1,
+      11,
+      10,
+      5,
+      7,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 61,
+  "fields": {
+    "number": "313",
+    "room_type": "Suite",
+    "price": "255.00",
+    "status": "Available",
+    "title": "Garden Suite",
+    "location": "Uzhhorod, Ukraine",
+    "capacity": 4,
+    "rating": "4.9",
+    "photo": "rooms/unsplash_54.jpg",
+    "services": [
+      1,
+      11,
+      9,
+      7,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 62,
+  "fields": {
+    "number": "314",
+    "room_type": "Suite",
+    "price": "300.00",
+    "status": "Available",
+    "title": "Seaside Penthouse",
+    "location": "Odesa, Ukraine",
+    "capacity": 4,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_09.jpg",
+    "services": [
+      1,
+      11,
+      7,
+      6,
+      8
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 63,
+  "fields": {
+    "number": "315",
+    "room_type": "Suite",
+    "price": "250.00",
+    "status": "Available",
+    "title": "Luxury Suite with Fireplace",
+    "location": "Ivano-Frankivsk, Ukraine",
+    "capacity": 4,
+    "rating": "4.7",
+    "photo": "rooms/unsplash_19.jpg",
+    "services": [
+      4,
+      1,
+      11,
+      5,
+      2,
+      9,
+      7,
+      6,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 64,
+  "fields": {
+    "number": "316",
+    "room_type": "Suite",
+    "price": "440.00",
+    "status": "Available",
+    "title": "Group Suite for Friends",
+    "location": "Lviv, Ukraine",
+    "capacity": 8,
+    "rating": "4.8",
+    "photo": "rooms/unsplash_35.jpg",
+    "services": [
+      4,
+      13,
+      1,
+      11,
+      10,
+      2,
+      8,
+      3
+    ]
+  }
+},
+{
+  "model": "hotel.room",
+  "pk": 65,
+  "fields": {
+    "number": "317",
+    "room_type": "Suite",
+    "price": "445.00",
+    "status": "Available",
+    "title": "Ski Chalet Suite",
+    "location": "Bukovel, Ukraine",
+    "capacity": 8,
+    "rating": "4.6",
+    "photo": "rooms/unsplash_16.jpg",
+    "services": [
+      4,
+      1,
+      10,
+      5,
+      2,
+      6,
+      8
+    ]
+  }
+}
+]

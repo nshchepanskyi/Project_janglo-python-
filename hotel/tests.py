@@ -828,8 +828,9 @@ class CalendarWiringTests(TestCase):
         self.assertIsNotNone(finders.find("hotel/cal.js"))
 
     def test_home_search_uses_custom_calendar(self):
+        from django.contrib.staticfiles.storage import staticfiles_storage
         resp = self.client.get("/")
-        self.assertContains(resp, "hotel/cal.js")
+        self.assertContains(resp, staticfiles_storage.url("hotel/cal.js"))
         self.assertContains(resp, 'class="js-cal"')
         self.assertContains(resp, 'name="check_in"')
         self.assertContains(resp, 'name="check_out"')
@@ -1335,11 +1336,12 @@ class MobileVersionTests(TestCase):
         self.assertIn("overflow-x:auto", text)            # широкі таблиці гортаються вбік
 
     def test_static_links_carry_cache_version(self):
+        from django.contrib.staticfiles.storage import staticfiles_storage
         resp = self.client.get("/")
-        self.assertContains(resp, "landing.css?v=8")
-        self.assertContains(resp, "app.js?v=6")
+        self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=8")
+        self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=6")
         resp = self.client.get("/login/")
-        self.assertContains(resp, "style.css?v=5")
+        self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=5")
 
     def test_burger_menu_markup(self):
         # у шапці — кнопка-бургер (aria) і nav#p-nav як шухлядне меню
@@ -1442,8 +1444,13 @@ class FaviconTests(TestCase):
         for url in ("/", "/places/", "/places/101/", "/catalog/", "/login/", "/register/"):
             resp = self.client.get(url)
             self.assertEqual(resp.status_code, 200, url)
-            self.assertContains(resp, "favicon-180.png", msg_prefix=url)
-            self.assertContains(resp, "favicon-32.png", msg_prefix=url)
+            from django.contrib.staticfiles.storage import staticfiles_storage
+            self.assertContains(
+                resp, staticfiles_storage.url("hotel/favicon-180.png"), msg_prefix=url
+            )
+            self.assertContains(
+                resp, staticfiles_storage.url("hotel/favicon-32.png"), msg_prefix=url
+            )
 
     def test_root_favicon_ico_is_served(self):
         resp = self.client.get("/favicon.ico")
