@@ -126,8 +126,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Локально виводимо листи в консоль. Для реального SMTP задайте
-# EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend та параметри нижче.
 EMAIL_BACKEND = os.environ.get(
     'EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend'
 )
