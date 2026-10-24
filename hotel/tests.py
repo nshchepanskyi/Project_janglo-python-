@@ -482,6 +482,23 @@ class PublicSiteTests(TestCase):
             self.assertContains(resp, title)
         self.assertEqual(self.client.get("/pages/nope/").status_code, 404)
 
+    def test_room_cards_link_to_their_own_detail_pages(self):
+        places = self.client.get("/places/")
+        self.assertContains(places, 'class="place-card-hitarea"')
+        for room in (self.single, self.double, self.suite):
+            self.assertContains(
+                places,
+                reverse("hotel:place_detail", kwargs={"number": room.number}),
+            )
+
+        catalog = self.client.get("/catalog/")
+        self.assertContains(catalog, 'class="place-card-hitarea"')
+        for room in (self.single, self.double, self.suite):
+            self.assertContains(
+                catalog,
+                reverse("hotel:room_detail", kwargs={"pk": room.pk}),
+            )
+
     def test_service_fee_and_total(self):
 
         self.assertEqual(calc_service_fee(Decimal("120")), Decimal("14"))
@@ -1465,7 +1482,7 @@ class MobileVersionTests(TestCase):
     def test_static_links_carry_cache_version(self):
         from django.contrib.staticfiles.storage import staticfiles_storage
         resp = self.client.get("/")
-        self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=8")
+        self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=9")
         self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=6")
         resp = self.client.get("/login/")
         self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=6")

@@ -16,7 +16,8 @@
   {% if rooms %}
   <div class="rooms-grid">
     {% for room in rooms %}
-    <div class="card place-card">
+    <article class="card place-card">
+      <a class="place-card-hitarea" href="{{ room.get_absolute_url }}" aria-label="{{ room.display_title }}"></a>
       {% if room.photo %}
         <img src="{{ room.photo.url }}" alt="{{ room.display_title }}" class="place-photo">
       {% else %}
@@ -28,7 +29,7 @@
         <p>${{ room.price }} / ніч · {{ room.capacity }} гостей · ★{{ room.rating }}</p>
         <a class="btn primary" href="{{ room.get_absolute_url }}">Переглянути</a>
       </div>
-    </div>
+    </article>
     {% endfor %}
   </div>
 
