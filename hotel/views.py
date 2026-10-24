@@ -163,7 +163,6 @@ def _send_registration_code(user, code):
                 user.email,
                 subject,
                 {"USERNAME": user.username, "CODE": code},
-                text=body,
             )
             return 1 if message_id else 0
         # Шаблон не налаштовано — тимчасовий inline-HTML, щоб реєстрація

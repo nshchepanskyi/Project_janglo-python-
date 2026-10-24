@@ -58,7 +58,7 @@ def send_email(to, subject, html, text=None):
     return getattr(response, "id", None)
 
 
-def send_template_email(to, subject, variables, text=None):
+def send_template_email(to, subject, variables):
     """Надсилає лист через опублікований шаблон Resend.
 
     Шаблон задається змінною середовища RESEND_VERIFICATION_TEMPLATE_ID
@@ -67,6 +67,11 @@ def send_template_email(to, subject, variables, text=None):
 
     Формат payload відповідає Resend Emails API / resend SDK (>=2.40):
     поле "template" має вигляд {"id": ..., "variables": {...}}.
+
+    ВАЖЛИВО: Resend API повертає 422 validation_error
+    "Cannot provide 'text' when using a template" (та сама заборона для
+    "html"), тому в payload з "template" НЕ передаються ні "text", ні
+    "html" — тіло листа бере на себе шаблон.
 
     Кидає RuntimeError, якщо RESEND_API_KEY або
     RESEND_VERIFICATION_TEMPLATE_ID відсутні.
@@ -88,8 +93,6 @@ def send_template_email(to, subject, variables, text=None):
             "variables": dict(variables),
         },
     }
-    if text:
-        payload["text"] = text
 
     response = resend.Emails.send(payload)
     return getattr(response, "id", None)
@@ -118,12 +121,14 @@ def send_email_safe(to, subject, html, text=None):
         return None
 
 
-def send_template_email_safe(to, subject, variables, text=None):
+def send_template_email_safe(to, subject, variables):
     """Надсилає лист шаблоном Resend без винятків.
 
     Повертає id листа або None. У лог пишеться причина відмови
     (відсутність змінних середовища чи помилка API), але ні API-ключі,
     ні значення змінних шаблону (код підтвердження) не логуються.
+    "text"/"html" не передаються — Resend повертає 422 при їх наявності
+    разом із "template".
     """
     if not is_configured():
         logger.warning(
@@ -139,7 +144,7 @@ def send_template_email_safe(to, subject, variables, text=None):
         )
         return None
     try:
-        return send_template_email(to, subject, variables, text)
+        return send_template_email(to, subject, variables)
     except ResendError as exc:
         logger.error(
             "email_service: Resend API error while sending template email: %s", exc

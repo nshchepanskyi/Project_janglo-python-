@@ -209,6 +209,10 @@ class ResendTemplateEmailTests(TestCase):
         self.assertEqual(template["variables"]["USERNAME"], "ivan")
         code = template["variables"]["CODE"]
         self.assertRegex(code, r"^[A-Z0-9]{6}$")
+        # Resend API: 422 validation_error "Cannot provide 'text' when
+        # using a template" — у payload з template не має бути text/html.
+        self.assertNotIn("text", payload)
+        self.assertNotIn("html", payload)
 
         # Код зі шаблонних змінних активує користувача — логіка сесії не зламана.
         resp = self.client.post("/verify-email/", {"code": code})
@@ -231,6 +235,11 @@ class ResendTemplateEmailTests(TestCase):
         second_code = second_payload["template"]["variables"]["CODE"]
         self.assertRegex(second_code, r"^[A-Z0-9]{6}$")
         self.assertNotEqual(first_code, second_code)
+        # Обидва запити (первинна реєстрація і resend) — лише template,
+        # без text/html (інакше 422 від Resend).
+        for payload in (first_payload, second_payload):
+            self.assertNotIn("text", payload)
+            self.assertNotIn("html", payload)
 
     @mock.patch("resend.Emails.send")
     def test_falls_back_to_inline_html_without_template_id(self, mock_send):
