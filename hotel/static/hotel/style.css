@@ -134,11 +134,11 @@ h3{margin:20px 0 8px;font-size:15px}
 .profile-avatar-control{position:relative;display:grid;width:min(296px,100%);height:auto;aspect-ratio:1;place-items:center;overflow:hidden;border:3px solid #ccfbf1;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;isolation:isolate}
 .profile-avatar-control:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 .profile-avatar-image,.profile-avatar-fallback{grid-area:1/1;width:100%;height:100%;object-fit:cover}
-.profile-avatar-fallback{display:grid;place-items:center;background:var(--accent);color:#fff;font-size:76px;font-weight:600}
+.profile-avatar-fallback{display:grid;place-items:center;background:var(--accent);color:#fff;font-size:120px;font-weight:600}
 .profile-avatar-image[hidden],.profile-avatar-fallback[hidden]{display:none}
 .profile-avatar-overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(15,23,42,0);color:#fff;opacity:0;transition:background .18s ease,opacity .18s ease}
 .profile-avatar-control:hover .profile-avatar-overlay,.profile-avatar-control:focus-visible .profile-avatar-overlay{background:rgba(15,23,42,.5);opacity:1}
-.profile-avatar-overlay svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}
+.profile-avatar-overlay svg{width:56px;height:56px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.8}
 .profile-avatar-error{margin:0 0 8px;color:#b91c1c;font-size:13px;text-align:center}
 .profile-avatar-error[hidden]{display:none}
 .profile-remove-form{margin:-8px 0 8px;text-align:center}

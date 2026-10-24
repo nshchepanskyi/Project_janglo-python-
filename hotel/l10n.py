@@ -39,6 +39,7 @@ TRANSLATIONS = {
         "Checked-in": "Заселено",
         "Change profile photo": "Змінити фото профілю",
         "Photo upload failed. Please try again.": "Не вдалося завантажити фото. Спробуйте ще раз.",
+        "Photo must be 5 MB or smaller": "Розмір фото має бути не більше 5 МБ",
         "Register": "Зареєструватися",
         "Back to login": "Назад до входу",
         "Enter username": "Введіть ім'я користувача",

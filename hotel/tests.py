@@ -1438,6 +1438,17 @@ class ProfileAvatarTests(TestCase):
         resp = self.client.get("/")
         self.assertContains(resp, 'class="avatar-img"')
 
+    def test_uploaded_avatar_is_square_optimized_jpeg(self):
+        from PIL import Image
+
+        self._upload()
+        profile = Profile.objects.get(user=self.user)
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+        with profile.avatar.open("rb") as avatar_file:
+            with Image.open(avatar_file) as saved_image:
+                self.assertEqual(saved_image.size, (592, 592))
+                self.assertEqual(saved_image.format, "JPEG")
+
     def test_replace_avatar_removes_old_file(self):
         from django.core.files.storage import default_storage
         self._upload(name="first.gif")
@@ -1455,9 +1466,9 @@ class ProfileAvatarTests(TestCase):
         self.assertFalse(profile.avatar.name)
 
     def test_reject_too_large(self):
-        big = TEST_GIF + b"\x00" * (2 * 1024 * 1024)
+        big = TEST_GIF + b"\x00" * (5 * 1024 * 1024)
         resp = self._upload(name="big.gif", content=big)
-        self.assertContains(resp, "Photo must be under 2 MB")
+        self.assertContains(resp, "Photo must be 5 MB or smaller")
         profile = Profile.objects.get(user=self.user)
         self.assertFalse(profile.avatar.name)
 

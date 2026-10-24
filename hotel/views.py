@@ -5,8 +5,11 @@ import time
 from datetime import date
 from decimal import Decimal
 from functools import wraps
+from io import BytesIO
+from pathlib import Path
 from smtplib import SMTPException
 
+from PIL import Image, ImageOps, UnidentifiedImageError
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -15,6 +18,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.mail.message import BadHeaderError
@@ -55,7 +59,8 @@ from .models import (
 from .forms import ShareRoomForm
 
 
-MAX_AVATAR_BYTES = 2 * 1024 * 1024
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
+AVATAR_IMAGE_SIZE = 592
 REGISTRATION_CODE_LENGTH = 6
 REGISTRATION_CODE_TTL_SECONDS = 10 * 60
 REGISTRATION_CODE_MAX_ATTEMPTS = 10
@@ -1000,12 +1005,39 @@ def reservation_detail_view(request, pk):
 
 
 
+def _make_avatar_jpeg(upload):
+    """Normalize an uploaded avatar to a centered square JPEG for retina use."""
+    upload.seek(0)
+    with Image.open(upload) as opened:
+        image = ImageOps.exif_transpose(opened)
+        image = ImageOps.fit(
+            image,
+            (AVATAR_IMAGE_SIZE, AVATAR_IMAGE_SIZE),
+            method=Image.Resampling.LANCZOS,
+            centering=(0.5, 0.5),
+        )
+
+        # Composite transparent sources onto white before converting to JPEG.
+        if "A" in image.getbands() or "transparency" in image.info:
+            rgba = image.convert("RGBA")
+            rgb = Image.new("RGB", rgba.size, "white")
+            rgb.paste(rgba, mask=rgba.getchannel("A"))
+        else:
+            rgb = image.convert("RGB")
+
+        output = BytesIO()
+        rgb.save(output, format="JPEG", quality=85, optimize=True, progressive=True)
+
+    filename = f"{Path(upload.name).stem[:100] or 'avatar'}.jpg"
+    return ContentFile(output.getvalue(), name=filename)
+
+
 def _update_avatar(request, user):
     """Завантаження/видалення фото профілю (дії з /profile/).
 
-    Перевіряємо розмір (MAX_AVATAR_BYTES), а «це справді зображення»
-    гарантує full_clean() ImageField (Pillow). Старий файл прибираємо
-    з диска після успішного збереження нового.
+    Перевіряємо розмір (MAX_AVATAR_BYTES), кропаємо зображення у квадрат
+    й зберігаємо оптимізованим JPEG. Старий файл прибираємо з диска після
+    успішного збереження нового.
     """
     action = request.POST.get("action")
     profile, _ = Profile.objects.get_or_create(user=user)
@@ -1023,14 +1055,23 @@ def _update_avatar(request, user):
     if avatar is None:
         messages.error(request, "Choose a photo")
     elif avatar.size > MAX_AVATAR_BYTES:
-        messages.error(request, "Photo must be under 2 MB")
+        messages.error(request, "Photo must be 5 MB or smaller")
     else:
         prev_name = profile.avatar.name if profile.avatar else ""
-        profile.avatar = avatar
         try:
+            profile.avatar = _make_avatar_jpeg(avatar)
             profile.full_clean()
-        except ValidationError as e:
-            messages.error(request, _validation_message(e) or "The file must be an image")
+        except (
+            ValidationError,
+            UnidentifiedImageError,
+            Image.DecompressionBombError,
+            OSError,
+            ValueError,
+        ) as e:
+            validation_message = (
+                _validation_message(e) if isinstance(e, ValidationError) else ""
+            )
+            messages.error(request, validation_message or "The file must be an image")
         else:
             profile.save()
             if prev_name and prev_name != profile.avatar.name \
