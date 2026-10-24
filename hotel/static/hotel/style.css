@@ -126,12 +126,12 @@ h3{margin:20px 0 8px;font-size:15px}
 .register-card .msg{margin:0 0 12px}
 
 /* Profile page */
-.profile-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;align-items:start}
+.profile-layout{display:grid;grid-template-columns:338px minmax(0,1fr);gap:16px;align-items:start}
 .profile-account-card,.profile-details-card{min-width:0;padding:20px}
 .profile-account-card{display:flex;flex-direction:column;align-items:stretch}
 .profile-avatar-form{margin:2px auto 14px}
 .profile-avatar-file{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;clip-path:inset(50%)}
-.profile-avatar-control{position:relative;display:grid;width:180px;height:180px;place-items:center;overflow:hidden;border:3px solid #ccfbf1;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;isolation:isolate}
+.profile-avatar-control{position:relative;display:grid;width:min(296px,100%);height:auto;aspect-ratio:1;place-items:center;overflow:hidden;border:3px solid #ccfbf1;border-radius:50%;background:var(--accent);color:#fff;cursor:pointer;isolation:isolate}
 .profile-avatar-control:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
 .profile-avatar-image,.profile-avatar-fallback{grid-area:1/1;width:100%;height:100%;object-fit:cover}
 .profile-avatar-fallback{display:grid;place-items:center;background:var(--accent);color:#fff;font-size:76px;font-weight:600}
