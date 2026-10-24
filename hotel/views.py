@@ -154,6 +154,21 @@ def _send_registration_code(user, code):
         "GrandStay team"
     )
     if _verification_uses_resend():
+        subject = "Verify your email address — GrandStay"
+        template_id = email_service.verification_template_id()
+        if template_id:
+            # Лист формує опублікований HTML-шаблон Resend
+            # (RESEND_VERIFICATION_TEMPLATE_ID), зі змінними USERNAME і CODE.
+            message_id = email_service.send_template_email_safe(
+                user.email,
+                subject,
+                {"USERNAME": user.username, "CODE": code},
+                text=body,
+            )
+            return 1 if message_id else 0
+        # Шаблон не налаштовано — тимчасовий inline-HTML, щоб реєстрація
+        # не ламалась. Причина (відсутній RESEND_VERIFICATION_TEMPLATE_ID)
+        # вже записана в лог email_service.safe-функцією нижче.
         html = (
             "<p>Hello "
             + user.username
@@ -167,7 +182,7 @@ def _send_registration_code(user, code):
             "this email.</p><p>GrandStay team</p>"
         )
         return 1 if email_service.send_email_safe(
-            user.email, "Verify your email address — GrandStay", html, text=body
+            user.email, subject, html, text=body
         ) else 0
     try:
         return send_mail(

@@ -1,8 +1,10 @@
+import os
 import re
 import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.core import mail
@@ -165,6 +167,106 @@ class AuthPagesTests(TestCase):
     def test_dashboard_requires_login(self):
         resp = self.client.get("/dashboard/")
         self.assertEqual(resp.status_code, 302)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend")
+class ResendTemplateEmailTests(TestCase):
+    """Лист підтвердження у проді йде через опублікований шаблон Resend.
+
+    EMAIL_BACKEND примусово smtp, щоб увімкнувся гілкування Resend
+    (_verification_uses_resend), але сам SDK замокано — реальних
+    мережевих запитів немає.
+    """
+
+    RESEND_ENV = {
+        "RESEND_API_KEY": "re_test_key",
+        "RESEND_VERIFICATION_TEMPLATE_ID": "test_template_123",
+        "DEFAULT_FROM_EMAIL": "GrandStay <noreply@grandstay.top>",
+    }
+
+    def _register(self):
+        return self.client.post("/register/", {
+            "username": "ivan", "email": "ivan@test.com",
+            "password": "secret123", "confirm": "secret123",
+        })
+
+    @mock.patch("resend.Emails.send")
+    def test_register_sends_template_with_username_and_code(self, mock_send):
+        mock_send.return_value = mock.Mock(id="email_test_id")
+        with mock.patch.dict(os.environ, self.RESEND_ENV):
+            resp = self._register()
+
+        self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
+        self.assertEqual(mock_send.call_count, 1)
+        payload = mock_send.call_args[0][0]
+        self.assertEqual(payload["from"], "GrandStay <noreply@grandstay.top>")
+        self.assertEqual(payload["to"], ["ivan@test.com"])
+        self.assertEqual(
+            payload["subject"], "Verify your email address — GrandStay"
+        )
+        template = payload["template"]
+        self.assertEqual(template["id"], "test_template_123")
+        self.assertEqual(template["variables"]["USERNAME"], "ivan")
+        code = template["variables"]["CODE"]
+        self.assertRegex(code, r"^[A-Z0-9]{6}$")
+
+        # Код зі шаблонних змінних активує користувача — логіка сесії не зламана.
+        resp = self.client.post("/verify-email/", {"code": code})
+        self.assertRedirects(resp, "/", fetch_redirect_response=False)
+        user = User.objects.get(username="ivan")
+        self.assertTrue(user.is_active)
+
+    @mock.patch("resend.Emails.send")
+    def test_resend_uses_template_with_new_code(self, mock_send):
+        mock_send.return_value = mock.Mock(id="email_test_id")
+        with mock.patch.dict(os.environ, self.RESEND_ENV):
+            self._register()
+            resp = self.client.post("/verify-email/", {"action": "resend"})
+
+        self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
+        self.assertEqual(mock_send.call_count, 2)
+        first_payload = mock_send.call_args_list[0][0][0]
+        second_payload = mock_send.call_args_list[1][0][0]
+        first_code = first_payload["template"]["variables"]["CODE"]
+        second_code = second_payload["template"]["variables"]["CODE"]
+        self.assertRegex(second_code, r"^[A-Z0-9]{6}$")
+        self.assertNotEqual(first_code, second_code)
+
+    @mock.patch("resend.Emails.send")
+    def test_falls_back_to_inline_html_without_template_id(self, mock_send):
+        mock_send.return_value = mock.Mock(id="email_test_id")
+        env = dict(self.RESEND_ENV)
+        env["RESEND_VERIFICATION_TEMPLATE_ID"] = ""
+        with mock.patch.dict(os.environ, env, clear=False):
+            resp = self._register()
+
+        self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
+        payload = mock_send.call_args[0][0]
+        self.assertNotIn("template", payload)
+        self.assertIn("html", payload)
+        code = re.search(
+            r"verification code is: <strong[^>]*>([A-Z0-9]{6})</strong>",
+            payload["html"],
+        ).group(1)
+        resp = self.client.post("/verify-email/", {"code": code})
+        self.assertRedirects(resp, "/", fetch_redirect_response=False)
+
+    @mock.patch("resend.Emails.send")
+    def test_without_api_key_falls_back_to_django_backend(self, mock_send):
+        env = dict(self.RESEND_ENV)
+        env["RESEND_API_KEY"] = ""
+        # locmem замість smtp, щоб Django-фолбек не йшов у реальний SMTP.
+        with override_settings(
+            EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
+        ), mock.patch.dict(os.environ, env, clear=False):
+            resp = self._register()
+
+        # Resend не викликався, запит не впав з 500 — лист пішов
+        # штатним Django email backend (локальна розробка/тести).
+        self.assertEqual(mock_send.call_count, 0)
+        self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertTrue(User.objects.filter(username="ivan").exists())
 
 
 class RoleAccessTests(TestCase):
