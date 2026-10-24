@@ -25,6 +25,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
+from config import email_service
+
 from .models import (
     ACTIVE_STATUSES,
     Guest,
@@ -128,6 +130,19 @@ def _new_registration_code():
     )
 
 
+def _verification_uses_resend():
+    """Вирішує, як надсилати лист.
+
+    Render Free блокує SMTP-порти (25/465/587), тому у продакшені код
+    підтвердження йде через HTTPS API Resend. Локально (console) і в тестах
+    (locmem) листи залишаються у штатному Django-бекенді.
+    """
+    return (
+        email_service.is_configured()
+        and settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+    )
+
+
 def _send_registration_code(user, code):
     body = (
         f"Hello {user.username},\n\n"
@@ -138,6 +153,22 @@ def _send_registration_code(user, code):
         "If you did not create a GrandStay account, you can ignore this email.\n\n"
         "GrandStay team"
     )
+    if _verification_uses_resend():
+        html = (
+            "<p>Hello "
+            + user.username
+            + ",</p><p>Welcome to <strong>GrandStay</strong>!</p>"
+            "<p>Your email verification code is: "
+            f"<strong style='font-size:20px;letter-spacing:3px'>{code}</strong></p>"
+            "<p>Enter this 6-character code on the verification page to confirm "
+            "that this email address belongs to you. The code expires in "
+            "10 minutes.</p>"
+            "<p>If you did not create a GrandStay account, you can ignore "
+            "this email.</p><p>GrandStay team</p>"
+        )
+        return 1 if email_service.send_email_safe(
+            user.email, "Verify your email address — GrandStay", html, text=body
+        ) else 0
     try:
         return send_mail(
             subject="Verify your email address — GrandStay",
