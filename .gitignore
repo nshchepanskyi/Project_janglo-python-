@@ -7,6 +7,10 @@ venv/
 .idea/
 *.log
 Розділ 1/
+# Звіт і матеріали до нього — локальні файли, у репозиторій не потрапляють
+data_text/
+model.mwb
+*.mwb.bak
 .env
 # Зібрана статика (collectstatic) — на Render збирається щоразу заново
 staticfiles/

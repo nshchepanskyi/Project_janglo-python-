@@ -230,15 +230,14 @@ Database URL Render Postgres, і що база та вебсервіс розм�
 Локально можна продовжувати використовувати SQLite; `DATABASE_URL` має пріоритет,
 коли заданий.
 
-### Скриншоти актуального сайту
+### Актуальний сайт
 
-Знімки зроблено з розгорнутого сайту 2026-10-23:
+Знімки з розгорнутого сайту (2026-10-23) зберігаються локально в `data_text/screenshots/`
+і в репозиторій не входять. Живі сторінки:
 
-| Сторінка | Скриншот |
-|---|---|
-| [Головна](https://grandstay-6kui.onrender.com/) | [`live-home.png`](data_text/screenshots/live-home.png) |
-| [Каталог](https://grandstay-6kui.onrender.com/places/) | [`live-places.png`](data_text/screenshots/live-places.png) |
-| [Номер 101](https://grandstay-6kui.onrender.com/places/101/) | [`live-room.png`](data_text/screenshots/live-room.png) |
+- [Головна](https://grandstay-6kui.onrender.com/)
+- [Каталог](https://grandstay-6kui.onrender.com/places/)
+- [Номер 101](https://grandstay-6kui.onrender.com/places/101/)
 
 Файли у `media/` з репозиторію доступні після деплою, але нові завантаження
 користувачами потребують постійного файлового сховища (наприклад S3): локальна
