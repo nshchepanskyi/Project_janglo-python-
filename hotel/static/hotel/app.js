@@ -209,7 +209,8 @@
       fallback.hidden = true;
       control.setAttribute("aria-busy", "true");
 
-      fetch(avatarForm.action || window.location.href, {
+      var formAction = avatarForm.getAttribute("action") || window.location.href;
+      fetch(formAction, {
         method: "POST",
         body: new FormData(avatarForm),
         credentials: "same-origin",
