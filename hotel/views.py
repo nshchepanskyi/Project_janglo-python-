@@ -2,6 +2,8 @@ import re
 import secrets
 import string
 import time
+from io import BytesIO
+from pathlib import Path
 from datetime import date
 from decimal import Decimal
 from functools import wraps
@@ -15,6 +17,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.core.mail.message import BadHeaderError
@@ -55,7 +58,7 @@ from .models import (
 from .forms import ShareRoomForm
 
 
-MAX_AVATAR_BYTES = 2 * 1024 * 1024
+MAX_AVATAR_BYTES = 5 * 1024 * 1024
 REGISTRATION_CODE_LENGTH = 6
 REGISTRATION_CODE_TTL_SECONDS = 10 * 60
 REGISTRATION_CODE_MAX_ATTEMPTS = 10
@@ -1000,12 +1003,29 @@ def reservation_detail_view(request, pk):
 
 
 
+def _prepare_avatar_upload(avatar):
+    from PIL import Image, ImageOps
+
+    try:
+        avatar.seek(0)
+        with Image.open(avatar) as image:
+            image = ImageOps.exif_transpose(image)
+            image = ImageOps.fit(image, (592, 592), method=Image.Resampling.LANCZOS)
+            image = image.convert("RGB")
+            output = BytesIO()
+            image.save(output, format="JPEG", quality=85, optimize=True)
+    except Exception as e:
+        raise ValidationError({"avatar": "The file must be an image"}) from e
+
+    filename = f"{Path(avatar.name).stem}.jpg"
+    return ContentFile(output.getvalue(), name=filename)
+
+
 def _update_avatar(request, user):
     """Завантаження/видалення фото профілю (дії з /profile/).
 
-    Перевіряємо розмір (MAX_AVATAR_BYTES), а «це справді зображення»
-    гарантує full_clean() ImageField (Pillow). Старий файл прибираємо
-    з диска після успішного збереження нового.
+    Перевіряємо розмір і формат, зберігаючи фото квадратним JPEG.
+    Старий файл прибираємо з диска після успішного збереження нового.
     """
     action = request.POST.get("action")
     profile, _ = Profile.objects.get_or_create(user=user)
@@ -1023,12 +1043,13 @@ def _update_avatar(request, user):
     if avatar is None:
         messages.error(request, "Choose a photo")
     elif avatar.size > MAX_AVATAR_BYTES:
-        messages.error(request, "Photo must be under 2 MB")
+        messages.error(request, "Photo must be 5 MB or smaller")
     else:
         prev_name = profile.avatar.name if profile.avatar else ""
         profile.avatar = avatar
         try:
             profile.full_clean()
+            profile.avatar = _prepare_avatar_upload(avatar)
         except ValidationError as e:
             messages.error(request, _validation_message(e) or "The file must be an image")
         else:

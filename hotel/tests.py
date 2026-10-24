@@ -1396,9 +1396,17 @@ class ProfileAvatarTests(TestCase):
         self.assertContains(resp, "Profile photo updated")
         profile = Profile.objects.get(user=self.user)
         self.assertTrue(profile.avatar.name.startswith("avatars/"))
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+        from PIL import Image
+        with profile.avatar.open("rb") as avatar_file:
+            with Image.open(avatar_file) as image:
+                self.assertEqual(image.size, (592, 592))
+                self.assertEqual(image.format, "JPEG")
 
         resp = self.client.get("/profile/")
         self.assertContains(resp, "/media/avatars/")
+        self.assertContains(resp, "profile-layout")
+        self.assertContains(resp, 'class="avatar-picker"')
         resp = self.client.get("/")
         self.assertContains(resp, 'class="avatar-img"')
 
@@ -1419,9 +1427,9 @@ class ProfileAvatarTests(TestCase):
         self.assertFalse(profile.avatar.name)
 
     def test_reject_too_large(self):
-        big = TEST_GIF + b"\x00" * (2 * 1024 * 1024)
+        big = TEST_GIF + b"\x00" * (5 * 1024 * 1024)
         resp = self._upload(name="big.gif", content=big)
-        self.assertContains(resp, "Photo must be under 2 MB")
+        self.assertContains(resp, "Photo must be 5 MB or smaller")
         profile = Profile.objects.get(user=self.user)
         self.assertFalse(profile.avatar.name)
 

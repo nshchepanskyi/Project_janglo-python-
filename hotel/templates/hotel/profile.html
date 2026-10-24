@@ -3,26 +3,29 @@
 {% block content %}
 <h1>{% tr "Profile" %}</h1>
 
-<div class="grid-2">
-  <div class="card">
+<div class="grid-2 profile-layout">
+  <div class="card account-card">
     <h2>{% tr "My Account" %}</h2>
 
-    {# Фото профілю: показуємо поточне, поруч — завантаження/видалення #}
     <h3>{% tr "Profile photo" %}</h3>
     <div class="profile-avatar">
-      <div class="pa-photo">
+      <form method="post" class="avatar-upload-form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="avatar">
+        <label class="avatar-picker">
         {% if user.profile.avatar %}
-        <img class="avatar-big" src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+          <img class="avatar-big" src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
         {% else %}
-        <span class="avatar big">{{ user.username|first|upper }}</span>
+          <span class="avatar-big avatar-placeholder" aria-hidden="true">{{ user.username|first|upper }}</span>
         {% endif %}
-      </div>
+          <span class="avatar-overlay" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+          </span>
+          <input type="file" name="avatar" accept="image/*" aria-label="{% tr 'Upload photo' %}" required>
+        </label>
+        <button class="btn primary" type="submit">{% tr "Upload photo" %}</button>
+      </form>
       <div class="pa-actions">
-        <form method="post" class="avatar-form" enctype="multipart/form-data">{% csrf_token %}
-          <input type="hidden" name="action" value="avatar">
-          <input type="file" name="avatar" accept="image/*" required>
-          <button class="btn primary" type="submit">{% tr "Upload photo" %}</button>
-        </form>
         {% if user.profile.avatar %}
         <form method="post" class="avatar-form">{% csrf_token %}
           <input type="hidden" name="action" value="avatar_remove">
