@@ -84,6 +84,25 @@ h3{margin:20px 0 8px;font-size:15px}
 .auth-card form{display:flex;flex-direction:column;gap:10px}
 .messages{margin-bottom:12px}.msg{padding:11px 14px;border-radius:10px;margin-bottom:8px}.msg.error{background:#fee2e2;color:#991b1b}.msg.success{background:#dcfce7;color:#166534}
 
+/* Login page: scoped styles keep the register/verification pages unchanged. */
+.login-page{min-height:100vh;min-height:100svh;padding:16px;background:#f1f5f9}
+.login-card{width:100%;max-width:420px;padding:32px;background:#fff;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 16px 40px rgba(15,23,42,.08)}
+.login-card h1{margin:0 0 24px;color:#0f766e;font-size:22px;font-weight:700;letter-spacing:0}
+.login-card form{gap:16px}
+.login-field{display:flex;flex-direction:column;gap:7px}
+.login-field label{color:var(--text);font-size:14px;font-weight:600}
+.login-field input{width:100%;height:37px;padding:7px 11px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;color:#0f172a;font:inherit}
+.login-field input:focus-visible{outline:3px solid color-mix(in srgb,#0f766e 25%,transparent);outline-offset:1px;border-color:#0f766e}
+.login-submit{width:100%;height:39px;min-height:39px;margin-top:2px;border:1px solid #0f766e;border-radius:10px;background:#0f766e;color:#fff;font-weight:700;cursor:pointer}
+.login-submit:hover{background:#115e59;border-color:#115e59}
+.login-submit:focus-visible,.login-signup a:focus-visible,.login-utilities a:focus-visible{outline:3px solid color-mix(in srgb,#0f766e 35%,transparent);outline-offset:3px}
+.login-signup{margin:20px 0 0;text-align:center;color:var(--muted);font-size:14px;line-height:1.6}
+.login-signup a{color:#0f766e;font-weight:600;text-decoration:underline;text-underline-offset:2px}
+.login-utilities{display:flex;justify-content:center;gap:18px;margin-top:18px;font-size:12px}
+.login-utilities a{color:var(--muted);text-decoration:none}
+.login-utilities a:hover{color:#0f766e;text-decoration:underline}
+.login-card .msg{margin:0 0 14px}
+
 @media(max-width:900px){
   .kpi-row,.kpi-row.two{grid-template-columns:repeat(2,1fr)}
   .grid-2{grid-template-columns:1fr}
@@ -102,6 +121,7 @@ h3{margin:20px 0 8px;font-size:15px}
   .svc-pick{grid-template-columns:1fr}
   .room-grid{grid-template-columns:repeat(4,1fr)}
   .auth-card{width:100%;max-width:380px;padding:24px}
+  .login-card{max-width:420px;padding:28px 24px}
   .auth-actions{flex-wrap:wrap}
   .form-row{gap:8px}
 }

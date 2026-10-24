@@ -11,6 +11,7 @@ from django.core import mail
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.urls import reverse
 
 from .models import (
     Guest,
@@ -1452,7 +1453,11 @@ class MobileVersionTests(TestCase):
         self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=8")
         self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=6")
         resp = self.client.get("/login/")
-        self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=5")
+        self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=6")
+        self.assertContains(resp, 'name="login"')
+        self.assertContains(resp, 'name="password"')
+        self.assertContains(resp, "Welcome back")
+        self.assertContains(resp, reverse("hotel:register"))
 
     def test_burger_menu_markup(self):
 

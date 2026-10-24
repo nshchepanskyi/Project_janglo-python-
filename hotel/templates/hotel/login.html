@@ -1,22 +1,28 @@
 {% load tr_tags %}{% load static %}<!DOCTYPE html>
 <html lang="{{ lang }}" data-theme="{{ theme }}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GrandStay — {% tr "Login" %}</title><link rel="icon" type="image/png" sizes="32x32" href="{% static 'hotel/favicon-32.png' %}?v=1"><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=5"></head>
-<body class="auth-page">
-<div class="auth-card">
-  <h1>GrandStay {% tr "Login" %}</h1>
-  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}">{% tr m %}</div>{% endfor %}{% endif %}
+<title>GrandStay — {% tr "Login" %}</title><link rel="icon" type="image/png" sizes="32x32" href="{% static 'hotel/favicon-32.png' %}?v=1"><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=6"></head>
+<body class="auth-page login-page">
+<main class="auth-card login-card">
+  <h1>Welcome back</h1>
+  {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}" role="alert">{% tr m %}</div>{% endfor %}{% endif %}
   <form method="post">{% csrf_token %}
     {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-    <input name="login" placeholder="{% tr "Username or Email" %}" required>
-    <input name="password" type="password" placeholder="{% tr "Password" %}" required>
-    <button class="btn primary" type="submit">{% tr "Login" %}</button>
+    <div class="login-field">
+      <label for="login-email">Email</label>
+      <input id="login-email" name="login" type="text" autocomplete="username" aria-label="Email or username" required>
+    </div>
+    <div class="login-field">
+      <label for="login-password">Password</label>
+      <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="btn primary login-submit" type="submit">Sign in</button>
   </form>
-  <div class="auth-actions">
-    <a class="btn ghost" href="{% url 'hotel:home' %}">{% tr "Home" %}</a>
-    <a class="btn primary" href="{% url 'hotel:register' %}">{% tr "Create account" %}</a>
-    <a class="btn ghost" href="{% url 'hotel:toggle_lang' %}">{{ lang|upper }}</a>
-  </div>
-</div>
+  <p class="login-signup">New to GrandStay? <a href="{% url 'hotel:register' %}">Create an account</a></p>
+  <nav class="login-utilities" aria-label="Login page links">
+    <a href="{% url 'hotel:home' %}">{% tr "Home" %}</a>
+    <a href="{% url 'hotel:toggle_lang' %}" lang="{{ lang }}">{{ lang|upper }}</a>
+  </nav>
+</main>
 </body>
 </html>
