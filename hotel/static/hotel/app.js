@@ -135,12 +135,122 @@
     }
   }
 
+
+  function initPasswordMatch() {
+    document.querySelectorAll("[data-password-match-form]").forEach(function (form) {
+      var firstName = form.getAttribute("data-match-first") || "password";
+      var secondName = form.getAttribute("data-match-second") || "confirm";
+      var first = form.querySelector('[name="' + firstName + '"]');
+      var second = form.querySelector('[name="' + secondName + '"]');
+      var error = form.querySelector(".inline-form-error");
+      if (!first || !second || !error) return;
+
+      function clearWhenMatching() {
+        if (first.value === second.value) {
+          error.hidden = true;
+          second.removeAttribute("aria-invalid");
+        }
+      }
+
+      first.addEventListener("input", clearWhenMatching);
+      second.addEventListener("input", clearWhenMatching);
+      form.addEventListener("submit", function (event) {
+        if (first.value === second.value) {
+          error.hidden = true;
+          second.removeAttribute("aria-invalid");
+          return;
+        }
+        event.preventDefault();
+        error.hidden = false;
+        second.setAttribute("aria-invalid", "true");
+        second.focus();
+      });
+    });
+  }
+
+
+  function initProfileEditor() {
+    var toggle = document.querySelector(".profile-edit-toggle");
+    var panel = document.getElementById("profile-edit-panel");
+    if (toggle && panel) {
+      toggle.addEventListener("click", function () {
+        var expanded = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+        panel.hidden = expanded;
+      });
+    }
+
+    var avatarForm = document.querySelector("[data-profile-avatar-form]");
+    if (!avatarForm) return;
+    var fileInput = avatarForm.querySelector('input[type="file"]');
+    var control = avatarForm.querySelector(".profile-avatar-control");
+    var image = avatarForm.querySelector(".profile-avatar-image");
+    var fallback = avatarForm.querySelector(".profile-avatar-fallback");
+    var error = document.querySelector("[data-avatar-error]");
+    if (!fileInput || !control || !image || !fallback || !error) return;
+
+    control.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    fileInput.addEventListener("change", function () {
+      var file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+
+      var oldSrc = image.getAttribute("src");
+      var hadImage = !image.hidden && Boolean(oldSrc);
+      var previewUrl = URL.createObjectURL(file);
+      error.hidden = true;
+      image.src = previewUrl;
+      image.hidden = false;
+      fallback.hidden = true;
+      control.setAttribute("aria-busy", "true");
+
+      fetch(avatarForm.action || window.location.href, {
+        method: "POST",
+        body: new FormData(avatarForm),
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      }).then(function (response) {
+        if (!response.ok) throw new Error(error.getAttribute("data-upload-failed"));
+        return response.text();
+      }).then(function (html) {
+        var parsed = new DOMParser().parseFromString(html, "text/html");
+        var serverError = parsed.querySelector(".p-messages .msg.error");
+        if (serverError) throw new Error(serverError.textContent.trim());
+        var savedImage = parsed.querySelector(".profile-avatar-image[src]");
+        if (savedImage) image.src = savedImage.getAttribute("src");
+      }).catch(function (uploadError) {
+        if (hadImage) {
+          image.src = oldSrc;
+          image.hidden = false;
+          fallback.hidden = true;
+        } else {
+          image.removeAttribute("src");
+          image.hidden = true;
+          fallback.hidden = false;
+        }
+        error.textContent = uploadError.message || error.getAttribute("data-upload-failed");
+        error.hidden = false;
+      }).finally(function () {
+        control.removeAttribute("aria-busy");
+        fileInput.value = "";
+        URL.revokeObjectURL(previewUrl);
+      });
+    });
+  }
+
   function init() {
     try { animateNumbers(); } catch (e) {}
     try { animateBars(); } catch (e) {}
     try { pressFeedback(); } catch (e) {}
     try { initStayType(); } catch (e) {}
     try { initBurger(); } catch (e) {}
+    try { initPasswordMatch(); } catch (e) {}
+    try { initProfileEditor(); } catch (e) {}
   }
 
   if (document.readyState === "loading") {

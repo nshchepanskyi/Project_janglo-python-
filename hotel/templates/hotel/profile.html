@@ -3,115 +3,105 @@
 {% block content %}
 <h1>{% tr "Profile" %}</h1>
 
-<div class="grid-2">
-  <div class="card">
-    <h2>{% tr "My Account" %}</h2>
-
-    {# Фото профілю: показуємо поточне, поруч — завантаження/видалення #}
-    <h3>{% tr "Profile photo" %}</h3>
-    <div class="profile-avatar">
-      <div class="pa-photo">
+<div class="profile-layout">
+  <aside class="card profile-account-card" aria-label="{% tr 'My Account' %}">
+    <form method="post" class="profile-avatar-form" enctype="multipart/form-data" data-profile-avatar-form>
+      {% csrf_token %}
+      <input type="hidden" name="action" value="avatar">
+      <input class="profile-avatar-file" id="profile-avatar-file" type="file" name="avatar" accept="image/*" aria-label="{% tr 'Change profile photo' %}">
+      <label class="profile-avatar-control" for="profile-avatar-file" role="button" tabindex="0" aria-label="{% tr 'Change profile photo' %}">
         {% if user.profile.avatar %}
-        <img class="avatar-big" src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+          <img class="profile-avatar-image" src="{{ user.profile.avatar.url }}" alt="{{ user.username }}">
+          <span class="profile-avatar-fallback" hidden>{{ user.username|first|upper }}</span>
         {% else %}
-        <span class="avatar big">{{ user.username|first|upper }}</span>
+          <span class="profile-avatar-fallback">{{ user.username|first|upper }}</span>
+          <img class="profile-avatar-image" alt="{{ user.username }}" hidden>
         {% endif %}
-      </div>
-      <div class="pa-actions">
-        <form method="post" class="avatar-form" enctype="multipart/form-data">{% csrf_token %}
-          <input type="hidden" name="action" value="avatar">
-          <input type="file" name="avatar" accept="image/*" required>
-          <button class="btn primary" type="submit">{% tr "Upload photo" %}</button>
-        </form>
-        {% if user.profile.avatar %}
-        <form method="post" class="avatar-form">{% csrf_token %}
-          <input type="hidden" name="action" value="avatar_remove">
-          <button class="btn danger" type="submit">{% tr "Remove photo" %}</button>
-        </form>
-        {% endif %}
-      </div>
-    </div>
-
-    <table class="kv">
-      <tr><td>{% tr "Username" %}</td><td>{{ user.username }}</td></tr>
-      <tr><td>{% tr "Email" %}</td><td>{{ user.email|default:"—" }}</td></tr>
-      <tr><td>{% tr "Role" %}</td><td>{% if user.is_superuser %}{% tr "Administrator" %}{% else %}{% tr "User" %}{% endif %}</td></tr>
-      <tr><td>{% tr "Member since" %}</td><td>{{ user.date_joined|date:"Y-m-d" }}</td></tr>
-      <tr><td>{% tr "Last login" %}</td><td>{{ user.last_login|date:"Y-m-d H:i" }}</td></tr>
-      <tr><td>{% tr "Language" %}</td><td>{{ lang|upper }}</td></tr>
-      <tr><td>{% tr "Theme" %}</td><td>{% if theme == "light" %}{% tr "Light" %}{% else %}{% tr "Dark" %}{% endif %}</td></tr>
-    </table>
-
-    <h3>{% tr "Update Email" %}</h3>
-    <form method="post" class="form-row">{% csrf_token %}
-      <input type="hidden" name="action" value="email">
-      <input name="email" type="email" value="{{ user.email }}" placeholder="{% tr "Email" %}">
-      <button class="btn primary" type="submit">{% tr "Save" %}</button>
+        <span class="profile-avatar-overlay" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>
+        </span>
+      </label>
     </form>
-
-    <h3>{% tr "Change Password" %}</h3>
-    <form method="post" class="form-col">{% csrf_token %}
-      <input type="hidden" name="action" value="password">
-      <input name="old_password" type="password" placeholder="{% tr "Current Password" %}" required>
-      <input name="new_password1" type="password" placeholder="{% tr "New Password" %}" required>
-      <input name="new_password2" type="password" placeholder="{% tr "Confirm Password" %}" required>
-      <button class="btn primary" type="submit">{% tr "Change Password" %}</button>
+    <p class="profile-avatar-error" data-avatar-error data-upload-failed="{% tr 'Photo upload failed. Please try again.' %}" role="alert" hidden></p>
+    {% if user.profile.avatar %}
+    <form method="post" class="profile-remove-form">{% csrf_token %}
+      <input type="hidden" name="action" value="avatar_remove">
+      <button type="submit" class="profile-remove-link">{% tr "Remove photo" %}</button>
     </form>
-  </div>
-
-  <div class="card">
-    <h2>{% tr "My Statistics" %}</h2>
-    {% if is_admin %}
-    <div class="kpi-row two">
-      <div class="card kpi mini"><div class="kpi-label">{% tr "GUESTS" %}</div><div class="kpi-value">{{ stats.guests }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "RESERVATIONS" %}</div><div class="kpi-value">{{ stats.reservations }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "OCCUPANCY" %}</div><div class="kpi-value">{{ stats.occupancy }}%</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "TOTAL REVENUE" %}</div><div class="kpi-value">{% money stats.revenue 0 %}</div></div>
-    </div>
-
-    <h3>{% tr "Recent Reservations" %}</h3>
-    <table>
-      <thead><tr><th>{% tr "GUEST NAME" %}</th><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "STATUS" %}</th></tr></thead>
-      <tbody>
-      {% for r in recent %}
-        <tr><td>{{ r.guest.name }}</td><td><span class="pill">{{ r.room.number }}</span></td><td class="nowrap">{{ r.check_in|date:"Y-m-d" }}</td><td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td></tr>
-      {% empty %}
-        <tr><td colspan="4">{% tr "No reservations yet" %}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div class="kpi-row two">
-      <div class="card kpi mini"><div class="kpi-label">{% tr "MY RESERVATIONS" %}</div><div class="kpi-value">{{ stats.my_reservations }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "NIGHTS" %}</div><div class="kpi-value">{{ stats.nights }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "SPENT" %}</div><div class="kpi-value">{% money stats.amount 0 %}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "ORDERS" %}</div><div class="kpi-value">{{ stats.orders }}</div></div>
-      <div class="card kpi mini"><div class="kpi-label">{% tr "CHECKED-IN" %}</div><div class="kpi-value">{{ stats.checked_in }}</div></div>
-    </div>
-
-    <h3>{% tr "My Reservations" %}</h3>
-    <table>
-      <thead><tr><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "CHECK OUT" %}</th><th>{% tr "NIGHTS" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th><th></th></tr></thead>
-      <tbody>
-      {% for r in recent %}
-        <tr>
-          <td><span class="pill">{{ r.room.number }}</span> · {% tr r.room.room_type %}</td>
-          <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_in_time }}{% endif %}</td>
-          <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_out_time }}{% endif %}</td>
-          <td>{% if r.is_day_use %}<span class="pill">{% tr "DAY" %}</span>{% else %}{{ r.nights }}{% endif %}</td>
-          <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
-          <td>{% money r.amount %}</td>
-          <td><a class="btn ghost small" href="{% url 'hotel:reservation_detail' r.id %}">{% tr "Details" %}</a></td>
-        </tr>
-      {% empty %}
-        <tr><td colspan="7">{% tr "No reservations yet" %}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p><a class="btn primary" href="{% url 'hotel:reservations' %}">{% tr "Book a Room" %}</a></p>
     {% endif %}
-  </div>
+
+    <h2 class="profile-account-name">{{ user.username }}</h2>
+    <p class="profile-account-email">{{ user.email|default:"—" }}</p>
+
+    <button class="profile-edit-toggle" type="button" aria-expanded="false" aria-controls="profile-edit-panel">
+      <span>{% tr "Edit profile" %}</span>
+      <svg class="profile-chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="m5 7.5 5 5 5-5"/></svg>
+    </button>
+    <section class="profile-edit-panel" id="profile-edit-panel" hidden>
+      <h3>{% tr "Update Email" %}</h3>
+      <form method="post" class="profile-edit-form">{% csrf_token %}
+        <input type="hidden" name="action" value="email">
+        <label for="profile-email">{% tr "Email" %}</label>
+        <input id="profile-email" name="email" type="email" value="{{ user.email }}" autocomplete="email" required>
+        <button class="btn primary profile-action-button" type="submit">{% tr "Save" %}</button>
+      </form>
+
+      <h3>{% tr "Change Password" %}</h3>
+      <form method="post" class="profile-edit-form" data-password-match-form data-match-first="new_password1" data-match-second="new_password2">{% csrf_token %}
+        <input type="hidden" name="action" value="password">
+        <label for="profile-old-password">{% tr "Current Password" %}</label>
+        <input id="profile-old-password" name="old_password" type="password" autocomplete="current-password" required>
+        <label for="profile-new-password1">{% tr "New Password" %}</label>
+        <input id="profile-new-password1" name="new_password1" type="password" autocomplete="new-password" required>
+        <label for="profile-new-password2">{% tr "Confirm Password" %}</label>
+        <input id="profile-new-password2" name="new_password2" type="password" autocomplete="new-password" aria-describedby="profile-password-error" required>
+        <p class="inline-form-error" id="profile-password-error" role="alert" hidden>{% tr "Passwords do not match" %}</p>
+        <button class="btn primary profile-action-button" type="submit">{% tr "Change Password" %}</button>
+      </form>
+    </section>
+  </aside>
+
+  <section class="card profile-details-card">
+    <h2>{% tr "My Statistics" %}</h2>
+    <div class="profile-stat-grid">
+      <div class="profile-stat"><span>{% tr "Reservations" %}</span><strong>{% if is_admin %}{{ stats.reservations }}{% else %}{{ stats.my_reservations }}{% endif %}</strong></div>
+      <div class="profile-stat"><span>{% tr "Nights" %}</span><strong>{% if is_admin %}—{% else %}{{ stats.nights }}{% endif %}</strong></div>
+      <div class="profile-stat"><span>{% tr "Spent" %}</span><strong>{% if is_admin %}—{% else %}{% money stats.amount 0 %}{% endif %}</strong></div>
+      <div class="profile-stat"><span>{% tr "Orders" %}</span><strong>{{ stats.orders }}</strong></div>
+      <div class="profile-stat"><span>{% tr "Checked-in" %}</span><strong>{{ stats.checked_in }}</strong></div>
+    </div>
+
+    <dl class="profile-info-list">
+      <div><dt>{% tr "Role" %}</dt><dd>{% if user.is_superuser %}{% tr "Administrator" %}{% else %}{% tr "User" %}{% endif %}</dd></div>
+      <div><dt>{% tr "Member since" %}</dt><dd>{{ user.date_joined|date:"Y-m-d" }}</dd></div>
+      <div><dt>{% tr "Last login" %}</dt><dd>{{ user.last_login|date:"Y-m-d H:i"|default:"—" }}</dd></div>
+      <div><dt>{% tr "Language" %}</dt><dd>{{ lang|upper }}</dd></div>
+      <div><dt>{% tr "Theme" %}</dt><dd>{% if theme == "light" %}{% tr "Light" %}{% else %}{% tr "Dark" %}{% endif %}</dd></div>
+    </dl>
+
+    <div class="profile-reservations-heading">
+      <h2>{% tr "My Reservations" %}</h2>
+      <a class="btn primary profile-book-button" href="{% url 'hotel:reservations' %}">{% tr "Book a Room" %}</a>
+    </div>
+    <div class="profile-table-wrap">
+      <table class="profile-reservations-table">
+        <thead><tr><th>{% tr "ROOM" %}</th><th>{% tr "CHECK IN" %}</th><th>{% tr "CHECK OUT" %}</th><th>{% tr "NIGHTS" %}</th><th>{% tr "STATUS" %}</th><th>{% tr "AMOUNT" %}</th></tr></thead>
+        <tbody>
+        {% for r in recent %}
+          <tr>
+            <td><span class="pill">{{ r.room.number }}</span> · {% tr r.room.room_type %}</td>
+            <td class="nowrap">{{ r.check_in|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_in_time }}{% endif %}</td>
+            <td class="nowrap">{{ r.check_out|date:"Y-m-d" }}{% if r.is_day_use %} · {{ r.check_out_time }}{% endif %}</td>
+            <td>{% if r.is_day_use %}<span class="pill">{% tr "DAY" %}</span>{% else %}{{ r.nights }}{% endif %}</td>
+            <td><span class="badge st-{{ r.status|slugify }}">{% tr r.status %}</span></td>
+            <td>{% money r.amount %}</td>
+          </tr>
+        {% empty %}
+          <tr><td class="profile-empty-state" colspan="6">{% tr "No reservations yet" %}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>
 {% endblock %}

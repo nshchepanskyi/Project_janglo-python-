@@ -1,13 +1,12 @@
 {% load tr_tags %}{% load static %}<!DOCTYPE html>
 <html lang="{{ lang }}" data-theme="{{ theme }}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GrandStay — {% tr "Register" %}</title><link rel="icon" type="image/png" sizes="32x32" href="{% static 'hotel/favicon-32.png' %}?v=1"><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=7"></head>
+<title>GrandStay — {% tr "Register" %}</title><link rel="icon" type="image/png" sizes="32x32" href="{% static 'hotel/favicon-32.png' %}?v=1"><link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1"><link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1"><link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=8"><script src="{% static 'hotel/app.js' %}?v=7" defer></script></head>
 <body class="auth-page register-page">
 <main class="auth-card register-card">
-  <a class="register-language" href="{% url 'hotel:toggle_lang' %}" lang="{{ lang }}" aria-label="{% tr 'Switch language' %}">{{ lang|upper }}</a>
   <h1>{% tr "Create your account" %}</h1>
   {% if messages %}{% for m in messages %}<div class="msg {{ m.tags }}" role="alert">{% tr m %}</div>{% endfor %}{% endif %}
-  <form method="post">{% csrf_token %}
+  <form method="post" class="register-form" data-password-match-form>{% csrf_token %}
     <div class="register-field">
       <label for="register-username">{% tr "Username" %}</label>
       <input id="register-username" name="username" autocomplete="username" required>
@@ -22,12 +21,16 @@
     </div>
     <div class="register-field">
       <label for="register-confirm">{% tr "Confirm password" %}</label>
-      <input id="register-confirm" name="confirm" type="password" autocomplete="new-password" required>
+      <input id="register-confirm" name="confirm" type="password" autocomplete="new-password" aria-describedby="register-password-error" required>
+      <p class="inline-form-error" id="register-password-error" role="alert" hidden>{% tr "Passwords do not match" %}</p>
     </div>
     <button class="btn primary register-submit" type="submit">{% tr "Create account" %}</button>
   </form>
   <p class="register-login">{% tr "Already have an account?" %} <a href="{% url 'hotel:login' %}">{% tr "Sign in" %}</a></p>
-  <a class="register-home" href="{% url 'hotel:home' %}">← {% tr "Back to home" %}</a>
+  <nav class="register-footer-links" aria-label="{% tr 'Registration links' %}">
+    <a href="{% url 'hotel:home' %}">{% tr "Home" %}</a>
+    <a href="{% url 'hotel:toggle_lang' %}" lang="{{ lang }}" aria-label="{% tr 'Switch language' %}">{{ lang|upper }}</a>
+  </nav>
 </main>
 </body>
 </html>

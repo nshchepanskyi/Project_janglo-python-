@@ -183,6 +183,11 @@ class AuthPagesTests(TestCase):
         self.assertContains(response, reverse("hotel:toggle_lang"))
         self.assertContains(response, "Create your account")
         self.assertContains(response, "Already have an account?")
+        self.assertContains(response, "register-password-error")
+        from django.contrib.staticfiles.storage import staticfiles_storage
+        self.assertContains(
+            response, staticfiles_storage.url("hotel/app.js") + "?v=7"
+        )
 
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend")
@@ -1408,6 +1413,20 @@ class ProfileAvatarTests(TestCase):
 
         self.assertTrue(Profile.objects.filter(user=self.user).exists())
 
+    def test_profile_redesign_keeps_existing_actions_and_avatar_picker(self):
+        response = self.client.get("/profile/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="action" value="avatar"')
+        self.assertContains(response, 'name="avatar"')
+        self.assertContains(response, 'name="action" value="email"')
+        self.assertContains(response, 'name="action" value="password"')
+        self.assertContains(response, 'name="old_password"')
+        self.assertContains(response, 'name="new_password1"')
+        self.assertContains(response, 'name="new_password2"')
+        self.assertContains(response, 'aria-controls="profile-edit-panel"')
+        self.assertContains(response, 'id="profile-edit-panel"')
+
     def test_upload_avatar_and_show_everywhere(self):
         resp = self._upload()
         self.assertContains(resp, "Profile photo updated")
@@ -1483,7 +1502,7 @@ class MobileVersionTests(TestCase):
         from django.contrib.staticfiles.storage import staticfiles_storage
         resp = self.client.get("/")
         self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=9")
-        self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=6")
+        self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=7")
         resp = self.client.get("/login/")
         self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=6")
         self.assertContains(resp, 'name="login"')
