@@ -169,6 +169,21 @@ class AuthPagesTests(TestCase):
         resp = self.client.get("/dashboard/")
         self.assertEqual(resp.status_code, 302)
 
+    def test_register_page_keeps_form_language_and_navigation(self):
+        response = self.client.get("/register/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'name="username"')
+        self.assertContains(response, 'name="email"')
+        self.assertContains(response, 'name="password"')
+        self.assertContains(response, 'name="confirm"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, reverse("hotel:login"))
+        self.assertContains(response, reverse("hotel:home"))
+        self.assertContains(response, reverse("hotel:toggle_lang"))
+        self.assertContains(response, "Create your account")
+        self.assertContains(response, "Already have an account?")
+
 
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend")
 class ResendTemplateEmailTests(TestCase):
