@@ -40,9 +40,22 @@ if not ALLOWED_HOSTS:
 if os.environ.get('TRUST_X_FORWARDED_PROTO', '').strip().lower() in ('1', 'true', 'yes'):
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+
 CSRF_TRUSTED_ORIGINS = _csv_env('CSRF_TRUSTED_ORIGINS')
-if not CSRF_TRUSTED_ORIGINS and os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip():
-    CSRF_TRUSTED_ORIGINS = ['https://' + os.environ['RENDER_EXTERNAL_HOSTNAME'].strip()]
+
+_render_host = os.environ.get(
+    'RENDER_EXTERNAL_HOSTNAME', ''
+).strip()
+
+if _render_host:
+    _render_origin = f'https://{_render_host}'
+    if _render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_render_origin)
+
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_HTTPONLY = False
+
 
 
 
