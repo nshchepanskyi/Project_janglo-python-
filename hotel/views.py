@@ -774,6 +774,11 @@ def rooms_view(request):
 
 
 COUNTRY_CODES = ["+380", "+1", "+44", "+49", "+33", "+48", "+39", "+34", "+90", "+81", "+86", "+91"]
+PHONE_LENGTHS = {
+    "+380": (9, 9), "+1": (10, 10), "+44": (10, 10), "+49": (10, 11),
+    "+33": (9, 9), "+48": (9, 9), "+39": (9, 10), "+34": (9, 9),
+    "+90": (10, 10), "+81": (10, 10), "+86": (11, 11), "+91": (10, 10),
+}
 
 
 def _validation_message(exc):
@@ -837,7 +842,12 @@ def reservations_view(request):
             guests = int(request.POST.get("guests", "1") or 1)
         except ValueError:
             guests = 0
-        if guests < 1 or guests > MAX_GUESTS:
+        phone_min, phone_max = PHONE_LENGTHS.get(code, (0, 0))
+        if code not in COUNTRY_CODES:
+            messages.error(request, "Invalid country code")
+        elif not phone.isascii() or not phone.isdigit() or not phone_min <= len(phone) <= phone_max:
+            messages.error(request, f"Phone number for {code} must contain {phone_min}" + (f"–{phone_max}" if phone_min != phone_max else "") + " digits")
+        elif guests < 1 or guests > MAX_GUESTS:
             messages.error(request, "Invalid guests count")
         elif not name:
             messages.error(request, "Enter guest name")
