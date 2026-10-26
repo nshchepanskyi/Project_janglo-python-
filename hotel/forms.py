@@ -26,12 +26,11 @@ def validate_future_date(value):
 
 
 def validate_phone(value):
-    """Лише цифри, пробіли і знак +; мінімум 7 символів."""
-    cleaned = value.replace(" ", "").replace("-", "")
-    if cleaned and not cleaned.lstrip("+").isdigit():
-        raise ValidationError("Номер телефону може містити лише цифри, +, пробіли і тире.")
-    if cleaned and len(cleaned) < 7:
-        raise ValidationError("Номер телефону занадто короткий (мінімум 7 символів).")
+    """Лише цифри; довжина — від 7 до 15 цифр."""
+    if value and (not value.isascii() or not value.isdigit()):
+        raise ValidationError("Номер телефону може містити лише цифри.")
+    if value and not 7 <= len(value) <= 15:
+        raise ValidationError("Номер телефону має містити від 7 до 15 цифр.")
 
 
 
