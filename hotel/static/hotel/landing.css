@@ -844,19 +844,22 @@ html.nav-locked { overflow: hidden }
   }
   html.burger-ready .p-nav {
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    z-index: 60;
-    width: 262px;
+    inset: 0 auto 0 0;
+    z-index: 62;
+    height: 100vh;
+    height: 100dvh;
+    width: min(300px, 85vw);
     max-width: 82vw;
+    box-sizing: border-box;
     flex-direction: column;
     align-items: stretch;
     gap: 6px;
     padding: 56px 12px 14px;
     background: var(--l-surface);
     border-right: 1px solid var(--l-border);
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
     transform: translateX(-105%);
     transition: transform .25s ease;
   }
