@@ -7,7 +7,7 @@
   <form method="post" enctype="multipart/form-data">{% csrf_token %}
     <input type="hidden" name="action" value="add">
     <div class="form-row">
-      <input name="number" placeholder="{% tr "Room Number" %}" required>
+      <input name="number" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="10" placeholder="{% tr "Room Number" %}" required>
       <input name="title" placeholder="{% tr "Title" %}">
       <input name="location" placeholder="{% tr "Location" %}">
       <select name="room_type"><option value="Single">{% tr "Single" %}</option><option value="Double">{% tr "Double" %}</option><option value="Suite">{% tr "Suite" %}</option></select>
@@ -32,7 +32,7 @@
   <h2>{% tr "Delete Room" %}</h2>
   <form method="post" class="form-row">{% csrf_token %}
     <input type="hidden" name="action" value="delete">
-    <input name="number" placeholder="{% tr "Room Number" %}">
+    <input name="number" type="text" inputmode="numeric" pattern="[0-9]+" maxlength="10" placeholder="{% tr "Room Number" %}">
     <button class="btn danger" type="submit">{% tr "Delete" %}</button>
   </form>
 </div>

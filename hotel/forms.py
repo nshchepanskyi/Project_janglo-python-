@@ -235,4 +235,6 @@ class RoomForm(ModelForm):
         number = self.cleaned_data.get("number", "").strip()
         if not number:
             raise ValidationError("Вкажіть номер кімнати.")
+        if not number.isascii() or not number.isdigit():
+            raise ValidationError("Номер кімнати має містити лише цифри.")
         return number
