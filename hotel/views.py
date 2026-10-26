@@ -1027,7 +1027,6 @@ def _make_avatar_jpeg(upload):
 
         output = BytesIO()
         rgb.save(output, format="JPEG", quality=85, optimize=True, progressive=True)
-
     filename = f"{Path(upload.name).stem[:100] or 'avatar'}.jpg"
     return ContentFile(output.getvalue(), name=filename)
 

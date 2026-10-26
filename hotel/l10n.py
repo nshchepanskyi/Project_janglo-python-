@@ -358,7 +358,7 @@ TRANSLATIONS = {
         "Profile photo removed": "Фото профілю видалено",
         "You have no profile photo": "У вас немає фото профілю",
         "Choose a photo": "Оберіть фото",
-        "Photo must be under 2 MB": "Фото має бути меншим за 2 МБ",
+        "Photo must be 5 MB or smaller": "Фото має бути не більше 5 МБ",
         "The file must be an image": "Файл має бути зображенням",
         "Remove photo": "Прибрати фото",
 

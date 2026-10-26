@@ -1432,9 +1432,17 @@ class ProfileAvatarTests(TestCase):
         self.assertContains(resp, "Profile photo updated")
         profile = Profile.objects.get(user=self.user)
         self.assertTrue(profile.avatar.name.startswith("avatars/"))
+        self.assertTrue(profile.avatar.name.endswith(".jpg"))
+        from PIL import Image
+        with profile.avatar.open("rb") as avatar_file:
+            with Image.open(avatar_file) as image:
+                self.assertEqual(image.size, (592, 592))
+                self.assertEqual(image.format, "JPEG")
 
         resp = self.client.get("/profile/")
         self.assertContains(resp, "/media/avatars/")
+        self.assertContains(resp, "profile-layout")
+        self.assertContains(resp, 'class="profile-avatar-control"')
         resp = self.client.get("/")
         self.assertContains(resp, 'class="avatar-img"')
 
@@ -1512,6 +1520,7 @@ class MobileVersionTests(TestCase):
     def test_static_links_carry_cache_version(self):
         from django.contrib.staticfiles.storage import staticfiles_storage
         resp = self.client.get("/")
+        self.assertContains(resp, staticfiles_storage.url("hotel/style.css") + "?v=9")
         self.assertContains(resp, staticfiles_storage.url("hotel/landing.css") + "?v=9")
         self.assertContains(resp, staticfiles_storage.url("hotel/app.js") + "?v=7")
         resp = self.client.get("/login/")
