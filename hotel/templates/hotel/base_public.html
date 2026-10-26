@@ -8,12 +8,15 @@
 <link rel="icon" type="image/png" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1">
 <link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1">
-<link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=9">
-<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=9">
+<link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=10">
+<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=10">
 </head>
 <body class="public">
 <div class="video-backdrop" aria-hidden="true">
-  <video autoplay muted loop playsinline preload="metadata">
+  <video class="video-light" autoplay muted loop playsinline preload="metadata">
+    <source src="{% static 'hotel/video/site-background-light.mp4' %}" type="video/mp4">
+  </video>
+  <video class="video-dark" autoplay muted loop playsinline preload="metadata">
     <source src="{% static 'hotel/video/site-background.mp4' %}" type="video/mp4">
   </video>
   <div class="video-glass"></div>

@@ -32,6 +32,7 @@
   height: 100%;
 }
 .video-backdrop video { object-fit: cover; }
+.video-backdrop .video-dark { display: none; }
 .video-glass { background: rgba(255, 255, 255, .78); backdrop-filter: blur(2px); }
 .public .p-topbar,
 .public .p-footer { background: rgba(255, 255, 255, .78); backdrop-filter: blur(14px); }
@@ -48,6 +49,8 @@
   --l-brand-soft: #134e4a;
 }
 [data-theme="dark"] .video-glass { background: rgba(8, 15, 28, .72); }
+[data-theme="dark"] .video-backdrop .video-light { display: none; }
+[data-theme="dark"] .video-backdrop .video-dark { display: block; }
 [data-theme="dark"] .public .p-topbar,
 [data-theme="dark"] .public .p-footer { background: rgba(11, 18, 32, .78); }
 [data-theme="dark"] .public .card,

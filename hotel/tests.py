@@ -447,6 +447,11 @@ class PublicSiteTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual([r.number for r in resp.context["rooms"]], ["201"])
 
+    def test_search_by_ukrainian_location_alias(self):
+        resp = self.client.get("/places/", {"location": "Львів"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual([r.number for r in resp.context["rooms"]], ["201"])
+
     def test_search_filters_by_guests_capacity(self):
         resp = self.client.get("/places/", {"guests": "3"})
         self.assertEqual([r.number for r in resp.context["rooms"]], ["301"])

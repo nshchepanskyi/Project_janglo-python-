@@ -161,6 +161,8 @@ h3{margin:20px 0 8px;font-size:15px}
 .profile-edit-panel[hidden]{display:none}
 .profile-edit-panel h3{margin:4px 0 10px;font-size:14px;font-weight:600}
 .profile-edit-panel h3:not(:first-child){margin-top:18px}
+[data-theme="dark"] .profile-edit-toggle{border-color:var(--border);background:var(--surface);color:var(--text)}
+[data-theme="dark"] .profile-edit-panel{border-color:var(--border);background:var(--bg);color:var(--text)}
 .profile-edit-form{display:flex;flex-direction:column;gap:7px}
 .profile-edit-form label{color:var(--text);font-size:12px;font-weight:500}
 .profile-edit-form input{width:100%;min-width:0;min-height:38px;padding:8px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface);font-size:13px}

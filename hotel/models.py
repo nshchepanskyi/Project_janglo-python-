@@ -417,6 +417,31 @@ def arrivals_count():
 
 
 
+_SEARCH_LOCATION_ALIASES = (
+    ("Kyiv", "Київ", "Kiev"),
+    ("Lviv", "Львів", "Lvov"),
+    ("Kharkiv", "Харків", "Kharkov"),
+    ("Odesa", "Одеса", "Odessa"),
+    ("Dnipro", "Дніпро", "Dnepr"),
+    ("Chernivtsi", "Чернівці"),
+    ("Uzhhorod", "Ужгород", "Uzhgorod"),
+    ("Vinnytsia", "Вінниця", "Vinnitsa"),
+    ("Ivano-Frankivsk", "Івано-Франківськ"),
+    ("Zaporizhzhia", "Запоріжжя", "Zaporozhye"),
+    ("Bukovel", "Буковель"),
+    ("Ukraine", "Україна", "Украина"),
+)
+
+
+def _location_search_terms(query):
+    """Return Ukrainian/English aliases for known location search terms."""
+    normalized = query.strip().casefold()
+    for aliases in _SEARCH_LOCATION_ALIASES:
+        if normalized in {alias.casefold() for alias in aliases}:
+            return aliases
+    return (query,)
+
+
 def search_rooms(location="", check_in=None, check_out=None, guests=None, stay_type=STAY_NIGHT):
     """
     Пошук місць для публічного каталогу.
@@ -433,11 +458,14 @@ def search_rooms(location="", check_in=None, check_out=None, guests=None, stay_t
     """
     qs = Room.objects.all()
     if location:
-        qs = qs.filter(
-            Q(title__icontains=location)
-            | Q(location__icontains=location)
-            | Q(number__icontains=location)
-        )
+        location_filter = Q()
+        for term in _location_search_terms(location):
+            location_filter |= (
+                Q(title__icontains=term)
+                | Q(location__icontains=term)
+                | Q(number__icontains=term)
+            )
+        qs = qs.filter(location_filter)
     if guests:
         qs = qs.filter(capacity__gte=guests)
     if check_in and (check_out or stay_type == STAY_DAY):
