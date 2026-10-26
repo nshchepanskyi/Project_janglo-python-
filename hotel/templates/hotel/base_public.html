@@ -12,6 +12,12 @@
 <link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=9">
 </head>
 <body class="public">
+<div class="video-backdrop" aria-hidden="true">
+  <video autoplay muted loop playsinline preload="metadata">
+    <source src="{% static 'hotel/video/site-background.mp4' %}" type="video/mp4">
+  </video>
+  <div class="video-glass"></div>
+</div>
 <header class="p-topbar">
   {% tr "Menu" as menu_label %}
   <button class="p-burger" type="button" aria-label="{{ menu_label }}" aria-expanded="false" aria-controls="p-nav"><span></span><span></span><span></span></button>

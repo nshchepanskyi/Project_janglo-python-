@@ -10,12 +10,33 @@
   --l-brand-600: #0d9488;
   --l-brand-soft: #ccfbf1;
   --l-star: #f59b0b;
-  background: var(--l-bg);
+  background: transparent;
   color: var(--l-text);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
 }
+.video-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.video-backdrop video,
+.video-glass {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.video-backdrop video { object-fit: cover; }
+.video-glass { background: rgba(255, 255, 255, .78); backdrop-filter: blur(2px); }
+.public .p-topbar,
+.public .p-footer { background: rgba(255, 255, 255, .78); backdrop-filter: blur(14px); }
+.public .card,
+.public .place-card { background: rgba(255, 255, 255, .82); backdrop-filter: blur(10px); }
 [data-theme="dark"] .public {
   --l-bg: #0b1220;
   --l-surface: #111827;
@@ -26,6 +47,11 @@
   --l-brand-600: #14b8a6;
   --l-brand-soft: #134e4a;
 }
+[data-theme="dark"] .video-glass { background: rgba(8, 15, 28, .72); }
+[data-theme="dark"] .public .p-topbar,
+[data-theme="dark"] .public .p-footer { background: rgba(11, 18, 32, .78); }
+[data-theme="dark"] .public .card,
+[data-theme="dark"] .public .place-card { background: rgba(17, 24, 39, .82); }
 .public .btn.primary {
   background: var(--l-brand);
   border-color: var(--l-brand);
