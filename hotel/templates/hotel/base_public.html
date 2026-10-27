@@ -9,17 +9,13 @@
 <link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1">
 <link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=10">
-<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=12">
+<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=13">
 </head>
 <body class="public">
-<div class="video-backdrop" aria-hidden="true">
-  <video class="video-light" autoplay muted loop playsinline preload="metadata">
-    <source src="{% static 'hotel/video/site-background-light-loop.mp4' %}" type="video/mp4">
-  </video>
-  <video class="video-dark" autoplay muted loop playsinline preload="metadata">
-    <source src="{% static 'hotel/video/site-background-dark-loop.mp4' %}" type="video/mp4">
-  </video>
-  <div class="video-glass"></div>
+<div class="static-backdrop" aria-hidden="true">
+  <img class="background-light" src="{% static 'hotel/images/site-background-light.jpg' %}" alt="">
+  <img class="background-dark" src="{% static 'hotel/images/site-background-dark.jpg' %}" alt="">
+  <div class="background-glass"></div>
 </div>
 <header class="p-topbar">
   {% tr "Menu" as menu_label %}
