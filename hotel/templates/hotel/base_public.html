@@ -9,12 +9,14 @@
 <link rel="shortcut icon" href="{% static 'hotel/favicon.ico' %}?v=1">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'hotel/favicon-180.png' %}?v=1">
 <link rel="stylesheet" href="{% static 'hotel/style.css' %}?v=10">
-<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=13">
+<link rel="stylesheet" href="{% static 'hotel/landing.css' %}?v=14">
 </head>
 <body class="public">
 <div class="static-backdrop" aria-hidden="true">
   <img class="background-light" src="{% static 'hotel/images/site-background-light.jpg' %}" alt="">
   <img class="background-dark" src="{% static 'hotel/images/site-background-dark.jpg' %}" alt="">
+  <video class="background-light-video" muted playsinline loop preload="none" tabindex="-1" aria-hidden="true" poster="{% static 'hotel/images/site-background-light.jpg' %}" data-src="{% static 'hotel/videos/light.mp4' %}"></video>
+  <video class="background-dark-video" muted playsinline loop preload="none" tabindex="-1" aria-hidden="true" poster="{% static 'hotel/images/site-background-dark.jpg' %}" data-src="{% static 'hotel/videos/dark.mp4' %}"></video>
   <div class="background-glass"></div>
 </div>
 <header class="p-topbar">
@@ -69,7 +71,7 @@
   </div>
   <div class="p-copy">© 2026 GrandStay Hotel · {% tr "All rights reserved" %}</div>
 </footer>
-<script src="{% static 'hotel/app.js' %}?v=7" defer></script>
+<script src="{% static 'hotel/app.js' %}?v=8" defer></script>
 <script src="{% static 'hotel/cal.js' %}?v=5" defer></script>
 </body>
 </html>

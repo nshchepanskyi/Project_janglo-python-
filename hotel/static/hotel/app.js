@@ -135,6 +135,30 @@
     }
   }
 
+  function initBackgroundVideo() {
+    if (reduceMotion) return;
+    var theme = document.documentElement.getAttribute("data-theme") === "dark"
+      ? "dark"
+      : "light";
+    var video = document.querySelector(".background-" + theme + "-video");
+    if (!video) return;
+    var source = video.getAttribute("data-src");
+    if (!source) return;
+
+    video.addEventListener("playing", function () {
+      video.classList.add("is-playing");
+    }, { once: true });
+    video.src = source;
+    video.load();
+    var playback = video.play();
+    if (playback && typeof playback.catch === "function") {
+      playback.catch(function () {
+        video.removeAttribute("src");
+        video.load();
+      });
+    }
+  }
+
 
   function initPasswordMatch() {
     document.querySelectorAll("[data-password-match-form]").forEach(function (form) {
@@ -248,6 +272,7 @@
     try { animateNumbers(); } catch (e) {}
     try { animateBars(); } catch (e) {}
     try { pressFeedback(); } catch (e) {}
+    initBackgroundVideo();
     try { initStayType(); } catch (e) {}
     try { initBurger(); } catch (e) {}
     try { initPasswordMatch(); } catch (e) {}

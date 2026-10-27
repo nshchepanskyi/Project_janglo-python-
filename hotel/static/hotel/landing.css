@@ -25,6 +25,7 @@
   pointer-events: none;
 }
 .static-backdrop img,
+.static-backdrop video,
 .background-glass {
   position: absolute;
   inset: 0;
@@ -36,6 +37,12 @@
   opacity: 1;
   transition: opacity .2s ease-in-out;
 }
+.static-backdrop video {
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity .2s ease-in-out;
+}
+.static-backdrop video.is-playing { opacity: 1; }
 .static-backdrop .background-dark { opacity: 0; }
 .background-glass { background: rgba(255, 255, 255, .78); backdrop-filter: blur(2px); }
 .public .p-topbar,
