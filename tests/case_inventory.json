@@ -1,0 +1,50 @@
+[
+  {
+    "id": "GRNDST-0003",
+    "title": "Authorization with valid credentials",
+    "preconditions": "1. User is created\n2. The user is logged out\n3. Hope page is opened\t",
+    "description": "This Test case verifies Signing out functionality",
+    "steps": [
+      {
+        "number": 1,
+        "action": "On the right top corner click 'Sign In'",
+        "test_data": null,
+        "expected": "Signing in page is opened"
+      },
+      {
+        "number": 2,
+        "action": "Set the 'Email'",
+        "test_data": "e.g. n.shchepanskyi@gmail.com",
+        "expected": "Email is set"
+      },
+      {
+        "number": 3,
+        "action": "Set the 'Password'",
+        "test_data": "e.g. GR/23w6",
+        "expected": "Pasword is set"
+      },
+      {
+        "number": 4,
+        "action": "Click 'Sign in' button",
+        "test_data": null,
+        "expected": "Profile is opened."
+      }
+    ],
+    "sheet": "Шаблон тест-кейсу"
+  },
+  {
+    "id": "GRNDST-0002",
+    "title": "Signing out from the webpage",
+    "preconditions": "1. User is created\n2. The user is logged in\n3. Hope page is opened",
+    "description": "This Test case verifies Signing out functionality",
+    "steps": [
+      {
+        "number": 1,
+        "action": "Press 'Logout' button at the header",
+        "test_data": null,
+        "expected": "User is logged out from the webpage"
+      }
+    ],
+    "sheet": "Шаблон тест-кейсу"
+  }
+]
