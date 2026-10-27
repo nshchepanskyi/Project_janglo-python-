@@ -50,8 +50,6 @@ def driver(request, base_url):
     browser = BROWSER
     if browser == "chrome":
         options = ChromeOptions()
-        # UI readiness is checked with explicit waits; do not block on media
-        # or other nonessential resources during navigation.
         options.page_load_strategy = "eager"
         if HEADLESS:
             options.add_argument("--headless=new")

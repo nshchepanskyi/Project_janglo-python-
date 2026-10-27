@@ -162,17 +162,12 @@ def _send_registration_code(user, code):
         subject = "Verify your email address — GrandStay"
         template_id = email_service.verification_template_id()
         if template_id:
-            # Лист формує опублікований HTML-шаблон Resend
-            # (RESEND_VERIFICATION_TEMPLATE_ID), зі змінними USERNAME і CODE.
             message_id = email_service.send_template_email_safe(
                 user.email,
                 subject,
                 {"USERNAME": user.username, "CODE": code},
             )
             return 1 if message_id else 0
-        # Шаблон не налаштовано — тимчасовий inline-HTML, щоб реєстрація
-        # не ламалась. Причина (відсутній RESEND_VERIFICATION_TEMPLATE_ID)
-        # вже записана в лог email_service.safe-функцією нижче.
         html = (
             "<p>Hello "
             + user.username
@@ -1027,7 +1022,6 @@ def _make_avatar_jpeg(upload):
             centering=(0.5, 0.5),
         )
 
-        # Composite transparent sources onto white before converting to JPEG.
         if "A" in image.getbands() or "transparency" in image.info:
             rgba = image.convert("RGBA")
             rgb = Image.new("RGB", rgba.size, "white")

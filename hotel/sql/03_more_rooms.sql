@@ -1,17 +1,10 @@
--- 03_more_rooms.sql — ще 60 номерів для демо-бази GrandStay (запускати ПІСЛЯ 01_schema.sql і 02_seed.sql)
--- 20 × Single (103–122), 24 × Double (203–226), 16 × Suite (302–317)
--- Різні міста, ціни, рейтинги, місткість і набори послуг «що є в номері».
--- Скрипт безпечно запускати повторно: INSERT OR IGNORE не створює дублікатів (number — UNIQUE).
--- Поле photo порожнє — фото додаються пізніше через адмінку Django.
 
--- Каталог послуг (на випадок, якщо 02_seed.sql ще не запускали):
 INSERT OR IGNORE INTO hotel_service (name, price) VALUES
     ('Breakfast', 10), ('Laundry', 15), ('Spa', 50), ('Airport Transfer', 25),
     ('Gym', 20), ('Pool', 15), ('Parking', 12), ('Room Service', 8),
     ('Mini Bar', 18), ('Dry Cleaning', 22), ('Conference Room', 100),
     ('Movie Rental', 12), ('Bicycle Rental', 30);
 
--- Номери:
 INSERT OR IGNORE INTO hotel_room (number, room_type, price, status, title, location, capacity, rating, photo) VALUES
     ('103', 'Single', 50, 'Available', 'Cozy Single near Old Town', 'Lviv, Ukraine', 1, 4.4, ''),
     ('104', 'Single', 75, 'Available', 'Compact Single with Desk', 'Kyiv, Ukraine', 1, 4.5, ''),
@@ -74,7 +67,6 @@ INSERT OR IGNORE INTO hotel_room (number, room_type, price, status, title, locat
     ('316', 'Suite', 440, 'Available', 'Group Suite for Friends', 'Lviv, Ukraine', 8, 4.8, ''),
     ('317', 'Suite', 445, 'Available', 'Ski Chalet Suite', 'Bukovel, Ukraine', 8, 4.6, '');
 
--- «Що є в цьому номері»:
 INSERT OR IGNORE INTO hotel_room_services (room_id, service_id)
 SELECT r.id, s.id FROM hotel_room r JOIN hotel_service s
 WHERE (r.number = '103' AND s.name IN ('Breakfast'))
@@ -138,4 +130,3 @@ WHERE (r.number = '103' AND s.name IN ('Breakfast'))
    OR (r.number = '316' AND s.name IN ('Breakfast', 'Laundry', 'Spa', 'Airport Transfer', 'Room Service', 'Dry Cleaning', 'Conference Room', 'Bicycle Rental'))
    OR (r.number = '317' AND s.name IN ('Breakfast', 'Laundry', 'Airport Transfer', 'Gym', 'Pool', 'Room Service', 'Dry Cleaning'));
 
--- Перевірка (необов'язково): SELECT COUNT(*) FROM hotel_room;  -- має бути 65

@@ -230,12 +230,9 @@ class ResendTemplateEmailTests(TestCase):
         self.assertEqual(template["variables"]["USERNAME"], "ivan")
         code = template["variables"]["CODE"]
         self.assertRegex(code, r"^[A-Z0-9]{6}$")
-        # Resend API: 422 validation_error "Cannot provide 'text' when
-        # using a template" — у payload з template не має бути text/html.
         self.assertNotIn("text", payload)
         self.assertNotIn("html", payload)
 
-        # Код зі шаблонних змінних активує користувача — логіка сесії не зламана.
         resp = self.client.post("/verify-email/", {"code": code})
         self.assertRedirects(resp, "/", fetch_redirect_response=False)
         user = User.objects.get(username="ivan")
@@ -256,8 +253,6 @@ class ResendTemplateEmailTests(TestCase):
         second_code = second_payload["template"]["variables"]["CODE"]
         self.assertRegex(second_code, r"^[A-Z0-9]{6}$")
         self.assertNotEqual(first_code, second_code)
-        # Обидва запити (первинна реєстрація і resend) — лише template,
-        # без text/html (інакше 422 від Resend).
         for payload in (first_payload, second_payload):
             self.assertNotIn("text", payload)
             self.assertNotIn("html", payload)
@@ -285,14 +280,11 @@ class ResendTemplateEmailTests(TestCase):
     def test_without_api_key_falls_back_to_django_backend(self, mock_send):
         env = dict(self.RESEND_ENV)
         env["RESEND_API_KEY"] = ""
-        # locmem замість smtp, щоб Django-фолбек не йшов у реальний SMTP.
         with override_settings(
             EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"
         ), mock.patch.dict(os.environ, env, clear=False):
             resp = self._register()
 
-        # Resend не викликався, запит не впав з 500 — лист пішов
-        # штатним Django email backend (локальна розробка/тести).
         self.assertEqual(mock_send.call_count, 0)
         self.assertRedirects(resp, "/verify-email/", fetch_redirect_response=False)
         self.assertEqual(len(mail.outbox), 1)

@@ -12,7 +12,6 @@
     <div class="pd-photo">
       {% if room.photo %}<img src="{{ room.photo.url }}" alt="{{ room.display_title }}">{% else %}<span class="ph">{% tr "Photo" %}</span>{% endif %}
       <span class="place-tag {{ room.badge_kind }}">{% tr room.badge_key %}</span>
-      {# зірочка обраного (Фаза 3) #}
       <form method="post" action="{% url 'hotel:favorite_toggle' room.number %}" class="fav-form">{% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <button type="submit" class="fav-star{% if room.fav %} on{% endif %}"
@@ -84,7 +83,6 @@
   </aside>
 </section>
 
-{# ---------- Фаза 3: відгуки + форма для тих, хто вже виселився ---------- #}
 <section class="section reviews">
   <div class="section-head">
     <h2>{% tr "Reviews" %} ({{ reviews|length }})</h2>

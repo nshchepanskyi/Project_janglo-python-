@@ -13,8 +13,6 @@ class BasePage:
         try:
             self.driver.get(f"{self.base_url}{path}")
         except TimeoutException:
-            # Remote pages can keep loading analytics or other third-party
-            # resources after the application UI is already usable.
             self.driver.execute_script("window.stop()")
         return self
 
@@ -35,7 +33,5 @@ class BasePage:
         try:
             self.clickable(locator).click()
         except TimeoutException:
-            # A form submit can succeed while Chrome waits on a slow response
-            # or third-party resources during the resulting navigation.
             self.driver.execute_script("window.stop()")
         return self

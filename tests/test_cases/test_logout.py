@@ -62,7 +62,6 @@ def test_grndst_0002_sign_out_and_browser_back_stays_logged_out(driver, base_url
         message=f"Login did not establish an authenticated session for {CASE_ID}",
     )
 
-    # Excel precondition: the authenticated user is on the home page.
     auth.open("/")
     home_heading = WebDriverWait(driver, WAIT_SECONDS).until(
         visible_heading_containing("Find your next stay")
@@ -99,7 +98,6 @@ def test_grndst_0002_sign_out_and_browser_back_stays_logged_out(driver, base_url
         f"Logout should remove authenticated controls for {CASE_ID}; URL: {driver.current_url}"
     )
 
-    # Also verify that public navigation and browser Back stay anonymous.
     auth.click_and_continue((By.LINK_TEXT, "Home"))
     home_heading = WebDriverWait(driver, WAIT_SECONDS).until(
         visible_heading_containing("Find your next stay")

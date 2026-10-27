@@ -700,7 +700,6 @@
 
 .place-card { position: relative; }
 
-/* Transparent full-card target; independent actions stay above this layer. */
 .place-card-hitarea {
   position: absolute;
   inset: 0;
